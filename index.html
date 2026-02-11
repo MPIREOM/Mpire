@@ -551,6 +551,11 @@ let financialData=[]; // [{businessName,fileName,parsedPL:{periods,revenue,cogs,
 let activeFinBusiness=null; // null = overview, or index into financialData
 let finCharts={}; // store chart instances for cleanup
 
+// ═══ FINANCIAL DATA PERSISTENCE ═══
+function saveFinancialData(){try{localStorage.setItem('mpire_financial_data',JSON.stringify(financialData))}catch(e){console.warn('Could not save financial data:',e)}}
+function loadFinancialData(){try{const d=localStorage.getItem('mpire_financial_data');if(d){financialData=JSON.parse(d)}}catch(e){console.warn('Could not load financial data:',e);financialData=[]}}
+loadFinancialData();
+
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
 function getTodayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function getPeopleList(){return ['—',...USERS.map(u=>u.displayName),'Team']}
@@ -840,6 +845,7 @@ function handleFinFileUpload(files){
         const parsed=parsePLFromWorkbook(wb,file.name);
         if(parsed){
           financialData.push(parsed);
+          saveFinancialData();
           activeFinBusiness=financialData.length-1;
           renderFinancialDashboard();
         }else{alert('Could not find P&L data in "'+file.name+'". Make sure the file contains a Profit & Loss sheet with recognizable line items (Revenue, Cost, Profit, etc.).')}
@@ -851,6 +857,7 @@ function handleFinFileUpload(files){
 
 function removeFinBusiness(idx){
   financialData.splice(idx,1);
+  saveFinancialData();
   if(activeFinBusiness>=financialData.length)activeFinBusiness=financialData.length>0?0:null;
   if(financialData.length===0)activeFinBusiness=null;
   renderFinancialDashboard();
