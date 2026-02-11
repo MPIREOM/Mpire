@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
@@ -482,13 +483,113 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   .kpi-value{font-size:1rem}
 }
 
+/* ═══ ANIMATED BACKGROUND ═══ */
+.bg-mesh{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.bg-orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.12;animation:orbFloat 20s ease-in-out infinite}
+.bg-orb:nth-child(1){width:500px;height:500px;background:var(--accent);top:-10%;left:-10%;animation-delay:0s}
+.bg-orb:nth-child(2){width:400px;height:400px;background:#42a5f5;bottom:-10%;right:-10%;animation-delay:-7s}
+.bg-orb:nth-child(3){width:350px;height:350px;background:#ab47bc;top:50%;left:50%;transform:translate(-50%,-50%);animation-delay:-14s}
+@keyframes orbFloat{0%,100%{transform:translate(0,0) scale(1)}25%{transform:translate(30px,-40px) scale(1.1)}50%{transform:translate(-20px,30px) scale(.95)}75%{transform:translate(40px,20px) scale(1.05)}}
+
+/* ═══ GLASSMORPHISM ═══ */
+.glass{background:rgba(19,22,32,.65)!important;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.header{background:rgba(19,22,32,.7)!important;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+
+/* ═══ TOAST NOTIFICATIONS ═══ */
+.toast-container{position:fixed;top:20px;right:20px;z-index:9000;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{display:flex;align-items:center;gap:10px;padding:12px 18px;border-radius:10px;font-size:.85rem;font-weight:500;pointer-events:all;transform:translateX(120%);opacity:0;transition:all .3s cubic-bezier(.16,1,.3,1);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--border-hover);box-shadow:var(--shadow-lg);max-width:340px}
+.toast.show{transform:translateX(0);opacity:1}
+.toast-icon{font-size:1rem;flex-shrink:0;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:.75rem;font-weight:700}
+.toast-success{background:rgba(102,187,106,.12);color:var(--done)}.toast-success .toast-icon{background:var(--done);color:var(--bg)}
+.toast-error{background:rgba(239,83,80,.12);color:var(--overdue)}.toast-error .toast-icon{background:var(--overdue);color:white}
+.toast-warning{background:rgba(255,167,38,.12);color:var(--tomorrow)}.toast-warning .toast-icon{background:var(--tomorrow);color:var(--bg)}
+.toast-info{background:rgba(66,165,245,.12);color:var(--weekly)}.toast-info .toast-icon{background:var(--weekly);color:var(--bg)}
+
+/* ═══ ACTIVITY LOG ═══ */
+.activity-list{max-height:400px;overflow-y:auto}
+.activity-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.activity-item:last-child{border-bottom:none}
+.activity-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:6px}
+.activity-content{flex:1;min-width:0}
+.activity-action{font-size:.85rem;font-weight:500;color:var(--text)}
+.activity-action strong{color:var(--accent-light);font-weight:600}
+.activity-detail{font-size:.78rem;color:var(--text-secondary);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.activity-time{font-size:.7rem;color:var(--text-muted);flex-shrink:0;margin-top:3px}
+
+/* ═══ KANBAN VIEW ═══ */
+.kanban-board{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;min-height:400px}
+.kanban-col{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.kanban-col-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.kanban-col-title{font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:8px}
+.kanban-col-count{font-size:.72rem;font-weight:600;background:var(--border-strong);color:var(--text-secondary);padding:1px 7px;border-radius:4px}
+.kanban-col-todo .kanban-col-title{color:var(--text-secondary)}
+.kanban-col-progress .kanban-col-title{color:var(--progress)}
+.kanban-col-done .kanban-col-title{color:var(--done)}
+.kanban-cards{flex:1;display:flex;flex-direction:column;gap:6px;min-height:60px}
+.kanban-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:grab;transition:all .15s ease;position:relative}
+.kanban-card:hover{border-color:var(--border-hover);box-shadow:var(--shadow-sm);transform:translateY(-1px)}
+.kanban-card:active{cursor:grabbing;box-shadow:var(--shadow-md);transform:scale(1.02)}
+.kanban-card-title{font-size:.82rem;font-weight:500;margin-bottom:6px;line-height:1.3}
+.kanban-card-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.kanban-card-meta .deadline-badge{font-size:.68rem;padding:1px 6px}
+.kanban-card-project{font-size:.65rem;font-weight:600;padding:1px 6px;border-radius:3px;white-space:nowrap}
+.kanban-card-person{font-size:.7rem;color:var(--text-secondary);margin-left:auto}
+.kanban-card.my-task{border-left:2px solid var(--accent)}
+.kanban-card.overdue-card{border-left:2px solid var(--overdue)}
+.sortable-ghost{opacity:.3}
+.sortable-drag{box-shadow:var(--shadow-lg)!important;transform:rotate(2deg)!important}
+.kanban-empty{font-size:.78rem;color:var(--text-muted);text-align:center;padding:20px 8px;font-style:italic;border:1px dashed var(--border);border-radius:8px}
+
+/* View toggle for list/kanban */
+.task-view-toggle{display:flex;gap:0;background:var(--bg);border:1px solid var(--border);border-radius:8px;overflow:hidden;padding:2px;margin-left:auto}
+.task-view-btn{padding:4px 12px;border:none;background:transparent;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:600;cursor:pointer;transition:all .15s ease;border-radius:6px;display:flex;align-items:center;gap:4px}
+.task-view-btn:hover{color:var(--text)}
+.task-view-btn.active{background:var(--accent);color:var(--bg)}
+
+/* ═══ ANIMATED COUNTERS ═══ */
+.counter-animate{display:inline-block;transition:all .4s cubic-bezier(.16,1,.3,1)}
+
+/* ═══ PAGE TRANSITIONS ═══ */
+.view-fade{animation:viewFadeIn .35s cubic-bezier(.16,1,.3,1) both}
+@keyframes viewFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══ STAGGER ANIMATIONS ═══ */
+.project:nth-child(1){animation-delay:.05s}
+.project:nth-child(2){animation-delay:.1s}
+.project:nth-child(3){animation-delay:.15s}
+.project:nth-child(4){animation-delay:.2s}
+.project:nth-child(5){animation-delay:.25s}
+.project:nth-child(6){animation-delay:.3s}
+.project:nth-child(7){animation-delay:.35s}
+
+/* ═══ ENHANCED HOVER EFFECTS ═══ */
+.project:hover{border-color:var(--border-hover);box-shadow:var(--shadow-sm),0 0 20px rgba(201,164,108,.04)}
+.kpi-card:hover,.fin-kpi:hover{box-shadow:var(--shadow-sm),0 0 20px rgba(201,164,108,.04)}
+.login-card:hover{box-shadow:var(--shadow-lg),0 0 40px rgba(201,164,108,.06)}
+
+/* Kanban responsive */
+@media(max-width:900px){.kanban-board{grid-template-columns:1fr;gap:12px}.kanban-col{min-height:auto}}
+@media(max-width:640px){
+  .toast-container{top:12px;right:12px;left:12px}
+  .toast{max-width:100%;font-size:.8rem;padding:10px 14px}
+  .kanban-card-title{font-size:.78rem}
+  .kanban-card-meta .deadline-badge{font-size:.62rem}
+}
+
 /* Reduce motion for accessibility */
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+  .bg-orb{animation:none!important}
 }
 </style>
 </head>
 <body>
+
+<!-- Animated Background -->
+<div class="bg-mesh"><div class="bg-orb"></div><div class="bg-orb"></div><div class="bg-orb"></div></div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
 
 <!-- Splash Screen -->
 <div class="splash" id="splashScreen" style="display:none">
@@ -539,6 +640,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
         <button class="view-toggle-btn active" id="viewTasksBtn" onclick="switchView('tasks')">Tasks</button>
         <button class="view-toggle-btn" id="viewFinBtn" onclick="switchView('financials')">Financials</button>
       </div>
+      <button class="hdr-btn" id="activityBtn" style="display:none" onclick="openActivityLog()">◷ Log</button>
       <button class="hdr-btn" id="settingsBtn" style="display:none" onclick="openSettingsModal()">⚙ Settings</button>
       <button class="hdr-btn logout-btn" onclick="doLogout()">Logout</button>
     </div>
@@ -561,6 +663,10 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
     <button class="filter-btn" data-filter="pending">Pending</button>
     <button class="add-project-btn" id="addProjectBtn" style="display:none" onclick="openProjectModal()">+ New Project</button>
     <button class="backlog-btn" id="backlogBtn" style="display:none" onclick="toggleBacklog()">📋 Backlog</button>
+    <div class="task-view-toggle" id="taskViewToggle">
+      <button class="task-view-btn active" id="listViewBtn" onclick="switchTaskView('list')">☰ List</button>
+      <button class="task-view-btn" id="kanbanViewBtn" onclick="switchTaskView('kanban')">▦ Board</button>
+    </div>
   </div>
   </div>
 </div>
@@ -599,6 +705,13 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   <div class="modal-footer"><button class="btn btn-add" onclick="closeSettingsModal()">Done</button></div>
 </div></div>
 
+<!-- Activity Log Modal -->
+<div class="modal-overlay" id="activityModalOverlay"><div class="modal" style="width:580px">
+  <div class="modal-header"><h2>Activity Log</h2><p>Recent changes by your team</p></div>
+  <div class="modal-body"><div class="activity-list" id="activityList"></div></div>
+  <div class="modal-footer"><button class="btn btn-cancel" onclick="document.getElementById('activityModalOverlay').classList.remove('open')">Close</button></div>
+</div></div>
+
 <script>
 // ═══ DATA ═══
 const DEFAULT_USERS=[
@@ -608,7 +721,7 @@ const DEFAULT_USERS=[
   {username:'Marwan',password:'8246',role:'user',displayName:'Marwan'},
 ];
 let USERS=[...DEFAULT_USERS];
-const PROJECTS=[
+const DEFAULT_PROJECTS=[
   {name:"Sama Hotel",color:"#c9a46c",visibility:{},tasks:[
     {text:"Tell Harith to buy descent",person:"Harith",deadline:"today",priority:"high",status:"todo"},
     {text:"Follow up on pending rents",person:"—",deadline:"daily",priority:"high",status:"todo"},
@@ -636,14 +749,17 @@ const PROJECTS=[
     {text:"Take Porsche to dealership",person:"—",deadline:"tomorrow",priority:"low",status:"todo"},
   ]}
 ];
+let PROJECTS=JSON.parse(JSON.stringify(DEFAULT_PROJECTS));
 const PROJECT_COLORS=['#c9a46c','#5ca0e0','#9b7ae0','#e0a33c','#4ead6b','#e05c5c','#e08a5c','#5cc0b8','#b06ec9','#7a8ee0'];
 let currentUser=null,activeFilter='all',activePersonFilter=null,taskModalProjectIndex=null,deleteProjectIndex=null,selectedProjectColor=PROJECT_COLORS[0],openPopover=null;
 let editingTask=null; // {pi,ti} when editing
 let showBacklog=false;
 let currentView='tasks'; // 'tasks' or 'financials'
+let currentTaskView='list'; // 'list' or 'kanban'
 let financialData=[]; // [{businessName,fileName,parsedPL:{periods,revenue,cogs,grossProfit,opex,netProfit,otherRows}}]
 let activeFinBusiness=null; // null = overview, or index into financialData
 let finCharts={}; // store chart instances for cleanup
+let activityLog=[]; // [{ts,user,action,detail}]
 
 // ═══ SUPABASE SETUP ═══
 let sbClient=null;
@@ -708,6 +824,73 @@ async function loadUsersFromCloud(){
 loadUsers();
 loadUsersFromCloud();
 
+// ═══ PROJECT DATA PERSISTENCE (Cloud + Local Cache) ═══
+function saveProjects(){
+  try{localStorage.setItem('mpire_projects',JSON.stringify(PROJECTS))}catch(e){}
+  if(!sbClient)return;
+  sbClient.from('financial_data').upsert({username:'_system_projects',data:PROJECTS,updated_at:new Date().toISOString()},{onConflict:'username'}).then(({error})=>{
+    if(error)console.warn('Supabase project save error:',error.message);
+  });
+}
+function loadProjects(){
+  try{
+    const d=localStorage.getItem('mpire_projects');
+    if(d){const saved=JSON.parse(d);if(Array.isArray(saved)&&saved.length>0){PROJECTS=saved;return}}
+  }catch(e){}
+  PROJECTS=JSON.parse(JSON.stringify(DEFAULT_PROJECTS));
+}
+async function loadProjectsFromCloud(){
+  if(!sbClient)return;
+  try{
+    const{data,error}=await sbClient.from('financial_data').select('data').eq('username','_system_projects').maybeSingle();
+    if(error){console.warn('Supabase project load error:',error.message);return}
+    if(data&&Array.isArray(data.data)&&data.data.length>0){
+      PROJECTS=data.data;
+      try{localStorage.setItem('mpire_projects',JSON.stringify(PROJECTS))}catch(e){}
+    }
+  }catch(e){console.warn('Cloud project load failed:',e)}
+}
+loadProjects();
+loadProjectsFromCloud();
+
+// ═══ ACTIVITY LOG ═══
+function loadActivityLog(){
+  try{const d=localStorage.getItem('mpire_activity');if(d)activityLog=JSON.parse(d)||[]}catch(e){activityLog=[]}
+}
+function saveActivityLog(){
+  try{localStorage.setItem('mpire_activity',JSON.stringify(activityLog.slice(-200)))}catch(e){}
+  if(!sbClient)return;
+  sbClient.from('financial_data').upsert({username:'_system_activity',data:activityLog.slice(-200),updated_at:new Date().toISOString()},{onConflict:'username'}).then(({error})=>{
+    if(error)console.warn('Activity log save error:',error.message);
+  });
+}
+async function loadActivityFromCloud(){
+  if(!sbClient)return;
+  try{
+    const{data,error}=await sbClient.from('financial_data').select('data').eq('username','_system_activity').maybeSingle();
+    if(error)return;
+    if(data&&Array.isArray(data.data)){activityLog=data.data;try{localStorage.setItem('mpire_activity',JSON.stringify(activityLog))}catch(e){}}
+  }catch(e){}
+}
+function logActivity(action,detail){
+  const entry={ts:new Date().toISOString(),user:currentUser?currentUser.displayName:'System',action,detail};
+  activityLog.push(entry);
+  saveActivityLog();
+}
+loadActivityLog();
+loadActivityFromCloud();
+
+// ═══ TOAST NOTIFICATIONS ═══
+function showToast(msg,type='info'){
+  const c=document.getElementById('toastContainer');if(!c)return;
+  const t=document.createElement('div');
+  t.className='toast toast-'+type;
+  t.innerHTML=`<span class="toast-icon">${type==='success'?'✓':type==='error'?'✕':type==='warning'?'⚠':'ℹ'}</span><span>${msg}</span>`;
+  c.appendChild(t);
+  requestAnimationFrame(()=>t.classList.add('show'));
+  setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),300)},3000);
+}
+
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
 function getTodayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function getPeopleList(){return ['—',...USERS.map(u=>u.displayName),'Team']}
@@ -727,13 +910,20 @@ function getDeadlineLabel(d){const m={today:'Today',tomorrow:'Tomorrow',daily:'D
 function getDeadlineClass(d,t){if(t&&isOverdue(t))return'deadline-overdue';return['today','tomorrow','weekly','daily','pending'].includes(d)?`deadline-${d}`:'deadline-date'}
 
 // ═══ LOGIN ═══
-function doLogin(){
+async function doLogin(){
   const u=document.getElementById('loginUser').value.trim(),p=document.getElementById('loginPass').value;
-  const user=USERS.find(x=>x.username.toLowerCase()===u.toLowerCase()&&x.password===p);
-  if(!user){document.getElementById('loginError').textContent='Invalid username or password';return}
+  const btn=document.querySelector('.login-btn');
+  btn.textContent='Signing in...';btn.disabled=true;
+  let user=USERS.find(x=>x.username.toLowerCase()===u.toLowerCase()&&x.password===p);
+  // If not found locally, fetch latest users from cloud and retry
+  if(!user&&sbClient){
+    await loadUsersFromCloud();
+    user=USERS.find(x=>x.username.toLowerCase()===u.toLowerCase()&&x.password===p);
+  }
+  if(!user){document.getElementById('loginError').textContent='Invalid username or password';btn.textContent='Sign In';btn.disabled=false;return}
   currentUser=user;
-  // Load financial data from cloud while splash plays
-  const cloudLoad=loadFinancialDataFromCloud();
+  // Load data from cloud while splash plays
+  const cloudLoad=Promise.all([loadFinancialDataFromCloud(),loadProjectsFromCloud(),loadActivityFromCloud()]);
   document.getElementById('loginPage').style.display='none';
   // Show splash screen
   const splash=document.getElementById('splashScreen');
@@ -757,10 +947,11 @@ function setupApp(){
   document.getElementById('ubName').textContent=currentUser.displayName;
   const rl=document.getElementById('ubRole');rl.textContent=getRoleLabel(currentUser.role);rl.style.color=getRoleColor(currentUser.role);rl.style.background=currentUser.role==='owner'?'rgba(201,164,108,.15)':currentUser.role==='manager'?'rgba(92,160,224,.15)':'rgba(139,143,163,.15)';
   document.getElementById('settingsBtn').style.display=canAccessSettings()?'flex':'none';
+  document.getElementById('activityBtn').style.display=canManage()?'flex':'none';
   document.getElementById('viewToggle').style.display=isOwner()?'flex':'none';
   document.getElementById('addProjectBtn').style.display=canManage()?'inline-flex':'none';
   document.getElementById('backlogBtn').style.display=canManage()?'inline-flex':'none';
-  activeFilter='all';activePersonFilter=null;showBacklog=false;currentView='tasks';switchView('tasks');
+  activeFilter='all';activePersonFilter=null;showBacklog=false;currentView='tasks';currentTaskView='list';switchView('tasks');
 }
 
 // ═══ TEAM BAR ═══
@@ -812,7 +1003,7 @@ function renderBacklog(){
     container.appendChild(sec);
   });
 }
-function undoComplete(pi,ti){PROJECTS[pi].tasks[ti].status='todo';render()}
+function undoComplete(pi,ti){PROJECTS[pi].tasks[ti].status='todo';logActivity('reopened',`"${PROJECTS[pi].tasks[ti].text}"`);showToast('Task moved back to active','info');saveProjects();render()}
 
 // ═══ RENDER ═══
 function render(){
@@ -857,7 +1048,7 @@ function render(){
             <div class="checkbox ${isDone?'checked':''}" ${canStatus?`onclick="toggleCheck(${pi},${ri})"`:'style="opacity:.4;cursor:default"'}></div>
             <div class="task-text-wrap">${overdue?'<span class="overdue-icon">⚠ <span class="overdue-tip">OVERDUE</span></span>':''}<span class="task-text">${esc(t.text)}</span></div>
             ${canEdit?`<div class="deadline-cell" onclick="event.stopPropagation();toggleDeadlinePopover('pop-${pi}-${ri}')"><span class="deadline-badge ${dlClass}">${getDeadlineLabel(t.deadline)}</span><span class="deadline-edit-icon">✎</span><div class="deadline-popover" id="pop-${pi}-${ri}"><select id="dltype-${pi}-${ri}" onchange="togglePopDateField(${pi},${ri})"><option value="today" ${t.deadline==='today'?'selected':''}>Today</option><option value="tomorrow" ${t.deadline==='tomorrow'?'selected':''}>Tomorrow</option><option value="daily" ${t.deadline==='daily'?'selected':''}>Daily</option><option value="weekly" ${t.deadline==='weekly'?'selected':''}>Weekly</option><option value="pending" ${t.deadline==='pending'?'selected':''}>Pending</option><option value="date" ${(t.deadline&&t.deadline.includes('-'))?'selected':''}>Pick a Date</option></select><input type="date" id="dldate-${pi}-${ri}" value="${(t.deadline&&t.deadline.includes('-'))?t.deadline:''}" style="display:${(t.deadline&&t.deadline.includes('-'))?'block':'none'}"><div class="pop-actions"><button class="pop-btn pop-btn-cancel" onclick="event.stopPropagation();closeDeadlinePopover()">Cancel</button><button class="pop-btn pop-btn-save" onclick="event.stopPropagation();saveDeadline(${pi},${ri})">Save</button></div></div></div>`:`<div><span class="deadline-badge ${dlClass}">${getDeadlineLabel(t.deadline)}</span></div>`}
-            <div><select class="person-select" ${dis} onchange="PROJECTS[${pi}].tasks[${ri}].person=this.value;renderTeamBar()">${PEOPLE.map(p=>`<option value="${esc(p)}" ${t.person===p?'selected':''}>${esc(p)}</option>`).join('')}</select></div>
+            <div><select class="person-select" ${dis} onchange="PROJECTS[${pi}].tasks[${ri}].person=this.value;saveProjects();renderTeamBar()">${PEOPLE.map(p=>`<option value="${esc(p)}" ${t.person===p?'selected':''}>${esc(p)}</option>`).join('')}</select></div>
             <div><select class="priority-select p-${t.priority}" ${dis} onchange="setPriority(${pi},${ri},this.value)"><option value="high" ${t.priority==='high'?'selected':''}>🔴 High</option><option value="medium" ${t.priority==='medium'?'selected':''}>🟡 Medium</option><option value="low" ${t.priority==='low'?'selected':''}>🔵 Low</option></select></div>
             <div><select class="status-select ${statusCls}" ${sDis} onchange="setStatus(${pi},${ri},this.value)"><option value="todo" ${t.status==='todo'?'selected':''}>To Do</option><option value="progress" ${t.status==='progress'?'selected':''}>In Progress</option><option value="done" ${t.status==='done'?'selected':''}>Done</option></select></div>
             <div>${canEdit?`<button class="icon-btn" title="Edit task" onclick="openEditTask(${pi},${ri})">✎</button>`:''}</div>
@@ -884,15 +1075,15 @@ function updateStats(){
 }
 
 function toggleProject(h){h.closest('.project').classList.toggle('collapsed')}
-function toggleCheck(pi,ti){const t=PROJECTS[pi].tasks[ti];if(!canChangeStatus(t))return;t.status=t.status==='done'?'todo':'done';render()}
-function setStatus(pi,ti,v){if(!canChangeStatus(PROJECTS[pi].tasks[ti]))return;PROJECTS[pi].tasks[ti].status=v;render()}
-function setPriority(pi,ti,v){if(!canManage())return;PROJECTS[pi].tasks[ti].priority=v;render()}
+function toggleCheck(pi,ti){const t=PROJECTS[pi].tasks[ti];if(!canChangeStatus(t))return;const was=t.status;t.status=t.status==='done'?'todo':'done';logActivity(t.status==='done'?'completed':'reopened',`"${t.text}" in ${PROJECTS[pi].name}`);showToast(t.status==='done'?`Task completed`:'Task reopened',t.status==='done'?'success':'info');saveProjects();render()}
+function setStatus(pi,ti,v){if(!canChangeStatus(PROJECTS[pi].tasks[ti]))return;PROJECTS[pi].tasks[ti].status=v;logActivity('status changed',`"${PROJECTS[pi].tasks[ti].text}" → ${v}`);saveProjects();render()}
+function setPriority(pi,ti,v){if(!canManage())return;PROJECTS[pi].tasks[ti].priority=v;logActivity('priority changed',`"${PROJECTS[pi].tasks[ti].text}" → ${v}`);saveProjects();render()}
 
 // Deadline popover
 function toggleDeadlinePopover(id){closeDeadlinePopover();const p=document.getElementById(id);if(p){p.classList.add('show');openPopover=p}}
 function closeDeadlinePopover(){if(openPopover){openPopover.classList.remove('show');openPopover=null}}
 function togglePopDateField(pi,ri){document.getElementById(`dldate-${pi}-${ri}`).style.display=document.getElementById(`dltype-${pi}-${ri}`).value==='date'?'block':'none'}
-function saveDeadline(pi,ri){let dl=document.getElementById(`dltype-${pi}-${ri}`).value;if(dl==='date')dl=document.getElementById(`dldate-${pi}-${ri}`).value||'pending';PROJECTS[pi].tasks[ri].deadline=dl;closeDeadlinePopover();render()}
+function saveDeadline(pi,ri){let dl=document.getElementById(`dltype-${pi}-${ri}`).value;if(dl==='date')dl=document.getElementById(`dldate-${pi}-${ri}`).value||'pending';PROJECTS[pi].tasks[ri].deadline=dl;logActivity('deadline changed',`"${PROJECTS[pi].tasks[ri].text}" → ${dl}`);saveProjects();closeDeadlinePopover();render()}
 document.addEventListener('click',e=>{if(openPopover&&!e.target.closest('.deadline-cell'))closeDeadlinePopover()});
 
 // ═══ TASK MODAL (Add & Edit) ═══
@@ -930,11 +1121,15 @@ function saveTaskModal(){
   if(editingTask){
     const t=PROJECTS[editingTask.pi].tasks[editingTask.ti];
     t.text=text;t.deadline=deadline;t.person=person;t.priority=priority;
+    logActivity('edited task',`"${text}" in ${PROJECTS[editingTask.pi].name}`);
+    showToast('Task updated','success');
   }else{
     if(taskModalProjectIndex===null)return;
     PROJECTS[taskModalProjectIndex].tasks.push({text,person,deadline,priority,status:'todo'});
+    logActivity('added task',`"${text}" to ${PROJECTS[taskModalProjectIndex].name}`);
+    showToast('Task added','success');
   }
-  closeTaskModal();render();
+  saveProjects();closeTaskModal();render();
 }
 document.getElementById('taskModalOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeTaskModal()});
 
@@ -942,13 +1137,13 @@ document.getElementById('taskModalOverlay').addEventListener('click',e=>{if(e.ta
 function openProjectModal(){document.getElementById('newProjectName').value='';selectedProjectColor=PROJECT_COLORS[0];renderColorOptions();document.getElementById('projectModalOverlay').classList.add('open');setTimeout(()=>document.getElementById('newProjectName').focus(),200)}
 function closeProjectModal(){document.getElementById('projectModalOverlay').classList.remove('open')}
 function renderColorOptions(){document.getElementById('colorOptions').innerHTML=PROJECT_COLORS.map(c=>`<div class="color-swatch ${c===selectedProjectColor?'selected':''}" style="background:${c}" onclick="selectedProjectColor='${c}';renderColorOptions()"></div>`).join('')}
-function addProject(){const name=document.getElementById('newProjectName').value.trim();if(!name)return;PROJECTS.push({name,color:selectedProjectColor,visibility:{},tasks:[]});closeProjectModal();render()}
+function addProject(){const name=document.getElementById('newProjectName').value.trim();if(!name)return;PROJECTS.push({name,color:selectedProjectColor,visibility:{},tasks:[]});logActivity('created project',name);showToast(`Project "${name}" created`,'success');saveProjects();closeProjectModal();render()}
 document.getElementById('projectModalOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeProjectModal()});
 
 // Delete Modal
 function openDeleteModal(pi){deleteProjectIndex=pi;document.getElementById('deleteProjectName').textContent=PROJECTS[pi].name;document.getElementById('deleteModalOverlay').classList.add('open')}
 function closeDeleteModal(){document.getElementById('deleteModalOverlay').classList.remove('open');deleteProjectIndex=null}
-function confirmDeleteProject(){if(deleteProjectIndex!==null)PROJECTS.splice(deleteProjectIndex,1);closeDeleteModal();render()}
+function confirmDeleteProject(){if(deleteProjectIndex!==null){const name=PROJECTS[deleteProjectIndex].name;PROJECTS.splice(deleteProjectIndex,1);logActivity('deleted project',name);showToast(`Project "${name}" deleted`,'warning');saveProjects()}closeDeleteModal();render()}
 document.getElementById('deleteModalOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeDeleteModal()});
 
 // ═══ SETTINGS ═══
@@ -984,7 +1179,7 @@ function renderSettings(){
 function setRole(i,role){if(USERS[i].role==='owner')return;USERS[i].role=role;saveUsers();renderSettings()}
 function removeUser(i){if(USERS[i].role==='owner')return;USERS.splice(i,1);saveUsers();renderSettings()}
 function addUser(){const name=document.getElementById('addUserName').value.trim(),pass=document.getElementById('addUserPass').value.trim(),role=document.getElementById('addUserRole').value;if(!name){alert('Please enter a username');return}if(!pass||pass.length!==4||isNaN(pass)){alert('Please enter a 4-digit PIN');return}if(USERS.find(u=>u.username.toLowerCase()===name.toLowerCase())){alert('Username already exists');return}USERS.push({username:name,password:pass,role,displayName:name});saveUsers();renderSettings()}
-function toggleVisibility(pi,username){const p=PROJECTS[pi];if(p.visibility[username]===false)delete p.visibility[username];else p.visibility[username]=false;renderSettings()}
+function toggleVisibility(pi,username){const p=PROJECTS[pi];if(p.visibility[username]===false)delete p.visibility[username];else p.visibility[username]=false;saveProjects();renderSettings()}
 
 // ═══ FINANCIAL TRACKER ═══
 function switchView(view){
@@ -999,10 +1194,12 @@ function switchView(view){
   if(view==='tasks'){
     tasksHeader.style.display='';projContainer.style.display='';finContainer.style.display='none';
     h1.innerHTML='<span class="brand-accent">M</span>PIRE';subtitle.style.display='';
+    projContainer.classList.add('view-fade');setTimeout(()=>projContainer.classList.remove('view-fade'),400);
     render();
   }else{
     tasksHeader.style.display='none';projContainer.style.display='none';finContainer.style.display='';
     h1.innerHTML='<span class="brand-accent">M</span>PIRE <span style="font-weight:500;color:var(--text-secondary);font-size:.85em">Financials</span>';subtitle.style.display='none';
+    finContainer.classList.add('view-fade');setTimeout(()=>finContainer.classList.remove('view-fade'),400);
     renderFinancialDashboard();
   }
 }
@@ -1362,11 +1559,126 @@ function renderBusinessCharts(biz){
   }
 }
 
+// ═══ TASK VIEW SWITCHING (List / Kanban) ═══
+function switchTaskView(view){
+  currentTaskView=view;
+  document.getElementById('listViewBtn').classList.toggle('active',view==='list');
+  document.getElementById('kanbanViewBtn').classList.toggle('active',view==='kanban');
+  render();
+}
+
+// ═══ KANBAN BOARD ═══
+function renderKanban(){
+  const container=document.getElementById('projectContainer');
+  container.innerHTML='';
+  container.classList.add('view-fade');
+  setTimeout(()=>container.classList.remove('view-fade'),400);
+  const allTasks=[];
+  PROJECTS.forEach((p,pi)=>{
+    if(!canSeeProject(p))return;
+    p.tasks.forEach((t,ti)=>{
+      let show=true;
+      if(activeFilter!=='all'&&t.deadline!==activeFilter)show=false;
+      if(activePersonFilter&&t.person!==activePersonFilter)show=false;
+      if(show)allTasks.push({...t,pi,ti,projectName:p.name,projectColor:p.color});
+    });
+  });
+  const todo=allTasks.filter(t=>t.status==='todo');
+  const progress=allTasks.filter(t=>t.status==='progress');
+  const done=allTasks.filter(t=>t.status==='done');
+
+  function cardHTML(t){
+    const dlClass=getDeadlineClass(t.deadline,t);
+    const isMyTask=currentUser&&t.person===currentUser.displayName;
+    const overdue=isOverdue(t);
+    let cls='kanban-card';if(isMyTask)cls+=' my-task';if(overdue)cls+=' overdue-card';
+    return `<div class="${cls}" data-pi="${t.pi}" data-ti="${t.ti}">
+      <div class="kanban-card-title">${overdue?'<span style="color:var(--overdue);font-size:.75rem">⚠ </span>':''}${esc(t.text)}</div>
+      <div class="kanban-card-meta">
+        <span class="deadline-badge ${dlClass}">${getDeadlineLabel(t.deadline)}</span>
+        <span class="kanban-card-project" style="background:${t.projectColor}18;color:${t.projectColor}">${esc(t.projectName)}</span>
+        ${t.person&&t.person!=='—'?`<span class="kanban-card-person">${esc(t.person)}</span>`:''}
+      </div>
+    </div>`;
+  }
+
+  container.innerHTML=`<div class="kanban-board">
+    <div class="kanban-col kanban-col-todo">
+      <div class="kanban-col-header"><span class="kanban-col-title">◯ To Do <span class="kanban-col-count">${todo.length}</span></span></div>
+      <div class="kanban-cards" id="kanbanTodo">${todo.length?todo.map(cardHTML).join(''):'<div class="kanban-empty">No tasks</div>'}</div>
+    </div>
+    <div class="kanban-col kanban-col-progress">
+      <div class="kanban-col-header"><span class="kanban-col-title">◐ In Progress <span class="kanban-col-count">${progress.length}</span></span></div>
+      <div class="kanban-cards" id="kanbanProgress">${progress.length?progress.map(cardHTML).join(''):'<div class="kanban-empty">No tasks</div>'}</div>
+    </div>
+    <div class="kanban-col kanban-col-done">
+      <div class="kanban-col-header"><span class="kanban-col-title">● Done <span class="kanban-col-count">${done.length}</span></span></div>
+      <div class="kanban-cards" id="kanbanDone">${done.length?done.map(cardHTML).join(''):'<div class="kanban-empty">No tasks</div>'}</div>
+    </div>
+  </div>`;
+
+  renderTeamBar();updateStats();
+  // Init drag-and-drop with SortableJS
+  if(typeof Sortable!=='undefined'){
+    const statusMap={kanbanTodo:'todo',kanbanProgress:'progress',kanbanDone:'done'};
+    ['kanbanTodo','kanbanProgress','kanbanDone'].forEach(id=>{
+      const el=document.getElementById(id);if(!el)return;
+      Sortable.create(el,{group:'kanban',animation:200,ghostClass:'sortable-ghost',dragClass:'sortable-drag',
+        onAdd(evt){
+          const card=evt.item;
+          const pi=parseInt(card.dataset.pi),ti=parseInt(card.dataset.ti);
+          const newStatus=statusMap[evt.to.id];
+          if(!canChangeStatus(PROJECTS[pi].tasks[ti])){render();return}
+          PROJECTS[pi].tasks[ti].status=newStatus;
+          logActivity('moved to '+newStatus,`"${PROJECTS[pi].tasks[ti].text}"`);
+          showToast(`Task moved to ${newStatus==='todo'?'To Do':newStatus==='progress'?'In Progress':'Done'}`,'success');
+          saveProjects();
+          setTimeout(()=>renderKanban(),50);
+        }
+      });
+    });
+  }
+}
+
+// ═══ ACTIVITY LOG VIEWER ═══
+function openActivityLog(){
+  // Load latest from cloud first
+  loadActivityFromCloud().then(()=>{
+    const list=document.getElementById('activityList');
+    if(!activityLog.length){list.innerHTML='<div style="text-align:center;padding:24px;color:var(--text-muted)">No activity yet</div>';document.getElementById('activityModalOverlay').classList.add('open');return}
+    const sorted=[...activityLog].reverse().slice(0,100);
+    list.innerHTML=sorted.map(e=>{
+      const d=new Date(e.ts);
+      const timeStr=d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      const actionColor=e.action==='completed'?'var(--done)':e.action.includes('deleted')?'var(--overdue)':e.action.includes('created')||e.action.includes('added')?'var(--accent)':'var(--weekly)';
+      return `<div class="activity-item">
+        <div class="activity-dot" style="background:${actionColor}"></div>
+        <div class="activity-content">
+          <div class="activity-action"><strong>${esc(e.user)}</strong> ${esc(e.action)}</div>
+          <div class="activity-detail">${esc(e.detail||'')}</div>
+        </div>
+        <div class="activity-time">${timeStr}</div>
+      </div>`;
+    }).join('');
+    document.getElementById('activityModalOverlay').classList.add('open');
+  });
+}
+
+// Override render to support kanban view
+const _origRender=render;
+render=function(){
+  if(currentTaskView==='kanban'&&!showBacklog&&currentView==='tasks'){renderKanban();return}
+  _origRender();
+}
+
 // Global keys
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeTaskModal();closeProjectModal();closeDeleteModal();closeSettingsModal();closeDeadlinePopover()}if(e.key==='Enter'){if(document.getElementById('taskModalOverlay').classList.contains('open'))saveTaskModal();else if(document.getElementById('projectModalOverlay').classList.contains('open'))addProject()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeTaskModal();closeProjectModal();closeDeleteModal();closeSettingsModal();closeDeadlinePopover();document.getElementById('activityModalOverlay').classList.remove('open')}if(e.key==='Enter'){if(document.getElementById('taskModalOverlay').classList.contains('open'))saveTaskModal();else if(document.getElementById('projectModalOverlay').classList.contains('open'))addProject()}});
 
 // Filters
 document.querySelectorAll('.filter-btn').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');activeFilter=btn.dataset.filter;showBacklog=false;document.querySelector('.backlog-btn')?.classList.remove('active');render()})});
+
+// Activity modal close on overlay click
+document.getElementById('activityModalOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)e.target.classList.remove('open')});
 </script>
 </body>
 </html>
