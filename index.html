@@ -68,7 +68,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .splash-line{width:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);margin-top:18px;animation:splashLine .7s ease .4s forwards}
 @keyframes splashLine{from{width:0}to{width:160px}}
 
-.app{display:none}.app.visible{display:block}
+.app{display:none!important}.app.visible{display:block!important}
 
 /* HEADER */
 .header{padding:20px 32px 16px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,rgba(19,22,32,.8) 0%,var(--bg) 100%)}
@@ -146,7 +146,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .task-row.my-task.in-progress{background:var(--progress-bg);border-left-color:var(--progress)}
 .task-row.my-task.overdue-row{background:var(--overdue-bg);border-left-color:var(--overdue)}
 
-.checkbox{width:18px;height:18px;border-radius:5px;border:1.5px solid rgba(255,255,255,.15);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s ease;flex-shrink:0;-webkit-tap-highlight-color:transparent}
+.checkbox{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--border-strong);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s ease;flex-shrink:0;-webkit-tap-highlight-color:transparent}
 .checkbox:hover{border-color:var(--accent);background:var(--accent-muted)}
 .checkbox.checked{background:var(--done);border-color:var(--done)}
 .checkbox.checked::after{content:'✓';color:white;font-size:.7rem;font-weight:700}
@@ -168,7 +168,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .deadline-edit-icon{font-size:.68rem;color:var(--text-muted);opacity:0;transition:opacity .15s ease}
 .deadline-cell:hover .deadline-edit-icon{opacity:1}
 
-.deadline-popover{position:absolute;top:100%;left:0;z-index:50;background:var(--surface-elevated);border:1px solid var(--border-hover);border-radius:var(--radius);padding:12px;box-shadow:var(--shadow-lg);display:none;min-width:200px}
+.deadline-popover{position:fixed;z-index:999;background:var(--surface-elevated);border:1px solid var(--border-hover);border-radius:var(--radius);padding:12px;box-shadow:var(--shadow-lg);display:none;min-width:200px;max-width:calc(100vw - 24px)}
 .deadline-popover.show{display:block}
 .deadline-popover select,.deadline-popover input{width:100%;padding:7px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:.85rem;margin-bottom:8px}
 .deadline-popover input[type="date"]{color-scheme:dark}
@@ -721,6 +721,7 @@ body.light-theme .splash-glow{background:radial-gradient(circle,rgba(176,138,62,
 .crm-type-client{background:rgba(102,187,106,.1);color:var(--done)}
 .crm-type-vendor{background:rgba(171,71,188,.1);color:#ab47bc}
 .crm-type-partner{background:rgba(66,165,245,.1);color:var(--weekly)}
+.crm-type-freelancer{background:rgba(255,183,77,.1);color:#ffb74d}
 .crm-detail{font-size:.78rem;color:var(--text-secondary);margin-bottom:3px;display:flex;align-items:center;gap:6px}
 .crm-projects{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
 .crm-project-tag{font-size:.65rem;font-weight:600;padding:2px 6px;border-radius:3px}
@@ -785,6 +786,7 @@ body.light-theme .splash-glow{background:radial-gradient(circle,rgba(176,138,62,
 </div>
 
 <div class="login-page" id="loginPage">
+  <button class="hdr-btn" id="loginThemeBtn" onclick="toggleTheme()" title="Toggle theme" style="position:absolute;top:16px;right:16px;z-index:10">☀</button>
   <div class="login-card">
     <div class="login-logo">MPIRE</div>
     <div class="login-sub">Sign in to access your dashboard</div>
@@ -811,9 +813,10 @@ body.light-theme .splash-glow{background:radial-gradient(circle,rgba(176,138,62,
         <button class="view-toggle-btn" id="viewDocsBtn" onclick="switchView('docs')">Docs</button>
         <button class="view-toggle-btn" id="viewFinBtn" onclick="switchView('financials')">Financials</button>
       </div>
-      <button class="notif-btn" id="notifBtn" style="display:none" onclick="toggleNotifPanel(event)">🔔<span class="notif-badge" id="notifBadge"></span>
-        <div class="notif-panel" id="notifPanel"><div class="notif-panel-header"><span>Notifications</span><button style="background:none;border:none;color:var(--text-muted);font-size:.75rem;cursor:pointer" onclick="event.stopPropagation();clearNotifications()">Clear all</button></div><div id="notifList"></div></div>
-      </button>
+      <div style="position:relative;display:inline-block" id="notifWrap">
+        <button class="notif-btn" id="notifBtn" style="display:none" onclick="toggleNotifPanel(event)">🔔<span class="notif-badge" id="notifBadge"></span></button>
+        <div class="notif-panel" id="notifPanel" onclick="event.stopPropagation()"><div class="notif-panel-header"><span>Notifications</span><button style="background:none;border:none;color:var(--text-muted);font-size:.75rem;cursor:pointer" onclick="event.stopPropagation();clearNotifications()">Clear all</button></div><div id="notifList"></div></div>
+      </div>
       <button class="hdr-btn" id="activityBtn" style="display:none" onclick="openActivityLog()">◷ Log</button>
       <button class="hdr-btn" id="settingsBtn" style="display:none" onclick="openSettingsModal()">⚙ Settings</button>
       <button class="hdr-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle light/dark theme">☀</button>
@@ -926,7 +929,7 @@ body.light-theme .splash-glow{background:radial-gradient(circle,rgba(176,138,62,
   <div class="modal-header"><h2 id="contactModalTitle">Add Contact</h2><p>Add a client, vendor, or partner</p></div>
   <div class="modal-body">
     <div class="field"><label>Name</label><input type="text" id="contactName" placeholder="Full name" autocomplete="off"></div>
-    <div class="field-row"><div class="field"><label>Type</label><select id="contactType"><option value="client">Client</option><option value="vendor">Vendor</option><option value="partner">Partner</option></select></div><div class="field"><label>Company</label><input type="text" id="contactCompany" placeholder="Company name" autocomplete="off"></div></div>
+    <div class="field-row"><div class="field"><label>Type</label><select id="contactType"><option value="client">Client</option><option value="vendor">Vendor</option><option value="freelancer">Freelancer</option></select></div><div class="field"><label>Company</label><input type="text" id="contactCompany" placeholder="Company name" autocomplete="off"></div></div>
     <div class="field-row"><div class="field"><label>Email</label><input type="email" id="contactEmail" placeholder="email@example.com" autocomplete="off"></div><div class="field"><label>Phone</label><input type="tel" id="contactPhone" placeholder="+1 234 567 8900" autocomplete="off"></div></div>
     <div class="field"><label>Linked Projects</label><div id="contactProjects" style="display:flex;gap:6px;flex-wrap:wrap"></div></div>
     <div class="field"><label>Notes</label><textarea id="contactNotes" rows="2" placeholder="Optional notes..."></textarea></div>
@@ -1222,7 +1225,12 @@ function setupApp(){
   document.getElementById('settingsBtn').style.display=canAccessSettings()?'flex':'none';
   document.getElementById('activityBtn').style.display=canManage()?'flex':'none';
   document.getElementById('notifBtn').style.display='flex';
-  document.getElementById('viewToggle').style.display=canManage()?'flex':'none';
+  document.getElementById('viewToggle').style.display='flex';
+  document.getElementById('viewDashBtn').style.display=canManage()?'':'none';
+  document.getElementById('viewTimeBtn').style.display=canManage()?'':'none';
+  document.getElementById('viewCrmBtn').style.display=canManage()?'':'none';
+  document.getElementById('viewDocsBtn').style.display=canManage()?'':'none';
+  document.getElementById('viewFinBtn').style.display=canManage()?'':'none';
   document.getElementById('addProjectBtn').style.display=canManage()?'inline-flex':'none';
   document.getElementById('backlogBtn').style.display=canManage()?'inline-flex':'none';
   activeFilter='all';activePersonFilter=null;showBacklog=false;currentView='tasks';currentTaskView='list';
@@ -1355,7 +1363,7 @@ function setStatus(pi,ti,v){if(!canChangeStatus(PROJECTS[pi].tasks[ti]))return;P
 function setPriority(pi,ti,v){if(!canManage())return;PROJECTS[pi].tasks[ti].priority=v;logActivity('priority changed',`"${PROJECTS[pi].tasks[ti].text}" → ${v}`);saveProjects();render()}
 
 // Deadline popover
-function toggleDeadlinePopover(id){closeDeadlinePopover();const p=document.getElementById(id);if(p){p.classList.add('show');openPopover=p}}
+function toggleDeadlinePopover(id){closeDeadlinePopover();const p=document.getElementById(id);if(p){const trigger=p.parentElement;const rect=trigger.getBoundingClientRect();let top=rect.bottom+4;let left=rect.left;p.classList.add('show');openPopover=p;const pH=p.offsetHeight;const pW=p.offsetWidth;if(top+pH>window.innerHeight)top=rect.top-pH-4;if(left+pW>window.innerWidth)left=window.innerWidth-pW-12;if(left<8)left=8;p.style.top=top+'px';p.style.left=left+'px'}}
 function closeDeadlinePopover(){if(openPopover){openPopover.classList.remove('show');openPopover=null}}
 function togglePopDateField(pi,ri){document.getElementById(`dldate-${pi}-${ri}`).style.display=document.getElementById(`dltype-${pi}-${ri}`).value==='date'?'block':'none'}
 function saveDeadline(pi,ri){let dl=document.getElementById(`dltype-${pi}-${ri}`).value;if(dl==='date')dl=document.getElementById(`dldate-${pi}-${ri}`).value||'pending';PROJECTS[pi].tasks[ri].deadline=dl;logActivity('deadline changed',`"${PROJECTS[pi].tasks[ri].text}" → ${dl}`);saveProjects();closeDeadlinePopover();render()}
@@ -1462,6 +1470,8 @@ const viewBtns=['viewDashBtn','viewTasksBtn','viewHrBtn','viewTimeBtn','viewCrmB
 const viewNames=['dashboard','tasks','hr','timetracking','crm','docs','financials'];
 const viewLabels={dashboard:'Dashboard',tasks:'',hr:'HR Directory',timetracking:'Time Tracking',crm:'Contacts',docs:'Documents',financials:'Financials'};
 function switchView(view){
+  const managerOnly=['dashboard','timetracking','crm','docs','financials'];
+  if(managerOnly.includes(view)&&!canManage()){view='tasks'}
   currentView=view;
   viewBtns.forEach(id=>{const el=document.getElementById(id);if(el)el.classList.toggle('active',viewNames[viewBtns.indexOf(id)]===view)});
   viewContainers.forEach(id=>{document.getElementById(id).style.display='none'});
@@ -1951,7 +1961,7 @@ function saveFeatureData(){
 function loadAllFeatureData(){
   try{
     const d=localStorage.getItem('mpire_features');
-    if(d){const p=JSON.parse(d);timeEntries=p.timeEntries||[];hrLeaves=p.hrLeaves||[];crmContacts=p.crmContacts||[];milestones=p.milestones||[];documents=p.documents||[]}
+    if(d){const p=JSON.parse(d);timeEntries=p.timeEntries||[];hrLeaves=p.hrLeaves||[];crmContacts=(p.crmContacts||[]).map(c=>{if(c.type==='partner')c.type='freelancer';return c});milestones=p.milestones||[];documents=p.documents||[]}
   }catch(e){}
   if(sbClient){
     sbClient.from('financial_data').select('data').eq('username','_system_features').maybeSingle().then(({data,error})=>{
@@ -2131,11 +2141,31 @@ function saveTimeEntry(){
 function deleteTimeEntry(id){timeEntries=timeEntries.filter(e=>e.id!==id);saveFeatureData();renderTimeTracking()}
 
 // ═══ 3. HR / TEAM DIRECTORY ═══
+function renderHREmployee(c){
+  const myName=currentUser.displayName;
+  const myLeaves=hrLeaves.filter(l=>l.employee===myName);
+  let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+    <div class="exec-section-title" style="margin:0;border:0;padding:0">My Leave Requests</div>
+    <button class="btn btn-add" style="font-size:.82rem;padding:7px 16px" onclick="openLeaveModal()">+ Request Leave</button>
+  </div>`;
+  if(myLeaves.length){
+    html+=`<div class="fin-details-table" style="--fin-detail-cols:1fr 1fr 1fr 1fr;margin-bottom:20px">
+      <div class="fin-details-row header"><div>Type</div><div>Start</div><div>End</div><div>Status</div></div>`;
+    myLeaves.forEach(l=>{
+      html+=`<div class="fin-details-row"><div>${esc(l.type)}</div><div>${l.startDate}</div><div>${l.endDate}</div><div><span class="leave-status leave-${l.status}">${l.status}</span></div></div>`;
+    });
+    html+=`</div>`;
+  }else{
+    html+=`<div style="text-align:center;padding:40px;color:var(--text-muted);font-size:.9rem">No leave requests yet. Click "+ Request Leave" to submit one.</div>`;
+  }
+  c.innerHTML=html;
+}
 function renderHR(){
   const c=document.getElementById('hrContainer');
+  if(!canManage()){renderHREmployee(c);return}
   let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
     <div class="exec-section-title" style="margin:0;border:0;padding:0">Team Directory</div>
-    ${canManage()?`<button class="btn btn-add" style="font-size:.82rem;padding:7px 16px" onclick="openLeaveModal()">+ Request Leave</button>`:''}
+    <button class="btn btn-add" style="font-size:.82rem;padding:7px 16px" onclick="openLeaveModal()">+ Request Leave</button>
   </div><div class="hr-grid">`;
   USERS.forEach((u,ui)=>{
     const rc=getRoleColor(u.role),rl=getRoleLabel(u.role);
@@ -2177,11 +2207,20 @@ function renderHR(){
 }
 
 function openLeaveModal(){
-  document.getElementById('leaveEmployee').innerHTML=USERS.map(u=>`<option value="${esc(u.displayName)}" ${currentUser&&u.displayName===currentUser.displayName?'selected':''}>${esc(u.displayName)}</option>`).join('');
+  if(canManage()){
+    document.getElementById('leaveEmployee').innerHTML=USERS.map(u=>`<option value="${esc(u.displayName)}" ${currentUser&&u.displayName===currentUser.displayName?'selected':''}>${esc(u.displayName)}</option>`).join('');
+    document.getElementById('leaveEmployee').disabled=false;
+    document.getElementById('leaveStatus').parentElement.style.display='';
+  }else{
+    document.getElementById('leaveEmployee').innerHTML=`<option value="${esc(currentUser.displayName)}">${esc(currentUser.displayName)}</option>`;
+    document.getElementById('leaveEmployee').disabled=true;
+    document.getElementById('leaveStatus').value='pending';
+    document.getElementById('leaveStatus').parentElement.style.display='none';
+  }
   document.getElementById('leaveStart').value=getTodayStr();
   document.getElementById('leaveEnd').value=getTodayStr();
   document.getElementById('leaveType').value='Vacation';
-  document.getElementById('leaveStatus').value=isOwner()?'approved':'pending';
+  if(canManage())document.getElementById('leaveStatus').value=isOwner()?'approved':'pending';
   document.getElementById('leaveModalOverlay').classList.add('open');
 }
 function saveLeave(){
@@ -2244,7 +2283,7 @@ function renderNotifList(){
 }
 function markNotifRead(id){const n=notifications.find(x=>x.id===id);if(n)n.read=true;updateNotifBadge();renderNotifList()}
 function clearNotifications(){notifications=[];updateNotifBadge();renderNotifList()}
-document.addEventListener('click',e=>{const panel=document.getElementById('notifPanel');if(panel&&!e.target.closest('.notif-btn'))panel.classList.remove('open')});
+document.addEventListener('click',e=>{const panel=document.getElementById('notifPanel');if(panel&&!e.target.closest('#notifWrap'))panel.classList.remove('open')});
 
 // ═══ 5. TASK COMMENTS ═══
 let commentTarget=null; // {pi,ti}
@@ -2386,7 +2425,7 @@ function renderCRM(){
     ${canManage()?`<button class="btn btn-add" style="font-size:.82rem;padding:7px 16px" onclick="openContactModal()">+ Add Contact</button>`:''}
   </div>`;
   // Type filter
-  const types=['all','client','vendor','partner'];
+  const types=['all','client','vendor','freelancer'];
   html+=`<div style="display:flex;gap:6px;margin-bottom:16px">${types.map(t=>`<button class="filter-btn ${t==='all'?'active':''}" onclick="filterCRM(this,'${t}')">${t.charAt(0).toUpperCase()+t.slice(1)}</button>`).join('')}</div>`;
   html+=`<div class="crm-grid" id="crmGrid">`;
   if(!crmContacts.length){
@@ -2501,8 +2540,11 @@ function deleteDoc(id){documents=documents.filter(d=>d.id!==id);saveFeatureData(
 
 // ═══ 10. DARK/LIGHT THEME ═══
 function applyTheme(){
-  if(currentTheme==='light'){document.body.classList.add('light-theme');document.getElementById('themeToggleBtn').textContent='🌙'}
-  else{document.body.classList.remove('light-theme');document.getElementById('themeToggleBtn').textContent='☀'}
+  const icon=currentTheme==='light'?'🌙':'☀';
+  if(currentTheme==='light')document.body.classList.add('light-theme');
+  else document.body.classList.remove('light-theme');
+  const tb=document.getElementById('themeToggleBtn');if(tb)tb.textContent=icon;
+  const lb=document.getElementById('loginThemeBtn');if(lb)lb.textContent=icon;
 }
 function toggleTheme(){
   currentTheme=currentTheme==='dark'?'light':'dark';
