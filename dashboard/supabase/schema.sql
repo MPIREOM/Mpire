@@ -177,9 +177,9 @@ create policy "Staff read assigned tasks"
   on public.tasks for select
   using (
     exists (
-      select 1 from public.projects p
-      where p.id = tasks.project_id
-        and p.company_id = public.get_my_company_id()
+      select 1 from public.projects proj
+      where proj.id = tasks.project_id
+        and proj.company_id = public.get_my_company_id()
     )
     and (
       public.get_my_role() in ('owner', 'manager')
@@ -191,9 +191,9 @@ create policy "Managers can insert tasks"
   on public.tasks for insert
   with check (
     exists (
-      select 1 from public.projects p
-      where p.id = tasks.project_id
-        and p.company_id = public.get_my_company_id()
+      select 1 from public.projects proj
+      where proj.id = tasks.project_id
+        and proj.company_id = public.get_my_company_id()
     )
     and public.get_my_role() in ('owner', 'manager')
   );
@@ -202,9 +202,9 @@ create policy "Staff can update own task status"
   on public.tasks for update
   using (
     exists (
-      select 1 from public.projects p
-      where p.id = tasks.project_id
-        and p.company_id = public.get_my_company_id()
+      select 1 from public.projects proj
+      where proj.id = tasks.project_id
+        and proj.company_id = public.get_my_company_id()
     )
     and (
       public.get_my_role() in ('owner', 'manager')
@@ -216,9 +216,9 @@ create policy "Managers can delete tasks"
   on public.tasks for delete
   using (
     exists (
-      select 1 from public.projects p
-      where p.id = tasks.project_id
-        and p.company_id = public.get_my_company_id()
+      select 1 from public.projects proj
+      where proj.id = tasks.project_id
+        and proj.company_id = public.get_my_company_id()
     )
     and public.get_my_role() in ('owner', 'manager')
   );
@@ -228,11 +228,11 @@ create policy "Users can read task comments"
   on public.task_comments for select
   using (
     exists (
-      select 1 from public.tasks t
-      join public.projects p on p.id = t.project_id
-      where t.id = task_comments.task_id
-        and p.company_id = public.get_my_company_id()
-        and (public.get_my_role() in ('owner', 'manager') or t.assignee_id = auth.uid())
+      select 1 from public.tasks tsk
+      join public.projects proj on proj.id = tsk.project_id
+      where tsk.id = task_comments.task_id
+        and proj.company_id = public.get_my_company_id()
+        and (public.get_my_role() in ('owner', 'manager') or tsk.assignee_id = auth.uid())
     )
   );
 
@@ -241,11 +241,11 @@ create policy "Users can insert comments on visible tasks"
   with check (
     user_id = auth.uid()
     and exists (
-      select 1 from public.tasks t
-      join public.projects p on p.id = t.project_id
-      where t.id = task_comments.task_id
-        and p.company_id = public.get_my_company_id()
-        and (public.get_my_role() in ('owner', 'manager') or t.assignee_id = auth.uid())
+      select 1 from public.tasks tsk
+      join public.projects proj on proj.id = tsk.project_id
+      where tsk.id = task_comments.task_id
+        and proj.company_id = public.get_my_company_id()
+        and (public.get_my_role() in ('owner', 'manager') or tsk.assignee_id = auth.uid())
     )
   );
 
@@ -254,11 +254,11 @@ create policy "Users can read task activity"
   on public.task_activity for select
   using (
     exists (
-      select 1 from public.tasks t
-      join public.projects p on p.id = t.project_id
-      where t.id = task_activity.task_id
-        and p.company_id = public.get_my_company_id()
-        and (public.get_my_role() in ('owner', 'manager') or t.assignee_id = auth.uid())
+      select 1 from public.tasks tsk
+      join public.projects proj on proj.id = tsk.project_id
+      where tsk.id = task_activity.task_id
+        and proj.company_id = public.get_my_company_id()
+        and (public.get_my_role() in ('owner', 'manager') or tsk.assignee_id = auth.uid())
     )
   );
 
