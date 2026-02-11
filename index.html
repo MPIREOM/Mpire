@@ -601,12 +601,13 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 
 <script>
 // ═══ DATA ═══
-const USERS=[
+const DEFAULT_USERS=[
   {username:'Almuhannad',password:'7242',role:'owner',displayName:'Almuhannad'},
   {username:'Harith',password:'3917',role:'user',displayName:'Harith'},
   {username:'Hilal',password:'5683',role:'user',displayName:'Hilal'},
   {username:'Marwan',password:'8246',role:'user',displayName:'Marwan'},
 ];
+let USERS=[...DEFAULT_USERS];
 const PROJECTS=[
   {name:"Sama Hotel",color:"#c9a46c",visibility:{},tasks:[
     {text:"Tell Harith to buy descent",person:"Harith",deadline:"today",priority:"high",status:"todo"},
@@ -674,6 +675,38 @@ async function loadFinancialDataFromCloud(){
   }catch(e){console.warn('Cloud load failed, using local cache:',e)}
 }
 loadFinancialData();
+
+// ═══ USER DATA PERSISTENCE (Cloud + Local Cache) ═══
+function saveUsers(){
+  try{localStorage.setItem('mpire_users',JSON.stringify(USERS))}catch(e){}
+  if(!sbClient)return;
+  sbClient.from('financial_data').upsert({username:'_system_users',data:USERS,updated_at:new Date().toISOString()},{onConflict:'username'}).then(({error})=>{
+    if(error)console.warn('Supabase user save error:',error.message);
+  });
+}
+function loadUsers(){
+  try{
+    const d=localStorage.getItem('mpire_users');
+    if(d){
+      const saved=JSON.parse(d);
+      if(Array.isArray(saved)&&saved.length>0){USERS=saved;return}
+    }
+  }catch(e){}
+  USERS=[...DEFAULT_USERS];
+}
+async function loadUsersFromCloud(){
+  if(!sbClient)return;
+  try{
+    const{data,error}=await sbClient.from('financial_data').select('data').eq('username','_system_users').maybeSingle();
+    if(error){console.warn('Supabase user load error:',error.message);return}
+    if(data&&Array.isArray(data.data)&&data.data.length>0){
+      USERS=data.data;
+      try{localStorage.setItem('mpire_users',JSON.stringify(USERS))}catch(e){}
+    }
+  }catch(e){console.warn('Cloud user load failed, using local cache:',e)}
+}
+loadUsers();
+loadUsersFromCloud();
 
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
 function getTodayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
@@ -948,9 +981,9 @@ function renderSettings(){
       }).join('')}
     </div>`;
 }
-function setRole(i,role){if(USERS[i].role==='owner')return;USERS[i].role=role;renderSettings()}
-function removeUser(i){if(USERS[i].role==='owner')return;USERS.splice(i,1);renderSettings()}
-function addUser(){const name=document.getElementById('addUserName').value.trim(),pass=document.getElementById('addUserPass').value.trim(),role=document.getElementById('addUserRole').value;if(!name){alert('Please enter a username');return}if(!pass||pass.length!==4||isNaN(pass)){alert('Please enter a 4-digit PIN');return}if(USERS.find(u=>u.username.toLowerCase()===name.toLowerCase())){alert('Username already exists');return}USERS.push({username:name,password:pass,role,displayName:name});renderSettings()}
+function setRole(i,role){if(USERS[i].role==='owner')return;USERS[i].role=role;saveUsers();renderSettings()}
+function removeUser(i){if(USERS[i].role==='owner')return;USERS.splice(i,1);saveUsers();renderSettings()}
+function addUser(){const name=document.getElementById('addUserName').value.trim(),pass=document.getElementById('addUserPass').value.trim(),role=document.getElementById('addUserRole').value;if(!name){alert('Please enter a username');return}if(!pass||pass.length!==4||isNaN(pass)){alert('Please enter a 4-digit PIN');return}if(USERS.find(u=>u.username.toLowerCase()===name.toLowerCase())){alert('Username already exists');return}USERS.push({username:name,password:pass,role,displayName:name});saveUsers();renderSettings()}
 function toggleVisibility(pi,username){const p=PROJECTS[pi];if(p.visibility[username]===false)delete p.visibility[username];else p.visibility[username]=false;renderSettings()}
 
 // ═══ FINANCIAL TRACKER ═══
