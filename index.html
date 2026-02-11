@@ -7,6 +7,8 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
 <style>
 :root{--bg:#0f1117;--surface:#181a22;--surface-hover:#1e2130;--border:#2a2d3a;--text:#e8e9ed;--text-muted:#8b8fa3;--accent:#c9a46c;--accent-light:#e0c98f;--today:#e05c5c;--today-bg:rgba(224,92,92,.1);--tomorrow:#e0a33c;--tomorrow-bg:rgba(224,163,60,.1);--weekly:#5ca0e0;--weekly-bg:rgba(92,160,224,.1);--daily:#9b7ae0;--daily-bg:rgba(155,122,224,.1);--done:#4ead6b;--done-bg:rgba(78,173,107,.08);--progress:#e0a33c;--progress-bg:rgba(224,163,60,.1);--overdue:#ff4d6a;--overdue-bg:rgba(255,77,106,.1);--high:#e05c5c;--medium:#e0a33c;--low:#5ca0e0;--my-task:rgba(201,164,108,.08);--radius:12px}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -601,9 +603,31 @@ let financialData=[]; // [{businessName,fileName,parsedPL:{periods,revenue,cogs,
 let activeFinBusiness=null; // null = overview, or index into financialData
 let finCharts={}; // store chart instances for cleanup
 
-// ═══ FINANCIAL DATA PERSISTENCE ═══
-function saveFinancialData(){try{localStorage.setItem('mpire_financial_data',JSON.stringify(financialData))}catch(e){console.warn('Could not save financial data:',e)}}
-function loadFinancialData(){try{const d=localStorage.getItem('mpire_financial_data');if(d){financialData=JSON.parse(d)}}catch(e){console.warn('Could not load financial data:',e);financialData=[]}}
+// ═══ SUPABASE SETUP ═══
+const supabase=window.MPIRE_SUPABASE_URL&&window.MPIRE_SUPABASE_KEY?window.supabase.createClient(window.MPIRE_SUPABASE_URL,window.MPIRE_SUPABASE_KEY):null;
+
+// ═══ FINANCIAL DATA PERSISTENCE (Cloud + Local Cache) ═══
+function saveFinancialData(){
+  try{localStorage.setItem('mpire_financial_data',JSON.stringify(financialData))}catch(e){}
+  if(!currentUser||!supabase)return;
+  supabase.from('financial_data').upsert({username:currentUser.username,data:financialData,updated_at:new Date().toISOString()},{onConflict:'username'}).then(({error})=>{
+    if(error)console.warn('Supabase save error:',error.message);
+  });
+}
+function loadFinancialData(){
+  try{const d=localStorage.getItem('mpire_financial_data');if(d){financialData=JSON.parse(d)}}catch(e){financialData=[]}
+}
+async function loadFinancialDataFromCloud(){
+  if(!currentUser||!supabase)return;
+  try{
+    const{data,error}=await supabase.from('financial_data').select('data').eq('username',currentUser.username).maybeSingle();
+    if(error){console.warn('Supabase load error:',error.message);return}
+    if(data&&data.data){
+      financialData=data.data;
+      try{localStorage.setItem('mpire_financial_data',JSON.stringify(financialData))}catch(e){}
+    }
+  }catch(e){console.warn('Cloud load failed, using local cache:',e)}
+}
 loadFinancialData();
 
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
@@ -630,20 +654,23 @@ function doLogin(){
   const user=USERS.find(x=>x.username.toLowerCase()===u.toLowerCase()&&x.password===p);
   if(!user){document.getElementById('loginError').textContent='Invalid username or password';return}
   currentUser=user;
+  // Load financial data from cloud while splash plays
+  const cloudLoad=loadFinancialDataFromCloud();
   document.getElementById('loginPage').style.display='none';
   // Show splash screen
   const splash=document.getElementById('splashScreen');
   splash.style.display='flex';splash.classList.remove('hide');
   document.getElementById('splashWelcome').textContent='Welcome back, '+user.displayName;
   // After animation, transition to dashboard
-  setTimeout(()=>{
+  setTimeout(async()=>{
+    await cloudLoad;
     splash.classList.add('hide');
     document.getElementById('app').classList.add('visible');
     setupApp();
     setTimeout(()=>{splash.style.display='none'},700);
   },2600);
 }
-function doLogout(){currentUser=null;showBacklog=false;currentView='tasks';document.getElementById('app').classList.remove('visible');document.getElementById('loginPage').style.display='flex';document.getElementById('loginUser').value='';document.getElementById('loginPass').value='';document.getElementById('loginError').textContent=''}
+function doLogout(){currentUser=null;showBacklog=false;currentView='tasks';financialData=[];activeFinBusiness=null;document.getElementById('app').classList.remove('visible');document.getElementById('loginPage').style.display='flex';document.getElementById('loginUser').value='';document.getElementById('loginPass').value='';document.getElementById('loginError').textContent=''}
 document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
 document.getElementById('loginUser').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginPass').focus()});
 
