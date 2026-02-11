@@ -8,7 +8,7 @@
 <style>
 :root{--bg:#0f1117;--surface:#181a22;--surface-hover:#1e2130;--border:#2a2d3a;--text:#e8e9ed;--text-muted:#8b8fa3;--accent:#c9a46c;--accent-light:#e0c98f;--today:#e05c5c;--today-bg:rgba(224,92,92,.1);--tomorrow:#e0a33c;--tomorrow-bg:rgba(224,163,60,.1);--weekly:#5ca0e0;--weekly-bg:rgba(92,160,224,.1);--daily:#9b7ae0;--daily-bg:rgba(155,122,224,.1);--done:#4ead6b;--done-bg:rgba(78,173,107,.08);--progress:#e0a33c;--progress-bg:rgba(224,163,60,.1);--overdue:#ff4d6a;--overdue-bg:rgba(255,77,106,.1);--high:#e05c5c;--medium:#e0a33c;--low:#5ca0e0;--my-task:rgba(201,164,108,.08);--radius:12px}
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;-webkit-text-size-adjust:100%;overflow-x:hidden}
 
 /* LOGIN */
 .login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;background:radial-gradient(ellipse at 30% 20%,rgba(201,164,108,.06) 0%,transparent 60%),radial-gradient(ellipse at 70% 80%,rgba(92,160,224,.04) 0%,transparent 60%),var(--bg)}
@@ -99,7 +99,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .task-row.my-task.in-progress{background:var(--progress-bg);border-left-color:var(--progress)}
 .task-row.my-task.overdue-row{background:var(--overdue-bg);border-left-color:var(--overdue)}
 
-.checkbox{width:20px;height:20px;border-radius:6px;border:2px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+.checkbox{width:20px;height:20px;border-radius:6px;border:2px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;-webkit-tap-highlight-color:transparent}
 .checkbox:hover{border-color:var(--accent)}
 .checkbox.checked{background:var(--done);border-color:var(--done)}
 .checkbox.checked::after{content:'✓';color:white;font-size:.75rem;font-weight:700}
@@ -213,7 +213,148 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .backlog-task .bt-date{font-size:.75rem;color:var(--text-muted)}
 .backlog-empty{color:var(--text-muted);font-size:.88rem;font-style:italic;padding:12px 18px}
 
-@media(max-width:900px){.header{padding:24px 20px 20px}.main{padding:20px 20px 40px}.task-row,.task-header{grid-template-columns:32px 1fr auto;gap:6px}.task-row{padding:12px 16px}.header-left h1{font-size:1.6rem}.login-card{padding:32px 24px}}
+/* KPI Cards */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.kpi-card{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:4px;transition:border-color .2s}
+.kpi-card:hover{border-color:var(--accent)}
+.kpi-label{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--text-muted)}
+.kpi-value{font-size:1.5rem;font-weight:700;line-height:1.2}
+.kpi-sub{font-size:.75rem;color:var(--text-muted);font-weight:500}
+.kpi-value.kpi-green{color:var(--done)}
+.kpi-value.kpi-red{color:var(--overdue)}
+.kpi-value.kpi-gold{color:var(--accent-light)}
+.kpi-value.kpi-blue{color:var(--weekly)}
+.kpi-bar{width:100%;height:6px;background:var(--border);border-radius:4px;margin-top:6px;overflow:hidden}
+.kpi-bar-fill{height:100%;border-radius:4px;transition:width .5s ease}
+.backlog-task .bt-undo{background:none;border:1px solid var(--border);color:var(--text-muted);padding:3px 10px;border-radius:6px;font-size:.72rem;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.backlog-task .bt-undo:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ═══ RESPONSIVE ═══ */
+
+/* Tablet */
+@media(max-width:900px){
+  .header{padding:24px 20px 20px}
+  .main{padding:20px 20px 40px}
+  .header-left h1{font-size:1.8rem}
+  .login-card{padding:32px 24px}
+  .task-row,.task-header{grid-template-columns:32px 1fr 120px 110px 100px 90px 32px;gap:6px}
+  .task-row{padding:12px 16px}
+  .project-header{padding:14px 18px}
+}
+
+/* Mobile */
+@media(max-width:640px){
+  .header{padding:18px 14px 14px}
+  .main{padding:14px 10px 40px}
+  .header-left h1{font-size:1.35rem}
+  .header-left .subtitle{font-size:.82rem}
+  .header-top{gap:10px}
+  .header-right{gap:8px;width:100%;justify-content:flex-end}
+  .user-badge{padding:5px 10px;font-size:.78rem}
+  .ub-avatar{width:22px;height:22px;font-size:.65rem}
+  .ub-role{font-size:.62rem;padding:2px 6px}
+  .hdr-btn{padding:6px 12px;font-size:.78rem}
+
+  /* Stats row: 2-column grid */
+  .stats-row{gap:8px 16px;margin-top:14px;display:grid;grid-template-columns:1fr 1fr}
+  .stat{font-size:.8rem}
+
+  /* Team & filter bars */
+  .team-bar{gap:6px;margin-top:12px}
+  .team-chip{padding:4px 10px;font-size:.76rem}
+  .chip-count{width:17px;height:17px;font-size:.65rem}
+  .filter-bar{gap:6px;margin-top:12px}
+  .filter-btn{padding:6px 12px;font-size:.78rem}
+  .add-project-btn,.backlog-btn{padding:6px 14px;font-size:.78rem}
+
+  /* Project cards */
+  .project{border-radius:10px;margin-bottom:16px}
+  .project-header{padding:12px 14px;flex-wrap:wrap;gap:8px}
+  .project-title-area{gap:10px}
+  .project-icon{width:32px;height:32px;font-size:.9rem;border-radius:8px}
+  .project-name{font-size:.95rem}
+  .project-count{font-size:.72rem}
+  .progress-bar{width:60px}
+  .progress-text{font-size:.72rem}
+
+  /* Task rows: stacked card layout */
+  .task-header{display:none}
+  .task-row{display:flex;flex-wrap:wrap;gap:8px 10px;padding:12px 14px;align-items:center}
+  .task-row>div:first-child{flex:0 0 auto}
+  .task-text-wrap{flex:1 1 calc(100% - 44px);min-width:0}
+  .task-text{font-size:.88rem}
+  .overdue-icon{font-size:.85rem}
+  .overdue-icon .overdue-tip{font-size:.65rem}
+
+  /* Inline meta row beneath text */
+  .deadline-cell,.task-row>div:nth-child(4),.task-row>div:nth-child(5),.task-row>div:nth-child(6){flex:0 0 auto}
+  .deadline-badge{font-size:.72rem;padding:3px 8px}
+  .person-select{font-size:.76rem;padding:3px 6px;max-width:100px}
+  .priority-select{font-size:.72rem;padding:3px 6px;padding-right:18px}
+  .status-select{font-size:.72rem;padding:3px 6px}
+  .task-row>div:last-child{flex:0 0 auto;margin-left:auto}
+
+  .add-task-row{padding:10px 14px}
+  .add-icon{width:18px;height:18px;font-size:.8rem}
+  .add-task-label{font-size:.8rem}
+
+  /* Deadline popover */
+  .deadline-popover{min-width:180px;padding:10px;left:auto;right:0}
+
+  /* Modals: full-width on mobile */
+  .modal{width:100%;max-width:100vw;border-radius:14px 14px 0 0;margin-top:auto;max-height:85vh}
+  .modal-overlay.open{align-items:flex-end}
+  .modal-header{padding:18px 20px 12px}
+  .modal-header h2{font-size:1.1rem}
+  .modal-body{padding:14px 20px 8px}
+  .modal-footer{padding:12px 20px 20px}
+  .field label{font-size:.74rem}
+  .field input,.field select,.field textarea{padding:9px 12px;font-size:.85rem}
+  .field-row{grid-template-columns:1fr;gap:10px}
+  .btn{padding:9px 18px;font-size:.84rem}
+
+  /* Settings modal */
+  .settings-user-row{flex-direction:column;align-items:flex-start;gap:8px;padding:10px 12px}
+  .settings-user-row>div:last-child{width:100%;display:flex;gap:6px}
+  .settings-user-row>div:last-child .settings-remove-btn{flex:1}
+  .settings-add-row{flex-direction:column}
+  .settings-add-row input,.settings-add-row select{width:100%;min-width:unset}
+  .vis-project-row{flex-direction:column;align-items:flex-start;gap:6px;padding:8px 12px}
+  .vis-toggles{gap:5px}
+  .vis-toggle{font-size:.7rem;padding:3px 8px}
+
+  /* Backlog */
+  .backlog-user-header{padding:10px 14px}
+  .backlog-avatar{width:28px;height:28px;font-size:.72rem}
+  .backlog-name{font-size:.9rem}
+  .backlog-task{padding:8px 14px;gap:8px;flex-wrap:wrap}
+  .backlog-task .bt-text{font-size:.82rem}
+  .backlog-task .bt-project{font-size:.7rem}
+  .kpi-row{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
+  .kpi-card{padding:10px 12px}
+  .kpi-value{font-size:1.2rem}
+
+  /* Login */
+  .login-card{padding:28px 20px;width:100%;max-width:100vw;border-radius:16px;margin:12px}
+  .login-logo{font-size:1.6rem}
+  .login-sub{font-size:.82rem;margin-bottom:24px}
+  .login-field input{padding:11px 14px;font-size:.9rem}
+  .login-btn{padding:12px;font-size:.9rem}
+}
+
+/* Small phones */
+@media(max-width:380px){
+  .header{padding:14px 10px 12px}
+  .main{padding:10px 8px 36px}
+  .header-left h1{font-size:1.15rem}
+  .stats-row{grid-template-columns:1fr 1fr;gap:6px 10px}
+  .stat{font-size:.74rem}
+  .project-header{padding:10px 12px}
+  .task-row{padding:10px 12px;gap:6px 8px}
+  .task-text{font-size:.84rem}
+  .person-select,.priority-select,.status-select{font-size:.7rem}
+  .modal{border-radius:12px 12px 0 0}
+}
 </style>
 </head>
 <body>
@@ -384,15 +525,40 @@ function toggleBacklog(){showBacklog=!showBacklog;document.querySelector('.backl
 
 function renderBacklog(){
   const container=document.getElementById('projectContainer');container.innerHTML='';
-  const byUser={};
-  PROJECTS.forEach(p=>{if(!canSeeProject(p))return;p.tasks.filter(t=>t.status==='done').forEach(t=>{const person=t.person||'—';if(!byUser[person])byUser[person]=[];byUser[person].push({...t,projectName:p.name,projectColor:p.color})})});
-  if(!Object.keys(byUser).length){container.innerHTML='<div class="backlog-empty">No completed tasks yet.</div>';return}
-  Object.entries(byUser).sort((a,b)=>b[1].length-a[1].length).forEach(([person,tasks])=>{
+  // Gather all tasks by user for KPI calculation
+  const userStats={};
+  PROJECTS.forEach((p,pi)=>{if(!canSeeProject(p))return;p.tasks.forEach((t,ti)=>{
+    const person=t.person||'—';
+    if(!userStats[person])userStats[person]={completed:[],overdue:[],total:0,inProgress:0,todo:0};
+    userStats[person].total++;
+    if(t.status==='done')userStats[person].completed.push({...t,projectName:p.name,projectColor:p.color,pi,ti});
+    else if(t.status==='progress')userStats[person].inProgress++;
+    else userStats[person].todo++;
+    if(isOverdue(t))userStats[person].overdue.push({...t,projectName:p.name,projectColor:p.color});
+  })});
+  // Only show users who have completed tasks or overdue tasks
+  const relevantUsers=Object.entries(userStats).filter(([_,s])=>s.completed.length>0||s.overdue.length>0);
+  if(!relevantUsers.length){container.innerHTML='<div class="backlog-empty">No completed tasks yet.</div>';return}
+  relevantUsers.sort((a,b)=>b[1].completed.length-a[1].completed.length).forEach(([person,stats])=>{
     const sec=document.createElement('div');sec.className='backlog-section';
-    sec.innerHTML=`<div class="backlog-user-header"><div class="backlog-avatar">${person.charAt(0)}</div><span class="backlog-name">${esc(person)}</span><span class="backlog-count">${tasks.length} completed</span></div>${tasks.map(t=>`<div class="backlog-task"><span class="bt-check">✓</span><span class="bt-text">${esc(t.text)}</span><span class="bt-project" style="background:${t.projectColor}20;color:${t.projectColor}">${esc(t.projectName)}</span><span class="bt-date">${getDeadlineLabel(t.deadline)}</span></div>`).join('')}`;
+    const completionRate=stats.total>0?Math.round((stats.completed.length/stats.total)*100):0;
+    const overdueCount=stats.overdue.length;
+    const barColor=completionRate>=75?'var(--done)':completionRate>=40?'var(--progress)':'var(--overdue)';
+    sec.innerHTML=`
+      <div class="backlog-user-header"><div class="backlog-avatar">${person.charAt(0)}</div><span class="backlog-name">${esc(person)}</span><span class="backlog-count">${stats.total} total tasks</span></div>
+      <div class="kpi-row">
+        <div class="kpi-card"><span class="kpi-label">Completed</span><span class="kpi-value kpi-green">${stats.completed.length}</span><span class="kpi-sub">of ${stats.total} tasks</span><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${completionRate}%;background:${barColor}"></div></div></div>
+        <div class="kpi-card"><span class="kpi-label">Past Due</span><span class="kpi-value ${overdueCount>0?'kpi-red':'kpi-green'}">${overdueCount}</span><span class="kpi-sub">${overdueCount>0?'tasks overdue':'all on track'}</span></div>
+        <div class="kpi-card"><span class="kpi-label">In Progress</span><span class="kpi-value kpi-gold">${stats.inProgress}</span><span class="kpi-sub">${stats.todo} still to do</span></div>
+        <div class="kpi-card"><span class="kpi-label">Performance</span><span class="kpi-value ${completionRate>=75?'kpi-green':completionRate>=40?'kpi-gold':'kpi-red'}">${completionRate}%</span><span class="kpi-sub">completion rate</span><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${completionRate}%;background:${barColor}"></div></div></div>
+      </div>
+      ${overdueCount>0?`<div style="margin-bottom:12px"><div style="font-size:.78rem;font-weight:600;color:var(--overdue);margin-bottom:6px;padding:0 4px">⚠ OVERDUE TASKS</div>${stats.overdue.map(t=>`<div class="backlog-task" style="border-left:3px solid var(--overdue)"><span class="overdue-icon" style="animation:none">⚠</span><span style="flex:1;font-size:.88rem">${esc(t.text)}</span><span class="bt-project" style="background:${t.projectColor}20;color:${t.projectColor}">${esc(t.projectName)}</span><span class="bt-date" style="color:var(--overdue)">${getDeadlineLabel(t.deadline)}</span></div>`).join('')}</div>`:''}
+      ${stats.completed.length>0?`<div style="font-size:.78rem;font-weight:600;color:var(--done);margin-bottom:6px;padding:0 4px">✓ COMPLETED TASKS</div>`:''}
+      ${stats.completed.map(t=>`<div class="backlog-task"><span class="bt-check">✓</span><span class="bt-text">${esc(t.text)}</span><span class="bt-project" style="background:${t.projectColor}20;color:${t.projectColor}">${esc(t.projectName)}</span><span class="bt-date">${getDeadlineLabel(t.deadline)}</span><button class="bt-undo" onclick="undoComplete(${t.pi},${t.ti})" title="Move back to task list">↩ Undo</button></div>`).join('')}`;
     container.appendChild(sec);
   });
 }
+function undoComplete(pi,ti){PROJECTS[pi].tasks[ti].status='todo';render()}
 
 // ═══ RENDER ═══
 function render(){
@@ -403,16 +569,18 @@ function render(){
 
   PROJECTS.forEach((project,pi)=>{
     if(!canSeeProject(project))return;
-    let tasks=project.tasks;
+    let tasks=project.tasks.filter(t=>t.status!=='done');
     if(activeFilter!=='all')tasks=tasks.filter(t=>t.deadline===activeFilter);
     if(activePersonFilter)tasks=tasks.filter(t=>t.person===activePersonFilter);
     if((activeFilter!=='all'||activePersonFilter)&&tasks.length===0)return;
 
     visibleProjects++;totalTasks+=tasks.length;
-    const doneInP=tasks.filter(t=>t.status==='done').length;doneCount+=doneInP;
     progressCount+=tasks.filter(t=>t.status==='progress').length;
     overdueCount+=tasks.filter(t=>isOverdue(t)).length;
-    const pct=tasks.length?Math.round((doneInP/tasks.length)*100):0;
+    // Progress bar uses all tasks (including done in backlog) to show true project progress
+    const allProjectTasks=project.tasks;
+    const doneInPAll=allProjectTasks.filter(t=>t.status==='done').length;doneCount+=doneInPAll;
+    const pct=allProjectTasks.length?Math.round((doneInPAll/allProjectTasks.length)*100):0;
     tasks.forEach(t=>{if(t.deadline==='today')todayCount++;else if(t.deadline==='tomorrow')tomorrowCount++;else if(t.deadline==='daily')dailyCount++;else if(t.deadline==='weekly')weeklyCount++});
 
     const el=document.createElement('div');el.className='project';
