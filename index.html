@@ -603,14 +603,15 @@ let activeFinBusiness=null; // null = overview, or index into financialData
 let finCharts={}; // store chart instances for cleanup
 
 // ═══ SUPABASE SETUP ═══
-const SUPABASE_URL='https://tqhanahgzlkrqdbmfpfp.supabase.co';
-const SUPABASE_KEY='sb_publishable_4qWwGX4zgtzMhrB8YI4vHw_LcE6eNRr';
-const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let supabase=null;
+try{
+  supabase=window.supabase.createClient('https://tqhanahgzlkrqdbmfpfp.supabase.co','sb_publishable_4qWwGX4zgtzMhrB8YI4vHw_LcE6eNRr');
+}catch(e){console.warn('Supabase init failed, cloud sync disabled:',e)}
 
 // ═══ FINANCIAL DATA PERSISTENCE (Cloud + Local Cache) ═══
 function saveFinancialData(){
   try{localStorage.setItem('mpire_financial_data',JSON.stringify(financialData))}catch(e){}
-  if(!currentUser)return;
+  if(!currentUser||!supabase)return;
   supabase.from('financial_data').upsert({username:currentUser.username,data:financialData,updated_at:new Date().toISOString()},{onConflict:'username'}).then(({error})=>{
     if(error)console.warn('Supabase save error:',error.message);
   });
@@ -619,7 +620,7 @@ function loadFinancialData(){
   try{const d=localStorage.getItem('mpire_financial_data');if(d){financialData=JSON.parse(d)}}catch(e){financialData=[]}
 }
 async function loadFinancialDataFromCloud(){
-  if(!currentUser)return;
+  if(!currentUser||!supabase)return;
   try{
     const{data,error}=await supabase.from('financial_data').select('data').eq('username',currentUser.username).maybeSingle();
     if(error){console.warn('Supabase load error:',error.message);return}
