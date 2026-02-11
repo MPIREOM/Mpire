@@ -8,7 +8,6 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="config.js"></script>
 <style>
 :root{--bg:#0f1117;--surface:#181a22;--surface-hover:#1e2130;--border:#2a2d3a;--text:#e8e9ed;--text-muted:#8b8fa3;--accent:#c9a46c;--accent-light:#e0c98f;--today:#e05c5c;--today-bg:rgba(224,92,92,.1);--tomorrow:#e0a33c;--tomorrow-bg:rgba(224,163,60,.1);--weekly:#5ca0e0;--weekly-bg:rgba(92,160,224,.1);--daily:#9b7ae0;--daily-bg:rgba(155,122,224,.1);--done:#4ead6b;--done-bg:rgba(78,173,107,.08);--progress:#e0a33c;--progress-bg:rgba(224,163,60,.1);--overdue:#ff4d6a;--overdue-bg:rgba(255,77,106,.1);--high:#e05c5c;--medium:#e0a33c;--low:#5ca0e0;--my-task:rgba(201,164,108,.08);--radius:12px}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -604,12 +603,14 @@ let activeFinBusiness=null; // null = overview, or index into financialData
 let finCharts={}; // store chart instances for cleanup
 
 // ═══ SUPABASE SETUP ═══
-const supabase=window.MPIRE_SUPABASE_URL&&window.MPIRE_SUPABASE_KEY?window.supabase.createClient(window.MPIRE_SUPABASE_URL,window.MPIRE_SUPABASE_KEY):null;
+const SUPABASE_URL='https://tqhanahgzlkrqdbmfpfp.supabase.co';
+const SUPABASE_KEY='sb_publishable_4qWwGX4zgtzMhrB8YI4vHw_LcE6eNRr';
+const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 // ═══ FINANCIAL DATA PERSISTENCE (Cloud + Local Cache) ═══
 function saveFinancialData(){
   try{localStorage.setItem('mpire_financial_data',JSON.stringify(financialData))}catch(e){}
-  if(!currentUser||!supabase)return;
+  if(!currentUser)return;
   supabase.from('financial_data').upsert({username:currentUser.username,data:financialData,updated_at:new Date().toISOString()},{onConflict:'username'}).then(({error})=>{
     if(error)console.warn('Supabase save error:',error.message);
   });
@@ -618,7 +619,7 @@ function loadFinancialData(){
   try{const d=localStorage.getItem('mpire_financial_data');if(d){financialData=JSON.parse(d)}}catch(e){financialData=[]}
 }
 async function loadFinancialDataFromCloud(){
-  if(!currentUser||!supabase)return;
+  if(!currentUser)return;
   try{
     const{data,error}=await supabase.from('financial_data').select('data').eq('username',currentUser.username).maybeSingle();
     if(error){console.warn('Supabase load error:',error.message);return}
