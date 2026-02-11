@@ -801,12 +801,21 @@ function saveUsers(){
     if(error)console.warn('Supabase user save error:',error.message);
   });
 }
+function mergeUsers(saved){
+  // Start with saved users, then add any new defaults not already present
+  const merged=[...saved];
+  const names=new Set(saved.map(u=>u.username.toLowerCase()));
+  for(const d of DEFAULT_USERS){
+    if(!names.has(d.username.toLowerCase())) merged.push({...d});
+  }
+  return merged;
+}
 function loadUsers(){
   try{
     const d=localStorage.getItem('mpire_users');
     if(d){
       const saved=JSON.parse(d);
-      if(Array.isArray(saved)&&saved.length>0){USERS=saved;return}
+      if(Array.isArray(saved)&&saved.length>0){USERS=mergeUsers(saved);return}
     }
   }catch(e){}
   USERS=[...DEFAULT_USERS];
@@ -817,7 +826,7 @@ async function loadUsersFromCloud(){
     const{data,error}=await sbClient.from('financial_data').select('data').eq('username','_system_users').maybeSingle();
     if(error){console.warn('Supabase user load error:',error.message);return}
     if(data&&Array.isArray(data.data)&&data.data.length>0){
-      USERS=data.data;
+      USERS=mergeUsers(data.data);
       try{localStorage.setItem('mpire_users',JSON.stringify(USERS))}catch(e){}
     }
   }catch(e){console.warn('Cloud user load failed, using local cache:',e)}
@@ -833,10 +842,19 @@ function saveProjects(){
     if(error)console.warn('Supabase project save error:',error.message);
   });
 }
+function mergeProjects(saved){
+  // Start with saved projects, then add any new defaults not already present
+  const merged=JSON.parse(JSON.stringify(saved));
+  const names=new Set(saved.map(p=>p.name.toLowerCase()));
+  for(const d of DEFAULT_PROJECTS){
+    if(!names.has(d.name.toLowerCase())) merged.push(JSON.parse(JSON.stringify(d)));
+  }
+  return merged;
+}
 function loadProjects(){
   try{
     const d=localStorage.getItem('mpire_projects');
-    if(d){const saved=JSON.parse(d);if(Array.isArray(saved)&&saved.length>0){PROJECTS=saved;return}}
+    if(d){const saved=JSON.parse(d);if(Array.isArray(saved)&&saved.length>0){PROJECTS=mergeProjects(saved);return}}
   }catch(e){}
   PROJECTS=JSON.parse(JSON.stringify(DEFAULT_PROJECTS));
 }
@@ -846,7 +864,7 @@ async function loadProjectsFromCloud(){
     const{data,error}=await sbClient.from('financial_data').select('data').eq('username','_system_projects').maybeSingle();
     if(error){console.warn('Supabase project load error:',error.message);return}
     if(data&&Array.isArray(data.data)&&data.data.length>0){
-      PROJECTS=data.data;
+      PROJECTS=mergeProjects(data.data);
       try{localStorage.setItem('mpire_projects',JSON.stringify(PROJECTS))}catch(e){}
     }
   }catch(e){console.warn('Cloud project load failed:',e)}
