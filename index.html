@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Project Task Board</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
 :root{--bg:#0f1117;--surface:#181a22;--surface-hover:#1e2130;--border:#2a2d3a;--text:#e8e9ed;--text-muted:#8b8fa3;--accent:#c9a46c;--accent-light:#e0c98f;--today:#e05c5c;--today-bg:rgba(224,92,92,.1);--tomorrow:#e0a33c;--tomorrow-bg:rgba(224,163,60,.1);--weekly:#5ca0e0;--weekly-bg:rgba(92,160,224,.1);--daily:#9b7ae0;--daily-bg:rgba(155,122,224,.1);--done:#4ead6b;--done-bg:rgba(78,173,107,.08);--progress:#e0a33c;--progress-bg:rgba(224,163,60,.1);--overdue:#ff4d6a;--overdue-bg:rgba(255,77,106,.1);--high:#e05c5c;--medium:#e0a33c;--low:#5ca0e0;--my-task:rgba(201,164,108,.08);--radius:12px}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -229,6 +231,59 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .backlog-task .bt-undo{background:none;border:1px solid var(--border);color:var(--text-muted);padding:3px 10px;border-radius:6px;font-size:.72rem;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif;white-space:nowrap}
 .backlog-task .bt-undo:hover{border-color:var(--accent);color:var(--accent)}
 
+/* VIEW TOGGLE */
+.view-toggle{display:flex;gap:0;background:var(--bg);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.view-toggle-btn{padding:7px 18px;border:none;background:transparent;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px}
+.view-toggle-btn:hover{color:var(--text);background:var(--surface-hover)}
+.view-toggle-btn.active{background:var(--accent);color:var(--bg)}
+
+/* FINANCIAL DASHBOARD */
+.fin-upload-area{border:2px dashed var(--border);border-radius:var(--radius);padding:40px 32px;text-align:center;transition:all .25s;cursor:pointer;background:var(--surface);margin-bottom:28px}
+.fin-upload-area:hover,.fin-upload-area.dragover{border-color:var(--accent);background:rgba(201,164,108,.05)}
+.fin-upload-icon{font-size:2.5rem;margin-bottom:10px;opacity:.6}
+.fin-upload-title{font-size:1rem;font-weight:600;color:var(--text);margin-bottom:4px}
+.fin-upload-sub{font-size:.82rem;color:var(--text-muted)}
+.fin-upload-input{display:none}
+
+.fin-business-tabs{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;align-items:center}
+.fin-tab{padding:8px 18px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:.84rem;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px}
+.fin-tab:hover{border-color:var(--accent);color:var(--text)}
+.fin-tab.active{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.fin-tab .tab-remove{font-size:.7rem;opacity:.6;margin-left:2px;transition:opacity .15s}
+.fin-tab:hover .tab-remove{opacity:1}
+.fin-overview-tab{border-color:#9b7ae0;color:#9b7ae0}
+.fin-overview-tab:hover{background:rgba(155,122,224,.1)}
+.fin-overview-tab.active{background:#9b7ae0;color:var(--bg)}
+
+.fin-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.fin-kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;transition:border-color .2s}
+.fin-kpi:hover{border-color:var(--accent)}
+.fin-kpi-label{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--text-muted);margin-bottom:8px}
+.fin-kpi-value{font-size:1.8rem;font-weight:700;line-height:1.1;margin-bottom:4px}
+.fin-kpi-sub{font-size:.78rem;color:var(--text-muted);font-weight:500;display:flex;align-items:center;gap:4px}
+.fin-kpi-sub .up{color:var(--done)}.fin-kpi-sub .down{color:var(--overdue)}
+.fin-kpi-value.green{color:var(--done)}.fin-kpi-value.red{color:var(--overdue)}.fin-kpi-value.gold{color:var(--accent-light)}.fin-kpi-value.blue{color:var(--weekly)}.fin-kpi-value.purple{color:#9b7ae0}
+
+.fin-charts-row{display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:28px}
+.fin-chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;overflow:hidden}
+.fin-chart-title{font-size:.88rem;font-weight:700;margin-bottom:16px;color:var(--text)}
+.fin-chart-wrap{position:relative;width:100%;height:280px}
+.fin-chart-wrap canvas{width:100%!important;height:100%!important}
+
+.fin-details-table{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:28px}
+.fin-details-title{padding:18px 24px;font-size:.88rem;font-weight:700;border-bottom:1px solid var(--border)}
+.fin-details-row{display:grid;grid-template-columns:var(--fin-detail-cols,200px repeat(auto-fill,minmax(90px,1fr)));padding:10px 24px;border-bottom:1px solid rgba(42,45,58,.5);font-size:.84rem;gap:8px;align-items:center}
+.fin-details-row:hover{background:var(--surface-hover)}
+.fin-details-row.header{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--text-muted)}
+.fin-details-row.total{font-weight:700;background:rgba(201,164,108,.05);border-top:2px solid var(--border)}
+.fin-details-row .label{font-weight:600;color:var(--text)}.fin-details-row .sub-label{color:var(--text-muted);padding-left:16px}
+.fin-details-row .neg{color:var(--overdue)}.fin-details-row .pos{color:var(--done)}
+
+.fin-empty{text-align:center;padding:60px 32px;color:var(--text-muted)}
+.fin-empty-icon{font-size:3rem;margin-bottom:12px;opacity:.4}
+.fin-empty-title{font-size:1.1rem;font-weight:600;color:var(--text);margin-bottom:6px}
+.fin-empty-sub{font-size:.88rem}
+
 /* ═══ RESPONSIVE ═══ */
 
 /* Tablet */
@@ -334,6 +389,16 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   .kpi-card{padding:10px 12px}
   .kpi-value{font-size:1.2rem}
 
+  /* Financial */
+  .fin-kpi-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .fin-kpi{padding:14px}
+  .fin-kpi-value{font-size:1.3rem}
+  .fin-charts-row{grid-template-columns:1fr;gap:14px}
+  .fin-chart-wrap{height:220px}
+  .fin-upload-area{padding:28px 18px}
+  .fin-details-row{grid-template-columns:140px repeat(auto-fill,minmax(70px,1fr));font-size:.76rem;padding:8px 14px}
+  .view-toggle-btn{padding:6px 12px;font-size:.78rem}
+
   /* Login */
   .login-card{padding:28px 20px;width:100%;max-width:100vw;border-radius:16px;margin:12px}
   .login-logo{font-size:1.6rem}
@@ -377,10 +442,15 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
     <div class="header-left"><h1>Task Board</h1><div class="subtitle"><span id="projectCount">0</span> projects · <span id="totalTasks">0</span> tasks</div></div>
     <div class="header-right">
       <div class="user-badge"><span class="ub-avatar" id="ubAvatar"></span><span id="ubName"></span><span class="ub-role" id="ubRole"></span></div>
+      <div class="view-toggle" id="viewToggle" style="display:none">
+        <button class="view-toggle-btn active" id="viewTasksBtn" onclick="switchView('tasks')">Tasks</button>
+        <button class="view-toggle-btn" id="viewFinBtn" onclick="switchView('financials')">Financials</button>
+      </div>
       <button class="hdr-btn" id="settingsBtn" style="display:none" onclick="openSettingsModal()">⚙ Settings</button>
       <button class="hdr-btn logout-btn" onclick="doLogout()">Logout</button>
     </div>
   </div>
+  <div id="tasksHeaderSection">
   <div class="stats-row">
     <div class="stat"><div class="stat-dot" style="background:var(--today)"></div>Today <strong id="statToday">0</strong></div>
     <div class="stat"><div class="stat-dot" style="background:var(--tomorrow)"></div>Tomorrow <strong id="statTomorrow">0</strong></div>
@@ -399,8 +469,10 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
     <button class="add-project-btn" id="addProjectBtn" style="display:none" onclick="openProjectModal()">+ New Project</button>
     <button class="backlog-btn" id="backlogBtn" style="display:none" onclick="toggleBacklog()">📋 Backlog</button>
   </div>
+  </div>
 </div>
 <div class="main" id="projectContainer"></div>
+<div class="main" id="financialContainer" style="display:none"></div>
 </div>
 
 <!-- Task Modal (Add) -->
@@ -474,6 +546,10 @@ const PROJECT_COLORS=['#c9a46c','#5ca0e0','#9b7ae0','#e0a33c','#4ead6b','#e05c5c
 let currentUser=null,activeFilter='all',activePersonFilter=null,taskModalProjectIndex=null,deleteProjectIndex=null,selectedProjectColor=PROJECT_COLORS[0],openPopover=null;
 let editingTask=null; // {pi,ti} when editing
 let showBacklog=false;
+let currentView='tasks'; // 'tasks' or 'financials'
+let financialData=[]; // [{businessName,fileName,parsedPL:{periods,revenue,cogs,grossProfit,opex,netProfit,otherRows}}]
+let activeFinBusiness=null; // null = overview, or index into financialData
+let finCharts={}; // store chart instances for cleanup
 
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
 function getTodayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
@@ -495,7 +571,7 @@ function getDeadlineClass(d,t){if(t&&isOverdue(t))return'deadline-overdue';retur
 
 // ═══ LOGIN ═══
 function doLogin(){const u=document.getElementById('loginUser').value.trim(),p=document.getElementById('loginPass').value;const user=USERS.find(x=>x.username.toLowerCase()===u.toLowerCase()&&x.password===p);if(!user){document.getElementById('loginError').textContent='Invalid username or password';return}currentUser=user;document.getElementById('loginPage').style.display='none';document.getElementById('app').classList.add('visible');setupApp()}
-function doLogout(){currentUser=null;showBacklog=false;document.getElementById('app').classList.remove('visible');document.getElementById('loginPage').style.display='flex';document.getElementById('loginUser').value='';document.getElementById('loginPass').value='';document.getElementById('loginError').textContent=''}
+function doLogout(){currentUser=null;showBacklog=false;currentView='tasks';document.getElementById('app').classList.remove('visible');document.getElementById('loginPage').style.display='flex';document.getElementById('loginUser').value='';document.getElementById('loginPass').value='';document.getElementById('loginError').textContent=''}
 document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
 document.getElementById('loginUser').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginPass').focus()});
 
@@ -504,9 +580,10 @@ function setupApp(){
   document.getElementById('ubName').textContent=currentUser.displayName;
   const rl=document.getElementById('ubRole');rl.textContent=getRoleLabel(currentUser.role);rl.style.color=getRoleColor(currentUser.role);rl.style.background=currentUser.role==='owner'?'rgba(201,164,108,.15)':currentUser.role==='manager'?'rgba(92,160,224,.15)':'rgba(139,143,163,.15)';
   document.getElementById('settingsBtn').style.display=canAccessSettings()?'flex':'none';
+  document.getElementById('viewToggle').style.display=isOwner()?'flex':'none';
   document.getElementById('addProjectBtn').style.display=canManage()?'inline-flex':'none';
   document.getElementById('backlogBtn').style.display=canManage()?'inline-flex':'none';
-  activeFilter='all';activePersonFilter=null;showBacklog=false;render();
+  activeFilter='all';activePersonFilter=null;showBacklog=false;currentView='tasks';switchView('tasks');
 }
 
 // ═══ TEAM BAR ═══
@@ -731,6 +808,380 @@ function setRole(i,role){if(USERS[i].role==='owner')return;USERS[i].role=role;re
 function removeUser(i){if(USERS[i].role==='owner')return;USERS.splice(i,1);renderSettings()}
 function addUser(){const name=document.getElementById('addUserName').value.trim(),pass=document.getElementById('addUserPass').value.trim(),role=document.getElementById('addUserRole').value;if(!name){alert('Please enter a username');return}if(!pass||pass.length!==4||isNaN(pass)){alert('Please enter a 4-digit PIN');return}if(USERS.find(u=>u.username.toLowerCase()===name.toLowerCase())){alert('Username already exists');return}USERS.push({username:name,password:pass,role,displayName:name});renderSettings()}
 function toggleVisibility(pi,username){const p=PROJECTS[pi];if(p.visibility[username]===false)delete p.visibility[username];else p.visibility[username]=false;renderSettings()}
+
+// ═══ FINANCIAL TRACKER ═══
+function switchView(view){
+  currentView=view;
+  document.getElementById('viewTasksBtn').classList.toggle('active',view==='tasks');
+  document.getElementById('viewFinBtn').classList.toggle('active',view==='financials');
+  const tasksHeader=document.getElementById('tasksHeaderSection');
+  const projContainer=document.getElementById('projectContainer');
+  const finContainer=document.getElementById('financialContainer');
+  const h1=document.querySelector('.header-left h1');
+  const subtitle=document.querySelector('.header-left .subtitle');
+  if(view==='tasks'){
+    tasksHeader.style.display='';projContainer.style.display='';finContainer.style.display='none';
+    h1.textContent='Task Board';subtitle.style.display='';
+    render();
+  }else{
+    tasksHeader.style.display='none';projContainer.style.display='none';finContainer.style.display='';
+    h1.textContent='Financial Dashboard';subtitle.style.display='none';
+    renderFinancialDashboard();
+  }
+}
+
+function handleFinFileUpload(files){
+  Array.from(files).forEach(file=>{
+    if(!file.name.match(/\.(xlsx|xls|csv)$/i)){alert('Please upload Excel files (.xlsx, .xls) or CSV files');return}
+    const reader=new FileReader();
+    reader.onload=function(e){
+      try{
+        const wb=XLSX.read(e.target.result,{type:'array'});
+        const parsed=parsePLFromWorkbook(wb,file.name);
+        if(parsed){
+          financialData.push(parsed);
+          activeFinBusiness=financialData.length-1;
+          renderFinancialDashboard();
+        }else{alert('Could not find P&L data in "'+file.name+'". Make sure the file contains a Profit & Loss sheet with recognizable line items (Revenue, Cost, Profit, etc.).')}
+      }catch(err){alert('Error reading file: '+err.message)}
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function removeFinBusiness(idx){
+  financialData.splice(idx,1);
+  if(activeFinBusiness>=financialData.length)activeFinBusiness=financialData.length>0?0:null;
+  if(financialData.length===0)activeFinBusiness=null;
+  renderFinancialDashboard();
+}
+
+// ═══ P&L AUTO-DETECTION ═══
+const PL_KEYWORDS={
+  revenue:['revenue','total revenue','sales','total sales','net revenue','net sales','income','total income','turnover','gross revenue'],
+  cogs:['cost of goods sold','cogs','cost of sales','cost of revenue','direct costs','cost of goods','cos'],
+  grossProfit:['gross profit','gross income','gross margin'],
+  opex:['operating expenses','total operating expenses','total expenses','operating costs','overhead','selling general','sg&a','admin expenses','general & administrative','general and administrative'],
+  operatingIncome:['operating income','operating profit','ebit','earnings before interest'],
+  netProfit:['net profit','net income','net earnings','profit after tax','net profit/(loss)','net income/(loss)','profit for the period','profit for the year','bottom line','net profit after tax'],
+  ebitda:['ebitda','earnings before interest tax depreciation'],
+  depreciation:['depreciation','depreciation & amortization','depreciation and amortization','d&a'],
+  interest:['interest expense','interest','finance costs','financial expenses'],
+  tax:['tax','income tax','tax expense','provision for taxes','taxation']
+};
+
+function matchPLKey(label){
+  if(!label)return null;
+  const l=label.toString().toLowerCase().replace(/[^a-z0-9&/ ]/g,'').trim();
+  if(!l)return null;
+  for(const[key,patterns]of Object.entries(PL_KEYWORDS)){
+    for(const p of patterns){if(l===p||l.startsWith(p))return key}
+  }
+  return null;
+}
+
+function detectPeriodHeaders(row){
+  const periods=[];
+  const monthPat=/^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i;
+  const qPat=/^q[1-4]/i;
+  const yearPat=/^(19|20)\d{2}$/;
+  const dateMonthPat=/^\d{1,2}[\/\-]\d{4}$/;
+  for(let c=1;c<row.length;c++){
+    const v=row[c];
+    if(v==null)continue;
+    const s=v.toString().trim();
+    if(monthPat.test(s)||qPat.test(s)||yearPat.test(s)||dateMonthPat.test(s)){
+      periods.push({col:c,label:s});
+    }
+  }
+  return periods;
+}
+
+function parsePLFromWorkbook(wb,fileName){
+  // Try to find a P&L sheet by name
+  const plNamePats=[/p\s*[&\/]\s*l/i,/profit/i,/loss/i,/income\s*statement/i,/pnl/i];
+  let targetSheet=null;
+  for(const name of wb.SheetNames){
+    for(const pat of plNamePats){if(pat.test(name)){targetSheet=name;break}}
+    if(targetSheet)break;
+  }
+  // If not found by name, scan all sheets for P&L content
+  const sheetsToTry=targetSheet?[targetSheet]:wb.SheetNames;
+  for(const sheetName of sheetsToTry){
+    const ws=wb.Sheets[sheetName];
+    const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
+    if(!data||data.length<3)continue;
+    const result=extractPLData(data);
+    if(result){
+      const bizName=fileName.replace(/\.(xlsx|xls|csv)$/i,'').replace(/[_-]/g,' ');
+      return{businessName:bizName,fileName,sheetName,...result};
+    }
+  }
+  return null;
+}
+
+function extractPLData(data){
+  let periods=[];
+  let headerRow=-1;
+  // Find the header row with period labels
+  for(let r=0;r<Math.min(data.length,15);r++){
+    const row=data[r];
+    if(!row)continue;
+    const detected=detectPeriodHeaders(row);
+    if(detected.length>=1){periods=detected;headerRow=r;break}
+  }
+  // If no period headers found, treat as single-period (column B = values)
+  if(periods.length===0){
+    // Check if column B has numbers for known P&L rows
+    const singlePeriod=extractSinglePeriod(data);
+    if(singlePeriod)return singlePeriod;
+    return null;
+  }
+  // Extract P&L values
+  const plData={periods:periods.map(p=>p.label),revenue:[],cogs:[],grossProfit:[],opex:[],operatingIncome:[],netProfit:[],ebitda:[],depreciation:[],interest:[],tax:[],otherRows:[]};
+  let foundAny=false;
+  for(let r=headerRow+1;r<data.length;r++){
+    const row=data[r];
+    if(!row||!row[0])continue;
+    const label=row[0].toString().trim();
+    const key=matchPLKey(label);
+    const values=periods.map(p=>{const v=row[p.col];return typeof v==='number'?v:(parseFloat(String(v).replace(/[,$()]/g,''))||0)});
+    if(key&&plData[key]!==undefined){
+      if(plData[key].length===0){plData[key]=values;foundAny=true}
+      else{plData.otherRows.push({label,key,values})}
+    }else if(label&&values.some(v=>v!==0)){
+      plData.otherRows.push({label,key:null,values});
+    }
+  }
+  if(!foundAny)return null;
+  // Auto-calculate missing fields
+  if(plData.revenue.length&&plData.cogs.length&&!plData.grossProfit.length){
+    plData.grossProfit=plData.revenue.map((r,i)=>r-(plData.cogs[i]||0));
+  }
+  if(plData.grossProfit.length&&plData.opex.length&&!plData.netProfit.length&&!plData.operatingIncome.length){
+    plData.netProfit=plData.grossProfit.map((g,i)=>g-Math.abs(plData.opex[i]||0));
+  }
+  return{parsedPL:plData};
+}
+
+function extractSinglePeriod(data){
+  const plData={periods:['Total'],revenue:[],cogs:[],grossProfit:[],opex:[],operatingIncome:[],netProfit:[],ebitda:[],depreciation:[],interest:[],tax:[],otherRows:[]};
+  let foundAny=false;
+  for(let r=0;r<data.length;r++){
+    const row=data[r];
+    if(!row||!row[0])continue;
+    const label=row[0].toString().trim();
+    const key=matchPLKey(label);
+    // Find first numeric value in the row
+    let val=0;
+    for(let c=1;c<row.length;c++){
+      const v=row[c];
+      if(typeof v==='number'){val=v;break}
+      const parsed=parseFloat(String(v||'').replace(/[,$()]/g,''));
+      if(!isNaN(parsed)){val=parsed;break}
+    }
+    if(key&&plData[key]!==undefined&&plData[key].length===0){
+      plData[key]=[val];foundAny=true;
+    }else if(label&&val!==0){
+      plData.otherRows.push({label,key,values:[val]});
+    }
+  }
+  if(!foundAny)return null;
+  if(plData.revenue.length&&plData.cogs.length&&!plData.grossProfit.length){
+    plData.grossProfit=plData.revenue.map((r,i)=>r-(plData.cogs[i]||0));
+  }
+  return{parsedPL:plData};
+}
+
+// ═══ FINANCIAL KPI HELPERS ═══
+function fmtMoney(n){
+  if(n==null||isNaN(n))return'—';
+  const abs=Math.abs(n);
+  const sign=n<0?'-':'';
+  if(abs>=1e9)return sign+(abs/1e9).toFixed(1)+'B';
+  if(abs>=1e6)return sign+(abs/1e6).toFixed(1)+'M';
+  if(abs>=1e3)return sign+(abs/1e3).toFixed(1)+'K';
+  return sign+abs.toFixed(0);
+}
+function fmtPct(n){return n==null||isNaN(n)?'—':n.toFixed(1)+'%'}
+function arrSum(a){return a.reduce((s,v)=>s+(v||0),0)}
+function arrLast(a){return a.length?a[a.length-1]:0}
+function calcGrowth(a){if(a.length<2)return null;const prev=a[a.length-2],cur=a[a.length-1];if(!prev)return null;return((cur-prev)/Math.abs(prev))*100}
+
+// ═══ RENDER FINANCIAL DASHBOARD ═══
+function destroyFinCharts(){Object.values(finCharts).forEach(c=>{if(c&&c.destroy)c.destroy()});finCharts={}}
+
+function renderFinancialDashboard(){
+  destroyFinCharts();
+  const container=document.getElementById('financialContainer');
+  if(!financialData.length){
+    container.innerHTML=`
+      <div class="fin-upload-area" id="finUploadArea" onclick="document.getElementById('finFileInput').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="event.preventDefault();this.classList.remove('dragover');handleFinFileUpload(event.dataTransfer.files)">
+        <div class="fin-upload-icon">📊</div>
+        <div class="fin-upload-title">Upload P&L Excel File</div>
+        <div class="fin-upload-sub">Drag & drop your Excel file here, or click to browse. Each file represents one business.</div>
+        <input type="file" id="finFileInput" class="fin-upload-input" accept=".xlsx,.xls,.csv" multiple onchange="handleFinFileUpload(this.files)">
+      </div>
+      <div class="fin-empty">
+        <div class="fin-empty-icon">📈</div>
+        <div class="fin-empty-title">No Financial Data Yet</div>
+        <div class="fin-empty-sub">Upload Excel files with P&L sheets to see your financial KPIs, charts, and performance metrics.</div>
+      </div>`;
+    return;
+  }
+  // Build HTML
+  let html=`
+    <div class="fin-upload-area" style="padding:18px 24px;margin-bottom:20px;display:flex;align-items:center;gap:16px;cursor:pointer" onclick="document.getElementById('finFileInput').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="event.preventDefault();this.classList.remove('dragover');handleFinFileUpload(event.dataTransfer.files)">
+      <span style="font-size:1.3rem">📊</span>
+      <div><div style="font-size:.88rem;font-weight:600">Upload Another Business</div><div style="font-size:.78rem;color:var(--text-muted)">Drop Excel file or click to browse</div></div>
+      <input type="file" id="finFileInput" class="fin-upload-input" accept=".xlsx,.xls,.csv" multiple onchange="handleFinFileUpload(this.files)">
+    </div>
+    <div class="fin-business-tabs">
+      <button class="fin-tab fin-overview-tab ${activeFinBusiness===null?'active':''}" onclick="activeFinBusiness=null;renderFinancialDashboard()">Overview</button>
+      ${financialData.map((b,i)=>`<button class="fin-tab ${activeFinBusiness===i?'active':''}" onclick="activeFinBusiness=${i};renderFinancialDashboard()">${esc(b.businessName)}<span class="tab-remove" onclick="event.stopPropagation();removeFinBusiness(${i})">✕</span></button>`).join('')}
+    </div>`;
+  if(activeFinBusiness===null){
+    html+=renderFinOverview();
+  }else{
+    html+=renderFinBusiness(financialData[activeFinBusiness]);
+  }
+  container.innerHTML=html;
+  // Render charts after DOM is ready
+  setTimeout(()=>{
+    if(activeFinBusiness===null)renderOverviewCharts();
+    else renderBusinessCharts(financialData[activeFinBusiness]);
+  },50);
+}
+
+function renderFinOverview(){
+  // Aggregate across all businesses
+  let totalRevenue=0,totalCogs=0,totalGP=0,totalOpex=0,totalNet=0,bizCount=financialData.length;
+  const bizSummaries=[];
+  financialData.forEach(b=>{
+    const pl=b.parsedPL;
+    const rev=arrSum(pl.revenue),cogs=arrSum(pl.cogs),gp=arrSum(pl.grossProfit),opex=arrSum(pl.opex),net=arrSum(pl.netProfit);
+    totalRevenue+=rev;totalCogs+=cogs;totalGP+=gp;totalOpex+=opex;totalNet+=net;
+    bizSummaries.push({name:b.businessName,revenue:rev,cogs,grossProfit:gp,opex,netProfit:net,margin:rev?((net/rev)*100):0});
+  });
+  const totalGrossMargin=totalRevenue?((totalGP/totalRevenue)*100):0;
+  const totalNetMargin=totalRevenue?((totalNet/totalRevenue)*100):0;
+  return `
+    <div class="fin-kpi-grid">
+      <div class="fin-kpi"><div class="fin-kpi-label">Total Revenue</div><div class="fin-kpi-value gold">${fmtMoney(totalRevenue)}</div><div class="fin-kpi-sub">${bizCount} business${bizCount!==1?'es':''}</div></div>
+      <div class="fin-kpi"><div class="fin-kpi-label">Total Gross Profit</div><div class="fin-kpi-value green">${fmtMoney(totalGP)}</div><div class="fin-kpi-sub">Margin: ${fmtPct(totalGrossMargin)}</div></div>
+      <div class="fin-kpi"><div class="fin-kpi-label">Total Net Profit</div><div class="fin-kpi-value ${totalNet>=0?'green':'red'}">${fmtMoney(totalNet)}</div><div class="fin-kpi-sub">Margin: ${fmtPct(totalNetMargin)}</div></div>
+      <div class="fin-kpi"><div class="fin-kpi-label">Total Expenses</div><div class="fin-kpi-value red">${fmtMoney(totalCogs+totalOpex)}</div><div class="fin-kpi-sub">COGS: ${fmtMoney(totalCogs)} + OpEx: ${fmtMoney(totalOpex)}</div></div>
+    </div>
+    <div class="fin-charts-row">
+      <div class="fin-chart-card"><div class="fin-chart-title">Revenue by Business</div><div class="fin-chart-wrap"><canvas id="overviewRevenueChart"></canvas></div></div>
+      <div class="fin-chart-card"><div class="fin-chart-title">Profit Margin Comparison</div><div class="fin-chart-wrap"><canvas id="overviewMarginChart"></canvas></div></div>
+    </div>
+    <div class="fin-details-table" style="--fin-detail-cols:200px repeat(6,minmax(80px,1fr))">
+      <div class="fin-details-title">Business Performance Summary</div>
+      <div class="fin-details-row header"><div>Business</div><div>Revenue</div><div>COGS</div><div>Gross Profit</div><div>OpEx</div><div>Net Profit</div><div>Margin</div></div>
+      ${bizSummaries.map(b=>`<div class="fin-details-row"><div class="label">${esc(b.name)}</div><div>${fmtMoney(b.revenue)}</div><div class="neg">${fmtMoney(b.cogs)}</div><div class="pos">${fmtMoney(b.grossProfit)}</div><div class="neg">${fmtMoney(b.opex)}</div><div class="${b.netProfit>=0?'pos':'neg'}">${fmtMoney(b.netProfit)}</div><div class="${b.margin>=0?'pos':'neg'}">${fmtPct(b.margin)}</div></div>`).join('')}
+      <div class="fin-details-row total"><div class="label">TOTAL</div><div>${fmtMoney(totalRevenue)}</div><div class="neg">${fmtMoney(totalCogs)}</div><div class="pos">${fmtMoney(totalGP)}</div><div class="neg">${fmtMoney(totalOpex)}</div><div class="${totalNet>=0?'pos':'neg'}">${fmtMoney(totalNet)}</div><div class="${totalNetMargin>=0?'pos':'neg'}">${fmtPct(totalNetMargin)}</div></div>
+    </div>`;
+}
+
+function renderFinBusiness(biz){
+  const pl=biz.parsedPL,periods=pl.periods;
+  const totalRev=arrSum(pl.revenue),totalCogs=arrSum(pl.cogs),totalGP=arrSum(pl.grossProfit);
+  const totalOpex=arrSum(pl.opex),totalNet=arrSum(pl.netProfit);
+  const grossMargin=totalRev?((totalGP/totalRev)*100):0;
+  const netMargin=totalRev?((totalNet/totalRev)*100):0;
+  const revGrowth=calcGrowth(pl.revenue);
+  const profitGrowth=calcGrowth(pl.netProfit);
+  return `
+    <div class="fin-kpi-grid">
+      <div class="fin-kpi"><div class="fin-kpi-label">Revenue</div><div class="fin-kpi-value gold">${fmtMoney(totalRev)}</div><div class="fin-kpi-sub">${revGrowth!==null?`<span class="${revGrowth>=0?'up':'down'}">${revGrowth>=0?'▲':'▼'} ${fmtPct(Math.abs(revGrowth))}</span> vs prev period`:`${periods.length} period${periods.length!==1?'s':''}`}</div></div>
+      <div class="fin-kpi"><div class="fin-kpi-label">Gross Profit</div><div class="fin-kpi-value green">${fmtMoney(totalGP)}</div><div class="fin-kpi-sub">Margin: ${fmtPct(grossMargin)}</div></div>
+      <div class="fin-kpi"><div class="fin-kpi-label">Net Profit</div><div class="fin-kpi-value ${totalNet>=0?'green':'red'}">${fmtMoney(totalNet)}</div><div class="fin-kpi-sub">${profitGrowth!==null?`<span class="${profitGrowth>=0?'up':'down'}">${profitGrowth>=0?'▲':'▼'} ${fmtPct(Math.abs(profitGrowth))}</span> vs prev`:`Margin: ${fmtPct(netMargin)}`}</div></div>
+      <div class="fin-kpi"><div class="fin-kpi-label">Net Margin</div><div class="fin-kpi-value ${netMargin>=20?'green':netMargin>=0?'gold':'red'}">${fmtPct(netMargin)}</div><div class="fin-kpi-sub">Gross: ${fmtPct(grossMargin)}</div></div>
+    </div>
+    <div class="fin-kpi-grid" style="grid-template-columns:repeat(4,1fr)">
+      <div class="fin-kpi"><div class="fin-kpi-label">COGS</div><div class="fin-kpi-value red">${fmtMoney(totalCogs)}</div><div class="fin-kpi-sub">${totalRev?fmtPct((totalCogs/totalRev)*100):''} of revenue</div></div>
+      <div class="fin-kpi"><div class="fin-kpi-label">Operating Expenses</div><div class="fin-kpi-value red">${fmtMoney(totalOpex)}</div><div class="fin-kpi-sub">${totalRev?fmtPct((totalOpex/totalRev)*100):''} of revenue</div></div>
+      <div class="fin-kpi"><div class="fin-kpi-label">EBITDA</div><div class="fin-kpi-value purple">${pl.ebitda.length?fmtMoney(arrSum(pl.ebitda)):'—'}</div><div class="fin-kpi-sub">${pl.ebitda.length&&totalRev?fmtPct((arrSum(pl.ebitda)/totalRev)*100)+' margin':''}</div></div>
+      <div class="fin-kpi"><div class="fin-kpi-label">Last Period Revenue</div><div class="fin-kpi-value gold">${fmtMoney(arrLast(pl.revenue))}</div><div class="fin-kpi-sub">${periods.length?periods[periods.length-1]:''}</div></div>
+    </div>
+    ${periods.length>1?`
+    <div class="fin-charts-row">
+      <div class="fin-chart-card"><div class="fin-chart-title">Revenue & Profit Trend</div><div class="fin-chart-wrap"><canvas id="bizTrendChart"></canvas></div></div>
+      <div class="fin-chart-card"><div class="fin-chart-title">Expense Breakdown</div><div class="fin-chart-wrap"><canvas id="bizExpenseChart"></canvas></div></div>
+    </div>
+    <div class="fin-charts-row" style="grid-template-columns:1fr 1fr">
+      <div class="fin-chart-card"><div class="fin-chart-title">Margin Trend</div><div class="fin-chart-wrap"><canvas id="bizMarginChart"></canvas></div></div>
+      <div class="fin-chart-card"><div class="fin-chart-title">Revenue vs Costs</div><div class="fin-chart-wrap"><canvas id="bizWaterfallChart"></canvas></div></div>
+    </div>`:''}
+    <div class="fin-details-table" style="--fin-detail-cols:200px repeat(${periods.length+1},minmax(80px,1fr))">
+      <div class="fin-details-title">P&L Details — ${esc(biz.businessName)} (Sheet: ${esc(biz.sheetName||'—')})</div>
+      <div class="fin-details-row header"><div>Line Item</div>${periods.map(p=>`<div>${esc(p)}</div>`).join('')}<div>Total</div></div>
+      ${pl.revenue.length?`<div class="fin-details-row"><div class="label">Revenue</div>${pl.revenue.map(v=>`<div class="pos">${fmtMoney(v)}</div>`).join('')}<div class="pos"><strong>${fmtMoney(totalRev)}</strong></div></div>`:''}
+      ${pl.cogs.length?`<div class="fin-details-row"><div class="label">COGS</div>${pl.cogs.map(v=>`<div class="neg">${fmtMoney(v)}</div>`).join('')}<div class="neg"><strong>${fmtMoney(totalCogs)}</strong></div></div>`:''}
+      ${pl.grossProfit.length?`<div class="fin-details-row total"><div class="label">Gross Profit</div>${pl.grossProfit.map(v=>`<div class="pos">${fmtMoney(v)}</div>`).join('')}<div class="pos"><strong>${fmtMoney(totalGP)}</strong></div></div>`:''}
+      ${pl.opex.length?`<div class="fin-details-row"><div class="label">Operating Expenses</div>${pl.opex.map(v=>`<div class="neg">${fmtMoney(v)}</div>`).join('')}<div class="neg"><strong>${fmtMoney(totalOpex)}</strong></div></div>`:''}
+      ${pl.operatingIncome.length?`<div class="fin-details-row"><div class="label">Operating Income</div>${pl.operatingIncome.map(v=>`<div class="${v>=0?'pos':'neg'}">${fmtMoney(v)}</div>`).join('')}<div class="${arrSum(pl.operatingIncome)>=0?'pos':'neg'}"><strong>${fmtMoney(arrSum(pl.operatingIncome))}</strong></div></div>`:''}
+      ${pl.depreciation.length?`<div class="fin-details-row"><div class="sub-label">Depreciation</div>${pl.depreciation.map(v=>`<div>${fmtMoney(v)}</div>`).join('')}<div>${fmtMoney(arrSum(pl.depreciation))}</div></div>`:''}
+      ${pl.interest.length?`<div class="fin-details-row"><div class="sub-label">Interest</div>${pl.interest.map(v=>`<div class="neg">${fmtMoney(v)}</div>`).join('')}<div class="neg">${fmtMoney(arrSum(pl.interest))}</div></div>`:''}
+      ${pl.tax.length?`<div class="fin-details-row"><div class="sub-label">Tax</div>${pl.tax.map(v=>`<div class="neg">${fmtMoney(v)}</div>`).join('')}<div class="neg">${fmtMoney(arrSum(pl.tax))}</div></div>`:''}
+      ${pl.netProfit.length?`<div class="fin-details-row total"><div class="label">Net Profit</div>${pl.netProfit.map(v=>`<div class="${v>=0?'pos':'neg'}">${fmtMoney(v)}</div>`).join('')}<div class="${totalNet>=0?'pos':'neg'}"><strong>${fmtMoney(totalNet)}</strong></div></div>`:''}
+      ${pl.ebitda.length?`<div class="fin-details-row"><div class="label">EBITDA</div>${pl.ebitda.map(v=>`<div class="pos">${fmtMoney(v)}</div>`).join('')}<div class="pos"><strong>${fmtMoney(arrSum(pl.ebitda))}</strong></div></div>`:''}
+    </div>`;
+}
+
+// ═══ CHART RENDERING ═══
+const chartColors=['#c9a46c','#5ca0e0','#9b7ae0','#e0a33c','#4ead6b','#e05c5c','#e08a5c','#5cc0b8'];
+const chartDefaults={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b8fa3',font:{family:'DM Sans',size:11}}}},scales:{x:{ticks:{color:'#8b8fa3',font:{family:'DM Sans',size:10}},grid:{color:'rgba(42,45,58,.5)'}},y:{ticks:{color:'#8b8fa3',font:{family:'DM Sans',size:10},callback:v=>fmtMoney(v)},grid:{color:'rgba(42,45,58,.5)'}}}};
+
+function renderOverviewCharts(){
+  const revEl=document.getElementById('overviewRevenueChart');
+  const margEl=document.getElementById('overviewMarginChart');
+  if(!revEl||!margEl)return;
+  const names=financialData.map(b=>b.businessName);
+  const revenues=financialData.map(b=>arrSum(b.parsedPL.revenue));
+  const margins=financialData.map(b=>{const rev=arrSum(b.parsedPL.revenue);const net=arrSum(b.parsedPL.netProfit);return rev?(net/rev)*100:0});
+  finCharts.overviewRevenue=new Chart(revEl,{type:'bar',data:{labels:names,datasets:[{label:'Revenue',data:revenues,backgroundColor:chartColors.slice(0,names.length),borderRadius:6}]},options:{...chartDefaults,plugins:{...chartDefaults.plugins,legend:{display:false}}}});
+  finCharts.overviewMargin=new Chart(margEl,{type:'bar',data:{labels:names,datasets:[{label:'Net Margin %',data:margins,backgroundColor:margins.map(m=>m>=0?'rgba(78,173,107,.7)':'rgba(255,77,106,.7)'),borderRadius:6}]},options:{...chartDefaults,plugins:{...chartDefaults.plugins,legend:{display:false}},scales:{...chartDefaults.scales,y:{...chartDefaults.scales.y,ticks:{...chartDefaults.scales.y.ticks,callback:v=>v+'%'}}}}});
+}
+
+function renderBusinessCharts(biz){
+  const pl=biz.parsedPL,periods=pl.periods;
+  if(periods.length<2)return;
+  // Revenue & Profit trend
+  const trendEl=document.getElementById('bizTrendChart');
+  if(trendEl){
+    const datasets=[{label:'Revenue',data:pl.revenue,borderColor:'#c9a46c',backgroundColor:'rgba(201,164,108,.1)',fill:true,tension:.3}];
+    if(pl.grossProfit.length)datasets.push({label:'Gross Profit',data:pl.grossProfit,borderColor:'#4ead6b',backgroundColor:'rgba(78,173,107,.1)',fill:true,tension:.3});
+    if(pl.netProfit.length)datasets.push({label:'Net Profit',data:pl.netProfit,borderColor:'#5ca0e0',backgroundColor:'rgba(92,160,224,.1)',fill:true,tension:.3});
+    finCharts.bizTrend=new Chart(trendEl,{type:'line',data:{labels:periods,datasets},options:chartDefaults});
+  }
+  // Expense breakdown
+  const expEl=document.getElementById('bizExpenseChart');
+  if(expEl){
+    const expLabels=[],expValues=[],expColors=[];
+    if(pl.cogs.length){expLabels.push('COGS');expValues.push(Math.abs(arrSum(pl.cogs)));expColors.push('#e05c5c')}
+    if(pl.opex.length){expLabels.push('OpEx');expValues.push(Math.abs(arrSum(pl.opex)));expColors.push('#e0a33c')}
+    if(pl.depreciation.length){expLabels.push('Depreciation');expValues.push(Math.abs(arrSum(pl.depreciation)));expColors.push('#9b7ae0')}
+    if(pl.interest.length){expLabels.push('Interest');expValues.push(Math.abs(arrSum(pl.interest)));expColors.push('#5ca0e0')}
+    if(pl.tax.length){expLabels.push('Tax');expValues.push(Math.abs(arrSum(pl.tax)));expColors.push('#e08a5c')}
+    if(expLabels.length){
+      finCharts.bizExpense=new Chart(expEl,{type:'doughnut',data:{labels:expLabels,datasets:[{data:expValues,backgroundColor:expColors,borderColor:'#181a22',borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#8b8fa3',font:{family:'DM Sans',size:11},padding:12}}}}});
+    }
+  }
+  // Margin trend
+  const margEl=document.getElementById('bizMarginChart');
+  if(margEl&&pl.revenue.length){
+    const grossMargins=pl.revenue.map((r,i)=>r?(((pl.grossProfit[i]||0)/r)*100):0);
+    const netMargins=pl.revenue.map((r,i)=>r?(((pl.netProfit[i]||0)/r)*100):0);
+    finCharts.bizMargin=new Chart(margEl,{type:'line',data:{labels:periods,datasets:[{label:'Gross Margin %',data:grossMargins,borderColor:'#4ead6b',tension:.3},{label:'Net Margin %',data:netMargins,borderColor:'#5ca0e0',tension:.3}]},options:{...chartDefaults,scales:{...chartDefaults.scales,y:{...chartDefaults.scales.y,ticks:{...chartDefaults.scales.y.ticks,callback:v=>v.toFixed(0)+'%'}}}}});
+  }
+  // Revenue vs Costs bar
+  const watEl=document.getElementById('bizWaterfallChart');
+  if(watEl){
+    finCharts.bizWaterfall=new Chart(watEl,{type:'bar',data:{labels:periods,datasets:[{label:'Revenue',data:pl.revenue,backgroundColor:'rgba(201,164,108,.7)',borderRadius:4},{label:'Total Costs',data:pl.revenue.map((r,i)=>(pl.cogs[i]||0)+(pl.opex[i]||0)),backgroundColor:'rgba(224,92,92,.5)',borderRadius:4}]},options:chartDefaults});
+  }
+}
 
 // Global keys
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeTaskModal();closeProjectModal();closeDeleteModal();closeSettingsModal();closeDeadlinePopover()}if(e.key==='Enter'){if(document.getElementById('taskModalOverlay').classList.contains('open'))saveTaskModal();else if(document.getElementById('projectModalOverlay').classList.contains('open'))addProject()}});
