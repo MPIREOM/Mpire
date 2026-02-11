@@ -27,6 +27,29 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .login-error{color:var(--overdue);font-size:.82rem;text-align:center;margin-top:14px;min-height:20px;font-weight:500}
 .login-footer{text-align:center;margin-top:24px;font-size:.78rem;color:var(--text-muted)}
 
+/* SPLASH SCREEN */
+.splash{position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 40%,#1a1c28 0%,#0f1117 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:1;transition:opacity .6s ease,visibility .6s ease;visibility:visible}
+.splash.hide{opacity:0;visibility:hidden;pointer-events:none}
+.splash-logo-wrap{position:relative;display:flex;flex-direction:column;align-items:center;gap:0}
+/* M mark container */
+.splash-m{width:120px;height:120px;position:relative;opacity:0;animation:splashMIn .8s cubic-bezier(.16,1,.3,1) .2s forwards}
+.splash-m svg{width:100%;height:100%}
+@keyframes splashMIn{from{opacity:0;transform:scale(.6) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+/* Glow behind logo */
+.splash-glow{position:absolute;top:50%;left:50%;width:200px;height:200px;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(201,164,108,.25) 0%,transparent 70%);border-radius:50%;opacity:0;animation:splashGlow 1.2s ease .4s forwards;pointer-events:none}
+@keyframes splashGlow{from{opacity:0;transform:translate(-50%,-50%) scale(.5)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+/* Brand text */
+.splash-brand{display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:18px}
+.splash-title{font-family:'Playfair Display',serif;font-size:2.6rem;font-weight:800;letter-spacing:12px;color:var(--accent-light);opacity:0;animation:splashTextIn .7s cubic-bezier(.16,1,.3,1) .6s forwards}
+.splash-sub{font-size:.72rem;font-weight:600;letter-spacing:6px;text-transform:uppercase;color:var(--text-muted);opacity:0;animation:splashTextIn .7s cubic-bezier(.16,1,.3,1) .8s forwards}
+@keyframes splashTextIn{from{opacity:0;transform:translateY(14px);letter-spacing:20px}to{opacity:1;transform:translateY(0);letter-spacing:inherit}}
+/* Welcome line */
+.splash-welcome{margin-top:32px;font-size:.88rem;color:var(--text-muted);opacity:0;animation:splashFadeIn .6s ease 1.1s forwards}
+@keyframes splashFadeIn{from{opacity:0}to{opacity:1}}
+/* Horizontal line that draws in */
+.splash-line{width:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);margin-top:20px;animation:splashLine .8s ease .5s forwards}
+@keyframes splashLine{from{width:0}to{width:180px}}
+
 .app{display:none}.app.visible{display:block}
 
 /* HEADER */
@@ -424,10 +447,38 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 </head>
 <body>
 
+<!-- Splash Screen -->
+<div class="splash" id="splashScreen" style="display:none">
+  <div class="splash-logo-wrap">
+    <div class="splash-glow"></div>
+    <div class="splash-m">
+      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Outer frame -->
+        <rect x="4" y="4" width="112" height="112" rx="22" stroke="#c9a46c" stroke-width="2.5" fill="none" opacity=".3"/>
+        <!-- M lettermark -->
+        <path d="M32 88V38l28 30 28-30v50" stroke="#c9a46c" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+          <animate attributeName="stroke-dasharray" from="0 250" to="250 0" dur="1s" begin=".3s" fill="freeze"/>
+        </path>
+        <!-- Accent dot -->
+        <circle cx="60" cy="32" r="4" fill="#e0c98f" opacity="0">
+          <animate attributeName="opacity" from="0" to="1" dur=".3s" begin="1s" fill="freeze"/>
+          <animate attributeName="r" from="0" to="4" dur=".3s" begin="1s" fill="freeze"/>
+        </circle>
+      </svg>
+    </div>
+    <div class="splash-line"></div>
+    <div class="splash-brand">
+      <div class="splash-title">MPIRE</div>
+      <div class="splash-sub">Production</div>
+    </div>
+    <div class="splash-welcome" id="splashWelcome"></div>
+  </div>
+</div>
+
 <div class="login-page" id="loginPage">
   <div class="login-card">
-    <div class="login-logo">Task Board</div>
-    <div class="login-sub">Sign in to access your projects</div>
+    <div class="login-logo">MPIRE</div>
+    <div class="login-sub">Sign in to access your dashboard</div>
     <div class="login-field"><label>Username</label><input type="text" id="loginUser" placeholder="Enter your username" autocomplete="off"></div>
     <div class="login-field"><label>Password</label><input type="password" id="loginPass" placeholder="Enter your password"></div>
     <button class="login-btn" onclick="doLogin()">Sign In</button>
@@ -575,7 +626,24 @@ function getDeadlineLabel(d){const m={today:'Today',tomorrow:'Tomorrow',daily:'D
 function getDeadlineClass(d,t){if(t&&isOverdue(t))return'deadline-overdue';return['today','tomorrow','weekly','daily','pending'].includes(d)?`deadline-${d}`:'deadline-date'}
 
 // ═══ LOGIN ═══
-function doLogin(){const u=document.getElementById('loginUser').value.trim(),p=document.getElementById('loginPass').value;const user=USERS.find(x=>x.username.toLowerCase()===u.toLowerCase()&&x.password===p);if(!user){document.getElementById('loginError').textContent='Invalid username or password';return}currentUser=user;document.getElementById('loginPage').style.display='none';document.getElementById('app').classList.add('visible');setupApp()}
+function doLogin(){
+  const u=document.getElementById('loginUser').value.trim(),p=document.getElementById('loginPass').value;
+  const user=USERS.find(x=>x.username.toLowerCase()===u.toLowerCase()&&x.password===p);
+  if(!user){document.getElementById('loginError').textContent='Invalid username or password';return}
+  currentUser=user;
+  document.getElementById('loginPage').style.display='none';
+  // Show splash screen
+  const splash=document.getElementById('splashScreen');
+  splash.style.display='flex';splash.classList.remove('hide');
+  document.getElementById('splashWelcome').textContent='Welcome back, '+user.displayName;
+  // After animation, transition to dashboard
+  setTimeout(()=>{
+    splash.classList.add('hide');
+    document.getElementById('app').classList.add('visible');
+    setupApp();
+    setTimeout(()=>{splash.style.display='none'},700);
+  },2600);
+}
 function doLogout(){currentUser=null;showBacklog=false;currentView='tasks';document.getElementById('app').classList.remove('visible');document.getElementById('loginPage').style.display='flex';document.getElementById('loginUser').value='';document.getElementById('loginPass').value='';document.getElementById('loginError').textContent=''}
 document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
 document.getElementById('loginUser').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginPass').focus()});
