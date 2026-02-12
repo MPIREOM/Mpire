@@ -13,6 +13,7 @@ import type { Task, User, Project, TaskStatus, TaskPriority } from '@/types/data
 import { isOverdue, isDueToday, isDueThisWeek, formatDate } from '@/lib/dates';
 import { canViewAllTasks, canAssignTasks, canCreateTasks } from '@/lib/roles';
 import { TaskDetailDrawer } from '@/components/operations/task-detail-drawer';
+import { TimeReviewDialog, type TimeEntry } from '@/components/tasks/time-review-dialog';
 
 type TabKey = 'today' | 'week' | 'overdue' | 'all';
 type GroupBy = 'none' | 'project' | 'status' | 'priority';
@@ -26,6 +27,7 @@ interface TaskTableProps {
   onUpdateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
   onCreateTask?: (task: Omit<Task, 'id' | 'created_at' | 'updated_at' | 'project' | 'assignee'>) => Promise<void>;
   onDeleteTask?: (taskId: string) => Promise<void>;
+  onCompleteTask?: (taskId: string, userId: string, timeEntries: TimeEntry[]) => Promise<void>;
 }
 
 const statusOptions: { value: TaskStatus; label: string }[] = [
@@ -45,6 +47,7 @@ export function TaskTable({
   onUpdateTask,
   onCreateTask,
   onDeleteTask,
+  onCompleteTask,
 }: TaskTableProps) {
   const [tab, setTab] = useState<TabKey>('today');
   const [viewMode, setViewMode] = useState<'my' | 'all'>('my');
@@ -62,6 +65,7 @@ export function TaskTable({
     assignee_id: '',
   });
   const [createSaving, setCreateSaving] = useState(false);
+  const [timeReviewTaskId, setTimeReviewTaskId] = useState<string | null>(null);
 
   const canSeeAll = canViewAllTasks(currentUser.role);
   const canCreate = canCreateTasks(currentUser.role);
@@ -71,6 +75,28 @@ export function TaskTable({
     () => tasks.find((t) => t.id === selectedTaskId) ?? null,
     [tasks, selectedTaskId]
   );
+
+  // Resolve time review task from live tasks array
+  const timeReviewTask = useMemo(
+    () => tasks.find((t) => t.id === timeReviewTaskId) ?? null,
+    [tasks, timeReviewTaskId]
+  );
+
+  // Intercept status changes — show time review dialog when marking as "done"
+  function handleStatusChange(taskId: string, newStatus: TaskStatus) {
+    if (newStatus === 'done' && onCompleteTask) {
+      setTimeReviewTaskId(taskId);
+    } else {
+      onUpdateTask(taskId, { status: newStatus });
+    }
+  }
+
+  async function handleTimeReviewConfirm(taskId: string, entries: TimeEntry[]) {
+    if (onCompleteTask) {
+      await onCompleteTask(taskId, currentUser.id, entries);
+    }
+    setTimeReviewTaskId(null);
+  }
 
   // Filter pipeline
   const filtered = useMemo(() => {
@@ -376,7 +402,7 @@ export function TaskTable({
                       <select
                         value={task.status}
                         onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => onUpdateTask(task.id, { status: e.target.value as TaskStatus })}
+                        onChange={(e) => handleStatusChange(task.id, e.target.value as TaskStatus)}
                         className={clsx(
                           'h-6 shrink-0 cursor-pointer rounded-md border-0 px-1 text-[10px] font-semibold focus:outline-none focus:ring-1 focus:ring-accent-muted',
                           task.status === 'in_progress' ? 'bg-blue-bg text-blue' :
@@ -427,6 +453,15 @@ export function TaskTable({
         team={team}
         onUpdateTask={onUpdateTask}
         onDeleteTask={onDeleteTask}
+        onCompleteTask={onCompleteTask}
+      />
+
+      {/* Time Review Dialog — shown when marking a task as done */}
+      <TimeReviewDialog
+        task={timeReviewTask}
+        open={!!timeReviewTaskId}
+        onConfirm={handleTimeReviewConfirm}
+        onCancel={() => setTimeReviewTaskId(null)}
       />
 
       {/* Create Task Dialog */}
