@@ -6,7 +6,7 @@
 -- created via Supabase Auth (Dashboard > Authentication > Users).
 --
 -- Credentials to create in Supabase Auth:
---   almuhannad@mpireom.com  / 7242
+--   almuhannad@mpireom.com  / 724293
 -- ============================================================
 
 -- Placeholder UUID — replace with real auth.users ID

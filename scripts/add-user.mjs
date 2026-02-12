@@ -50,7 +50,7 @@ if (!SUPABASE_URL) {
 
 // User to add
 const USER_EMAIL = "almuhannad@mpireom.com";
-const USER_PASSWORD = "7242";
+const USER_PASSWORD = "724293";
 
 async function addUserWithServiceRole() {
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
@@ -112,15 +112,6 @@ async function addUserWithAnonKey() {
       return null;
     }
     console.error("Error signing up user:", error.message);
-    console.error(
-      "\nNote: Supabase requires passwords to be at least 6 characters."
-    );
-    console.error(
-      'If password "7242" is too short, update the minimum password length in'
-    );
-    console.error(
-      "Supabase Dashboard > Authentication > Providers > Email > Minimum password length."
-    );
     process.exit(1);
   }
 
