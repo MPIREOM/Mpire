@@ -43,6 +43,13 @@ export default function PeoplePage() {
         body: JSON.stringify(form),
       });
 
+      // Guard against non-JSON responses (e.g. if session expired and server returned HTML)
+      const contentType = res.headers.get('content-type') ?? '';
+      if (!contentType.includes('application/json')) {
+        setError(res.status === 401 || res.redirected ? 'Session expired — please refresh the page and try again' : 'Unexpected server response');
+        return;
+      }
+
       const data = await res.json();
 
       if (!res.ok) {
@@ -54,7 +61,7 @@ export default function PeoplePage() {
       setForm({ email: '', password: '', full_name: '', role: 'staff' });
       mutate();
     } catch {
-      setError('Network error');
+      setError('Network error — please check your connection and try again');
     } finally {
       setSaving(false);
     }
