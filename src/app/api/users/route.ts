@@ -55,8 +55,9 @@ export async function POST(request: NextRequest) {
     // Create auth user via admin API using service role key
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!serviceRoleKey) {
+      console.error('SUPABASE_SERVICE_ROLE_KEY is not set. Check .env.local and next.config.ts env settings.');
       return NextResponse.json(
-        { error: 'Server configuration error: service role key not set' },
+        { error: 'Server configuration error — please contact the administrator' },
         { status: 500 }
       );
     }
