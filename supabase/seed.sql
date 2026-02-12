@@ -9,15 +9,14 @@
 --   almuhannad@mpireom.com  / 724293
 -- ============================================================
 
--- Placeholder UUID — replace with real auth.users ID
--- You can also run the companion seed.ts script which automates this.
+-- Auth user UUID for almuhannad@mpireom.com
 
 do $$
 declare
   v_company_id uuid;
   v_bu_ops uuid;
   v_bu_dev uuid;
-  v_owner_id uuid := '00000000-0000-0000-0000-000000000001'; -- replace
+  v_owner_id uuid := 'a2f6a06d-f7b3-47eb-b6f7-ac14a2cabbd5';
   v_proj_website uuid;
   v_proj_mobile uuid;
   v_proj_ops uuid;
