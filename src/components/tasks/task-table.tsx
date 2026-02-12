@@ -39,6 +39,17 @@ const statusOptions: { value: TaskStatus; label: string }[] = [
 
 const priorityOrder: Record<TaskPriority, number> = { high: 0, medium: 1, low: 2 };
 
+// Stable color from user name for avatar differentiation
+const USER_COLORS = [
+  '#6366f1', '#3b82f6', '#06b6d4', '#10b981', '#f59e0b',
+  '#ef4444', '#ec4899', '#8b5cf6', '#14b8a6', '#f97316',
+];
+function userColor(name: string): string {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = ((h << 5) - h + name.charCodeAt(i)) | 0;
+  return USER_COLORS[Math.abs(h) % USER_COLORS.length];
+}
+
 export function TaskTable({
   tasks,
   currentUser,
@@ -52,7 +63,7 @@ export function TaskTable({
   const [tab, setTab] = useState<TabKey>('today');
   const [viewMode, setViewMode] = useState<'my' | 'all'>('my');
   const [search, setSearch] = useState('');
-  const [groupBy, setGroupBy] = useState<GroupBy>('none');
+  const [groupBy, setGroupBy] = useState<GroupBy>('project');
   const [sortBy, setSortBy] = useState<SortBy>('due_date');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -359,7 +370,13 @@ export function TaskTable({
           {groups.map((group) => (
             <div key={group.label || 'default'}>
               {group.label && (
-                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">{group.label}</p>
+                <div className="mb-1.5 flex items-center gap-2">
+                  {groupBy === 'project' && group.tasks[0]?.project?.color && (
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: group.tasks[0].project.color }} />
+                  )}
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">{group.label}</p>
+                  <span className="rounded-full bg-bg px-1.5 py-0.5 text-[9px] font-bold text-muted">{group.tasks.length}</span>
+                </div>
               )}
               <div className="rounded-xl border border-border bg-card">
                 <div className="flex items-center gap-3 border-b border-border px-4 py-1.5">
@@ -373,7 +390,7 @@ export function TaskTable({
                     {allSelected && <CheckIcon className="h-3 w-3" />}
                   </button>
                   <span className="flex-1 text-[10px] font-semibold uppercase tracking-wide text-muted">Task</span>
-                  <span className="hidden w-20 text-[10px] font-semibold uppercase tracking-wide text-muted sm:block">Assignee</span>
+                  <span className="w-24 text-[10px] font-semibold uppercase tracking-wide text-muted">Assignee</span>
                   <span className="w-16 text-right text-[10px] font-semibold uppercase tracking-wide text-muted">Due</span>
                 </div>
 
@@ -421,13 +438,17 @@ export function TaskTable({
                         className={clsx('h-2 w-2 shrink-0 rounded-full', task.priority === 'high' ? 'bg-red' : task.priority === 'medium' ? 'bg-yellow' : 'bg-blue')}
                         title={task.priority}
                       />
-                      <span className="hidden w-20 truncate text-[11px] text-muted sm:block">
+                      <span className="w-24 truncate text-[11px] text-muted">
                         {task.assignee ? (
                           <span className="flex items-center gap-1.5">
-                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-accent text-[9px] font-bold text-white">
+                            <span
+                              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[9px] font-bold text-white"
+                              style={{ backgroundColor: userColor(task.assignee.full_name) }}
+                              title={task.assignee.full_name}
+                            >
                               {task.assignee.full_name.charAt(0)}
                             </span>
-                            <span className="truncate">{task.assignee.full_name.split(' ')[0]}</span>
+                            <span className="hidden truncate sm:inline">{task.assignee.full_name.split(' ')[0]}</span>
                           </span>
                         ) : (
                           <span className="text-muted/50">—</span>
