@@ -7,18 +7,7 @@ import { cn } from '@/lib/utils';
 import { useUser } from '@/hooks/use-user';
 import { canManage, canAccessFinance, canAccessSettings } from '@/lib/roles';
 import { Avatar } from '@/components/ui/avatar';
-import {
-  ChartBarIcon,
-  ClipboardDocumentListIcon,
-  CurrencyDollarIcon,
-  UsersIcon,
-  ClockIcon,
-  FolderIcon,
-  Cog6ToothIcon,
-  XMarkIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-} from '@heroicons/react/24/outline';
+import { ChevronLeftIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 interface SidebarProps {
   open: boolean;
@@ -29,53 +18,40 @@ interface SidebarProps {
 
 interface NavItem {
   name: string;
+  emoji: string;
   href: string;
-  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-  section: string;
   requiresManage?: boolean;
   requiresFinance?: boolean;
   requiresSettings?: boolean;
+  badge?: number;
 }
 
 const navigation: NavItem[] = [
-  { name: 'Overview', href: '/operations', icon: ChartBarIcon, section: 'Main' },
-  { name: 'Projects', href: '/projects', icon: FolderIcon, section: 'Main', requiresManage: true },
-  { name: 'Finance', href: '/finance', icon: CurrencyDollarIcon, section: 'Main', requiresFinance: true },
-  { name: 'People', href: '/people', icon: UsersIcon, section: 'Team', requiresManage: true },
-  { name: 'Time Tracking', href: '/people/time', icon: ClockIcon, section: 'Team', requiresManage: true },
-  { name: 'Tasks', href: '/tasks', icon: ClipboardDocumentListIcon, section: 'Work' },
-  { name: 'Settings', href: '/settings', icon: Cog6ToothIcon, section: 'System', requiresSettings: true },
+  { name: 'Dashboard', emoji: '📊', href: '/operations' },
+  { name: 'Projects', emoji: '📁', href: '/projects', requiresManage: true },
+  { name: 'Tasks', emoji: '✅', href: '/tasks' },
+  { name: 'People', emoji: '👥', href: '/people', requiresManage: true },
+  { name: 'Finance', emoji: '💰', href: '/finance', requiresFinance: true },
 ];
 
-const navListVariants = {
-  hidden: {},
-  visible: {
-    transition: { staggerChildren: 0.04, delayChildren: 0.1 },
-  },
-};
-
-const navItemVariants = {
-  hidden: { opacity: 0, x: -8 },
-  visible: {
-    opacity: 1,
-    x: 0,
-    transition: { duration: 0.25, ease: [0.4, 0, 0.2, 1] as const },
-  },
-};
+const bottomNavigation: NavItem[] = [
+  { name: 'Settings', emoji: '⚙️', href: '/settings', requiresSettings: true },
+];
 
 export function Sidebar({ open, onClose, collapsed, onToggleCollapse }: SidebarProps) {
   const pathname = usePathname();
   const { user } = useUser();
   const role = user?.role ?? 'staff';
 
-  const filteredNav = navigation.filter((item) => {
+  function canAccess(item: NavItem) {
     if (item.requiresManage && !canManage(role)) return false;
     if (item.requiresFinance && !canAccessFinance(role)) return false;
     if (item.requiresSettings && !canAccessSettings(role)) return false;
     return true;
-  });
+  }
 
-  const sections = [...new Set(filteredNav.map((i) => i.section))];
+  const filteredNav = navigation.filter(canAccess);
+  const filteredBottom = bottomNavigation.filter(canAccess);
 
   return (
     <>
@@ -87,7 +63,7 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse }: SidebarP
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm lg:hidden"
+            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden"
             onClick={onClose}
           />
         )}
@@ -95,25 +71,25 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse }: SidebarP
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex flex-col border-r border-border bg-card transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
-          collapsed ? 'lg:w-[68px]' : 'lg:w-60',
+          'sidebar-dark fixed inset-y-0 left-0 z-50 flex flex-col border-r border-white/[0.06] bg-gradient-to-b from-gray-900 to-gray-950 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+          collapsed ? 'lg:w-[72px]' : 'lg:w-60',
           'w-60 lg:translate-x-0',
           open ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        {/* Brand */}
-        <div className="flex h-14 items-center justify-between border-b border-border px-3">
+        {/* ── Brand ── */}
+        <div className="flex h-14 items-center justify-between border-b border-white/[0.06] px-3">
           <Link
             href="/operations"
             className="flex items-center gap-2.5 overflow-hidden"
             onClick={onClose}
           >
             <motion.div
-              whileHover={{ scale: 1.05, rotate: -3 }}
+              whileHover={{ scale: 1.08, rotate: -3 }}
               whileTap={{ scale: 0.95 }}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-accent to-accent-light text-[12px] font-extrabold text-white shadow-sm"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-xl shadow-lg shadow-blue-500/20"
             >
-              M
+              🎯
             </motion.div>
             <AnimatePresence mode="wait">
               {!collapsed && (
@@ -122,7 +98,7 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse }: SidebarP
                   animate={{ opacity: 1, width: 'auto' }}
                   exit={{ opacity: 0, width: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="whitespace-nowrap text-[15px] font-bold tracking-wider text-text"
+                  className="whitespace-nowrap text-[16px] font-bold tracking-wider text-white"
                 >
                   MPIRE
                 </motion.span>
@@ -131,111 +107,56 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse }: SidebarP
           </Link>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-muted transition-colors hover:bg-bg hover:text-text lg:hidden"
+            className="rounded-lg p-1 text-gray-500 transition-colors hover:bg-white/5 hover:text-gray-300 lg:hidden"
           >
             <XMarkIcon className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-4">
-          <motion.div variants={navListVariants} initial="hidden" animate="visible">
-            {sections.map((section) => (
-              <div key={section} className="mb-4">
-                <AnimatePresence mode="wait">
-                  {!collapsed ? (
-                    <motion.p
-                      key="label"
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.15 }}
-                      className="mb-2 overflow-hidden px-3 text-[10px] font-semibold uppercase tracking-widest text-muted"
-                    >
-                      {section}
-                    </motion.p>
-                  ) : (
-                    <div className="mx-auto mb-2 h-px w-6 bg-border" />
-                  )}
-                </AnimatePresence>
-                {filteredNav
-                  .filter((item) => item.section === section)
-                  .map((item) => {
-                    const isActive =
-                      pathname === item.href ||
-                      (item.href === '/operations' && pathname === '/') ||
-                      (item.href === '/projects' && pathname.startsWith('/projects/'));
+        {/* ── Main navigation ── */}
+        <nav className="sidebar-scroll flex-1 overflow-y-auto overflow-x-hidden px-2 py-4">
+          <div className="space-y-1">
+            {filteredNav.map((item) => {
+              const isActive =
+                pathname === item.href ||
+                (item.href === '/operations' && pathname === '/') ||
+                (item.href === '/projects' && pathname.startsWith('/projects/'));
 
-                    return (
-                      <motion.div key={item.name} variants={navItemVariants}>
-                        <Link
-                          href={item.href}
-                          onClick={onClose}
-                          className={cn(
-                            'group relative mb-0.5 flex items-center rounded-lg text-[13px] font-medium transition-all duration-200',
-                            collapsed
-                              ? 'justify-center px-2 py-2.5'
-                              : 'gap-2.5 px-3 py-2',
-                            isActive
-                              ? 'bg-accent-muted text-accent'
-                              : 'text-muted hover:bg-bg hover:text-text'
-                          )}
-                        >
-                          {isActive && (
-                            <motion.span
-                              layoutId="sidebarIndicator"
-                              className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-accent"
-                              transition={{
-                                type: 'spring',
-                                stiffness: 350,
-                                damping: 30,
-                              }}
-                            />
-                          )}
-                          <motion.div
-                            whileHover={{ scale: 1.15 }}
-                            transition={{ duration: 0.15 }}
-                            className="relative"
-                          >
-                            <item.icon className="h-[18px] w-[18px] shrink-0" />
-                          </motion.div>
-                          <AnimatePresence mode="wait">
-                            {!collapsed && (
-                              <motion.span
-                                initial={{ opacity: 0, width: 0 }}
-                                animate={{ opacity: 1, width: 'auto' }}
-                                exit={{ opacity: 0, width: 0 }}
-                                transition={{ duration: 0.15 }}
-                                className="whitespace-nowrap"
-                              >
-                                {item.name}
-                              </motion.span>
-                            )}
-                          </AnimatePresence>
-                          {/* Tooltip for collapsed mode */}
-                          {collapsed && (
-                            <div className="pointer-events-none absolute left-full z-[60] ml-3 hidden rounded-lg bg-text px-2.5 py-1.5 text-[11px] font-semibold text-card shadow-lg group-hover:block">
-                              {item.name}
-                              <div className="absolute -left-1 top-1/2 -translate-y-1/2 border-[5px] border-transparent border-r-text" />
-                            </div>
-                          )}
-                        </Link>
-                      </motion.div>
-                    );
-                  })}
-              </div>
-            ))}
-          </motion.div>
+              return (
+                <NavLink
+                  key={item.href}
+                  item={item}
+                  isActive={isActive}
+                  collapsed={collapsed}
+                  onClick={onClose}
+                />
+              );
+            })}
+          </div>
         </nav>
 
-        {/* Collapse toggle — desktop only */}
-        <div className="hidden border-t border-border px-2 py-2 lg:block">
+        {/* ── Bottom navigation (Settings) ── */}
+        <div className="border-t border-white/[0.06] px-2 py-2 space-y-1">
+          {filteredBottom.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <NavLink
+                key={item.href}
+                item={item}
+                isActive={isActive}
+                collapsed={collapsed}
+                onClick={onClose}
+              />
+            );
+          })}
+
+          {/* Collapse toggle — desktop only */}
           <motion.button
-            whileHover={{ backgroundColor: 'var(--color-bg)' }}
+            whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
             whileTap={{ scale: 0.97 }}
             onClick={onToggleCollapse}
             className={cn(
-              'flex w-full items-center rounded-lg px-3 py-2 text-[12px] font-medium text-muted transition-colors hover:text-text',
+              'hidden lg:flex w-full items-center rounded-xl px-3 py-2.5 text-[12px] font-medium text-gray-500 transition-colors hover:text-gray-300',
               collapsed ? 'justify-center' : 'gap-2.5'
             )}
           >
@@ -255,7 +176,7 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse }: SidebarP
                   className="flex flex-1 items-center justify-between"
                 >
                   <span>Collapse</span>
-                  <kbd className="rounded border border-border bg-bg px-1.5 py-0.5 text-[9px] font-medium text-muted">
+                  <kbd className="rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[9px] font-medium text-gray-500">
                     [
                   </kbd>
                 </motion.span>
@@ -264,19 +185,19 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse }: SidebarP
           </motion.button>
         </div>
 
-        {/* Footer — user info */}
-        <div className="border-t border-border p-2">
+        {/* ── User footer ── */}
+        <div className="border-t border-white/[0.06] p-2">
           {user && (
             <motion.div
-              whileHover={{ backgroundColor: 'var(--color-bg)' }}
+              whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
               className={cn(
-                'flex items-center rounded-lg px-2 py-2.5 transition-colors',
+                'group relative flex items-center rounded-xl px-2 py-2.5 transition-colors cursor-default',
                 collapsed ? 'justify-center' : 'gap-2.5'
               )}
             >
               <div className="relative shrink-0">
                 <Avatar name={user.full_name} src={user.avatar_url} size="sm" />
-                <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-card bg-green" />
+                <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-gray-900 bg-emerald-400" />
               </div>
               <AnimatePresence mode="wait">
                 {!collapsed && (
@@ -287,10 +208,10 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse }: SidebarP
                     transition={{ duration: 0.2 }}
                     className="min-w-0 overflow-hidden"
                   >
-                    <p className="truncate text-[13px] font-semibold text-text">
+                    <p className="truncate text-[13px] font-semibold text-white">
                       {user.full_name}
                     </p>
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">
                       {user.role}
                     </p>
                   </motion.div>
@@ -298,8 +219,9 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse }: SidebarP
               </AnimatePresence>
               {/* Tooltip for collapsed user */}
               {collapsed && (
-                <div className="pointer-events-none absolute left-full z-[60] ml-3 hidden rounded-lg bg-text px-2.5 py-1.5 text-[11px] font-semibold text-card shadow-lg group-hover:block">
+                <div className="pointer-events-none absolute left-full z-[60] ml-3 hidden rounded-lg bg-gray-800 px-2.5 py-1.5 text-[11px] font-semibold text-white shadow-lg group-hover:block">
                   {user.full_name}
+                  <div className="absolute -left-1 top-1/2 -translate-y-1/2 border-[5px] border-transparent border-r-gray-800" />
                 </div>
               )}
             </motion.div>
@@ -307,5 +229,79 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse }: SidebarP
         </div>
       </aside>
     </>
+  );
+}
+
+/* ── Nav link with emoji, active state, tooltip ── */
+function NavLink({
+  item,
+  isActive,
+  collapsed,
+  onClick,
+}: {
+  item: NavItem;
+  isActive: boolean;
+  collapsed: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <Link
+      href={item.href}
+      onClick={onClick}
+      className={cn(
+        'group relative flex items-center rounded-xl text-[13px] font-medium transition-all duration-200',
+        collapsed ? 'justify-center px-2 py-3' : 'gap-3 px-3 py-2.5',
+        isActive
+          ? 'bg-gradient-to-r from-blue-600/90 to-purple-600/90 text-white shadow-lg shadow-blue-500/20'
+          : 'text-gray-400 hover:bg-white/[0.06] hover:text-white'
+      )}
+    >
+      {/* Active indicator bar */}
+      {isActive && (
+        <motion.span
+          layoutId="sidebarIndicator"
+          className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-white"
+          transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+        />
+      )}
+
+      {/* Emoji icon */}
+      <motion.span
+        whileHover={{ scale: 1.15 }}
+        transition={{ duration: 0.15 }}
+        className="relative text-[22px] leading-none shrink-0"
+      >
+        {item.emoji}
+        {/* Notification badge */}
+        {item.badge != null && item.badge > 0 && (
+          <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white shadow-sm">
+            {item.badge > 99 ? '99+' : item.badge}
+          </span>
+        )}
+      </motion.span>
+
+      {/* Label */}
+      <AnimatePresence mode="wait">
+        {!collapsed && (
+          <motion.span
+            initial={{ opacity: 0, width: 0 }}
+            animate={{ opacity: 1, width: 'auto' }}
+            exit={{ opacity: 0, width: 0 }}
+            transition={{ duration: 0.15 }}
+            className="whitespace-nowrap"
+          >
+            {item.name}
+          </motion.span>
+        )}
+      </AnimatePresence>
+
+      {/* Tooltip when collapsed */}
+      {collapsed && (
+        <div className="pointer-events-none absolute left-full z-[60] ml-3 hidden rounded-lg bg-gray-800 px-2.5 py-1.5 text-[11px] font-semibold text-white shadow-lg group-hover:block">
+          {item.name}
+          <div className="absolute -left-1 top-1/2 -translate-y-1/2 border-[5px] border-transparent border-r-gray-800" />
+        </div>
+      )}
+    </Link>
   );
 }

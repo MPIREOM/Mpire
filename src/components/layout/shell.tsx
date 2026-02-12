@@ -67,7 +67,7 @@ export function Shell({ title, subtitle, children }: ShellProps) {
       <div
         className={cn(
           'transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
-          collapsed ? 'lg:pl-[68px]' : 'lg:pl-60'
+          collapsed ? 'lg:pl-[72px]' : 'lg:pl-60'
         )}
       >
         <TopNav
