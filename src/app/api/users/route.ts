@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createServerSupabase } from '@/lib/supabase/server';
+import { SUPABASE_SERVICE_ROLE_KEY } from '@/lib/generated/server-env';
 
-export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
@@ -55,18 +55,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Only owners and managers can add team members' }, { status: 403 });
     }
 
-    // Service role key is inlined at build time via next.config.ts env option
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!serviceRoleKey) {
+    // Service role key imported as literal constant from generated file
+    if (!SUPABASE_SERVICE_ROLE_KEY) {
       return NextResponse.json(
-        { error: 'Server configuration error — please contact the administrator' },
+        { error: 'Server configuration error — run: node scripts/gen-server-env.mjs' },
         { status: 500 }
       );
     }
 
     const adminClient = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      serviceRoleKey,
+      SUPABASE_SERVICE_ROLE_KEY,
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
