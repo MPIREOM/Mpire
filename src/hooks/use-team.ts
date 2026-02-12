@@ -7,7 +7,7 @@ import type { User } from '@/types/database';
 export function useTeam() {
   const supabase = createClient();
 
-  const { data, error, isLoading } = useSWR<User[]>(
+  const { data, error, isLoading, mutate } = useSWR<User[]>(
     'team',
     async () => {
       const { data, error } = await supabase
@@ -28,5 +28,6 @@ export function useTeam() {
     team: data ?? [],
     isLoading,
     error,
+    mutate,
   };
 }
