@@ -53,11 +53,7 @@ export default function PeoplePage() {
       const data = await res.json();
 
       if (!res.ok) {
-        // Show debug info if present (temporary)
-        const msg = data.debug
-          ? `${data.error} | debug: ${JSON.stringify(data.debug)}`
-          : data.error || 'Failed to add user';
-        setError(msg);
+        setError(data.error || 'Failed to add user');
         return;
       }
 
