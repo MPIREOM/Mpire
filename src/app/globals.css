@@ -23,6 +23,29 @@
   --radius-card: 12px;
 }
 
+/* ── Dark mode overrides ── */
+.dark {
+  --color-bg: #0f1117;
+  --color-card: #1a1d27;
+  --color-text: #f1f3f5;
+  --color-muted: #8b8fa3;
+  --color-border: #2a2d3a;
+  --color-border-hover: #3a3d4a;
+  --color-accent: #c9a046;
+  --color-accent-light: #d4b76a;
+  --color-accent-muted: rgba(201, 160, 70, 0.1);
+  --color-green: #34d399;
+  --color-green-bg: rgba(52, 211, 153, 0.1);
+  --color-red: #f87171;
+  --color-red-bg: rgba(248, 113, 113, 0.1);
+  --color-yellow: #fbbf24;
+  --color-yellow-bg: rgba(251, 191, 36, 0.1);
+  --color-blue: #60a5fa;
+  --color-blue-bg: rgba(96, 165, 250, 0.1);
+  --color-purple: #a78bfa;
+  color-scheme: dark;
+}
+
 body {
   background: var(--color-bg);
   color: var(--color-text);
@@ -85,8 +108,19 @@ main {
   border-radius: 4px;
 }
 
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
 /* Selection color */
 ::selection {
   background: rgba(176, 138, 62, 0.15);
   color: var(--color-text);
+}
+.dark ::selection {
+  background: rgba(201, 160, 70, 0.25);
 }

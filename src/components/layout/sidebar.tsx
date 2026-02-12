@@ -7,13 +7,19 @@ import { cn } from '@/lib/utils';
 import { useUser } from '@/hooks/use-user';
 import { canManage, canAccessFinance, canAccessSettings } from '@/lib/roles';
 import { Avatar } from '@/components/ui/avatar';
-import { ChevronLeftIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import {
+  ChevronLeftIcon,
+  XMarkIcon,
+  MapPinIcon,
+} from '@heroicons/react/24/outline';
 
 interface SidebarProps {
   open: boolean;
   onClose: () => void;
   collapsed: boolean;
   onToggleCollapse: () => void;
+  pinned: boolean;
+  onTogglePin: () => void;
 }
 
 interface NavItem {
@@ -38,7 +44,7 @@ const bottomNavigation: NavItem[] = [
   { name: 'Settings', emoji: '⚙️', href: '/settings', requiresSettings: true },
 ];
 
-export function Sidebar({ open, onClose, collapsed, onToggleCollapse }: SidebarProps) {
+export function Sidebar({ open, onClose, collapsed, onToggleCollapse, pinned, onTogglePin }: SidebarProps) {
   const pathname = usePathname();
   const { user } = useUser();
   const role = user?.role ?? 'staff';
@@ -150,39 +156,76 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse }: SidebarP
             );
           })}
 
-          {/* Collapse toggle — desktop only */}
-          <motion.button
-            whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
-            whileTap={{ scale: 0.97 }}
-            onClick={onToggleCollapse}
-            className={cn(
-              'hidden lg:flex w-full items-center rounded-xl px-3 py-2.5 text-[12px] font-medium text-gray-500 transition-colors hover:text-gray-300',
-              collapsed ? 'justify-center' : 'gap-2.5'
-            )}
-          >
-            <motion.div
-              animate={{ rotate: collapsed ? 180 : 0 }}
-              transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+          {/* Pin + Collapse — desktop only */}
+          <div className="hidden lg:flex items-center gap-1">
+            {/* Pin toggle */}
+            <motion.button
+              whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onTogglePin}
+              title={pinned ? 'Unpin sidebar' : 'Pin sidebar open'}
+              className={cn(
+                'flex items-center justify-center rounded-xl p-2.5 text-[12px] transition-colors',
+                pinned
+                  ? 'text-blue-400 hover:text-blue-300'
+                  : 'text-gray-500 hover:text-gray-300'
+              )}
             >
-              <ChevronLeftIcon className="h-4 w-4" />
-            </motion.div>
-            <AnimatePresence mode="wait">
-              {!collapsed && (
-                <motion.span
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className="flex flex-1 items-center justify-between"
+              <motion.div animate={{ rotate: pinned ? 0 : 45 }} transition={{ duration: 0.2 }}>
+                <MapPinIcon className="h-4 w-4" />
+              </motion.div>
+            </motion.button>
+
+            {/* Collapse toggle */}
+            {!pinned && (
+              <motion.button
+                whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+                whileTap={{ scale: 0.97 }}
+                onClick={onToggleCollapse}
+                className={cn(
+                  'flex flex-1 items-center rounded-xl px-3 py-2.5 text-[12px] font-medium text-gray-500 transition-colors hover:text-gray-300',
+                  collapsed ? 'justify-center' : 'gap-2.5'
+                )}
+              >
+                <motion.div
+                  animate={{ rotate: collapsed ? 180 : 0 }}
+                  transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
                 >
-                  <span>Collapse</span>
-                  <kbd className="rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[9px] font-medium text-gray-500">
-                    [
-                  </kbd>
+                  <ChevronLeftIcon className="h-4 w-4" />
+                </motion.div>
+                <AnimatePresence mode="wait">
+                  {!collapsed && (
+                    <motion.span
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                      className="flex flex-1 items-center justify-between"
+                    >
+                      <span>Collapse</span>
+                      <kbd className="rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[9px] font-medium text-gray-500">
+                        [
+                      </kbd>
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </motion.button>
+            )}
+
+            {/* Pinned label */}
+            <AnimatePresence>
+              {pinned && !collapsed && (
+                <motion.span
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -8 }}
+                  className="text-[11px] font-medium text-blue-400"
+                >
+                  Pinned
                 </motion.span>
               )}
             </AnimatePresence>
-          </motion.button>
+          </div>
         </div>
 
         {/* ── User footer ── */}
