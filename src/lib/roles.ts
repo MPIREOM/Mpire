@@ -31,3 +31,7 @@ export function canAccessFinance(role: Role): boolean {
 export function canAccessSettings(role: Role): boolean {
   return role === 'owner';
 }
+
+export function isCEOView(role: Role): boolean {
+  return role === 'owner' || role === 'investor';
+}

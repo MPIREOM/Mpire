@@ -47,6 +47,7 @@ export interface Task {
   assignee_id: string | null;
   created_by: string | null;
   recurring_rule: string | null;
+  tags: string[];
   created_at: string;
   updated_at: string;
   // Joined fields
@@ -71,6 +72,39 @@ export interface TaskActivity {
   meta: Record<string, unknown>;
   created_at: string;
   user?: User;
+}
+
+// Finance types
+export interface FinanceUpload {
+  id: string;
+  project_id: string;
+  uploaded_by: string;
+  file_name: string;
+  column_mapping: Record<string, string>;
+  row_count: number;
+  version: number;
+  created_at: string;
+  uploader?: User;
+}
+
+export interface FinanceRecord {
+  id: string;
+  project_id: string;
+  upload_id: string;
+  month: string; // YYYY-MM
+  category: string;
+  amount: number;
+  created_at: string;
+}
+
+export interface FinanceSummary {
+  project: Project;
+  burnThisMonth: number;
+  totalSpend: number;
+  recordCount: number;
+  lastUpload: string | null;
+  monthlyTrend: { month: string; amount: number }[];
+  byCategory: { category: string; amount: number }[];
 }
 
 // KPI types
