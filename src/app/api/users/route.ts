@@ -1,24 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createServerSupabase } from '@/lib/supabase/server';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
-// Read a server-only env var, bypassing Turbopack's compile-time replacement.
-// Falls back to reading .env.local directly from disk.
+// Force Node.js runtime (not Edge) so fs is available
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 function getServerEnv(key: string): string | undefined {
-  // Bracket notation avoids Turbopack static replacement
+  // Strategy 1: bracket notation to avoid Turbopack static replacement
   const val = process.env[key];
   if (val) return val;
 
-  // Fallback: parse .env.local at runtime
-  try {
-    const content = readFileSync(join(process.cwd(), '.env.local'), 'utf8');
-    const match = content.match(new RegExp(`^${key}=(.+)$`, 'm'));
-    return match?.[1]?.trim();
-  } catch {
-    return undefined;
+  // Strategy 2: read .env.local from cwd
+  const cwd = process.cwd();
+  const paths = [
+    join(cwd, '.env.local'),
+    join(cwd, '..', '.env.local'),
+    '/home/user/Mpire/.env.local',
+  ];
+
+  for (const p of paths) {
+    try {
+      if (existsSync(p)) {
+        const content = readFileSync(p, 'utf8');
+        const match = content.match(new RegExp(`^${key}=(.+)$`, 'm'));
+        if (match) return match[1].trim();
+      }
+    } catch {
+      continue;
+    }
   }
+
+  return undefined;
 }
 
 export async function POST(request: NextRequest) {
@@ -74,9 +89,35 @@ export async function POST(request: NextRequest) {
     // Create auth user via admin API using service role key
     const serviceRoleKey = getServerEnv('SUPABASE_SERVICE_ROLE_KEY');
     if (!serviceRoleKey) {
-      console.error('SUPABASE_SERVICE_ROLE_KEY missing from both process.env and .env.local');
+      // Temporary diagnostics — will remove once fixed
+      const cwd = process.cwd();
+      const envPath = join(cwd, '.env.local');
+      let fileExists = false;
+      let fileKeys: string[] = [];
+      try {
+        fileExists = existsSync(envPath);
+        if (fileExists) {
+          const lines = readFileSync(envPath, 'utf8').split('\n');
+          fileKeys = lines
+            .filter((l: string) => l.includes('=') && !l.startsWith('#'))
+            .map((l: string) => l.split('=')[0]);
+        }
+      } catch {}
+      const supaKeys = Object.keys(process.env).filter(k => k.includes('SUPA'));
+
       return NextResponse.json(
-        { error: 'Server configuration error — please contact the administrator' },
+        {
+          error: 'Service role key not found',
+          debug: {
+            cwd,
+            envPath,
+            fileExists,
+            fileKeys,
+            processEnvSupaKeys: supaKeys,
+            totalEnvKeys: Object.keys(process.env).length,
+            runtimeExport: 'nodejs',
+          },
+        },
         { status: 500 }
       );
     }
