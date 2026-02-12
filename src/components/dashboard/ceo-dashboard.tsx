@@ -32,7 +32,7 @@ function AnimatedValue({ value, suffix = '' }: { value: number | string; suffix?
     if (isNaN(numValue)) return;
     const start = prevValue.current;
     const end = numValue;
-    const duration = 700;
+    const duration = 875;
     const startTime = performance.now();
 
     function tick(now: number) {
@@ -79,7 +79,7 @@ function MiniRing({ percent, color, delay = 0 }: { percent: number; color: strin
         strokeDasharray={c}
         initial={{ strokeDashoffset: c }}
         animate={{ strokeDashoffset: c - (c * Math.min(percent, 100)) / 100 }}
-        transition={{ delay, duration: 1, ease: [0.4, 0, 0.2, 1] }}
+        transition={{ delay, duration: 1.25, ease: [0.4, 0, 0.2, 1] }}
       />
     </svg>
   );
@@ -154,7 +154,7 @@ export function CEODashboard({ tasks, projects, team, projectHealth }: CEODashbo
               key={card.label}
               initial={{ opacity: 0, y: 24, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ delay, duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
+              transition={{ delay, duration: 0.56, ease: [0.4, 0, 0.2, 1] }}
               whileHover={{
                 y: -3,
                 boxShadow: '0 8px 30px -12px rgba(0,0,0,0.12)',
@@ -212,7 +212,7 @@ export function CEODashboard({ tasks, projects, team, projectHealth }: CEODashbo
                     <span className={cn('h-2 w-2 rounded-full', ph.healthStatus === 'green' ? 'bg-green' : ph.healthStatus === 'yellow' ? 'bg-yellow' : 'bg-red')} />
                   </div>
                   <div className="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-bg">
-                    <motion.div initial={{ width: 0 }} animate={{ width: `${ph.progressPercent}%` }} transition={{ delay: 0.5 + i * 0.05, duration: 0.6, ease: [0.4, 0, 0.2, 1] }} className={cn('h-full rounded-full', ph.healthStatus === 'green' ? 'bg-green' : ph.healthStatus === 'yellow' ? 'bg-yellow' : 'bg-red')} />
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${ph.progressPercent}%` }} transition={{ delay: 0.5 + i * 0.05, duration: 0.75, ease: [0.4, 0, 0.2, 1] }} className={cn('h-full rounded-full', ph.healthStatus === 'green' ? 'bg-green' : ph.healthStatus === 'yellow' ? 'bg-yellow' : 'bg-red')} />
                   </div>
                   <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px]">
                     <span className="text-muted"><strong className="font-semibold text-text">{ph.progressPercent}%</strong> done</span>

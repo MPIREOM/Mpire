@@ -2,10 +2,13 @@
 
 import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { Shell } from '@/components/layout/shell';
 import { useProjects } from '@/hooks/use-projects';
 import { useTasks } from '@/hooks/use-tasks';
 import { useTeam } from '@/hooks/use-team';
+import { useUser } from '@/hooks/use-user';
+import { canManage } from '@/lib/roles';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,6 +22,7 @@ import {
   type SortKey,
   type FilterKey,
 } from '@/lib/project-utils';
+import type { ProjectStatus } from '@/types/database';
 import {
   Squares2X2Icon,
   ListBulletIcon,
@@ -31,6 +35,8 @@ import {
   ExclamationTriangleIcon,
   CheckCircleIcon,
   PauseCircleIcon,
+  PlusIcon,
+  TrashIcon,
 } from '@heroicons/react/24/outline';
 
 /* ── Sort options ── */
@@ -51,18 +57,63 @@ interface FilterPill {
 }
 
 /* ── Page ── */
+const PROJECT_COLORS = [
+  '#6366f1', '#3b82f6', '#06b6d4', '#10b981', '#f59e0b',
+  '#ef4444', '#ec4899', '#8b5cf6', '#14b8a6', '#f97316',
+];
+
 export default function ProjectsPage() {
-  const { projects, isLoading: projectsLoading } = useProjects();
+  const { projects, isLoading: projectsLoading, createProject, deleteProject } = useProjects();
   const { tasks, isLoading: tasksLoading } = useTasks();
   const { team } = useTeam();
+  const { user } = useUser();
 
   const isLoading = projectsLoading || tasksLoading;
+  const canEdit = user ? canManage(user.role) : false;
 
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<SortKey>('priority');
   const [filter, setFilter] = useState<FilterKey>('all');
   const [search, setSearch] = useState('');
   const [sortOpen, setSortOpen] = useState(false);
+
+  // Create project dialog state
+  const [showCreate, setShowCreate] = useState(false);
+  const [createForm, setCreateForm] = useState({ name: '', status: 'active' as ProjectStatus, color: PROJECT_COLORS[0] });
+  const [createSaving, setCreateSaving] = useState(false);
+
+  // Delete project dialog state
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleteSaving, setDeleteSaving] = useState(false);
+
+  async function handleCreateProject(e: React.FormEvent) {
+    e.preventDefault();
+    if (!user || !createForm.name.trim()) return;
+    setCreateSaving(true);
+    try {
+      await createProject({
+        name: createForm.name.trim(),
+        status: createForm.status,
+        color: createForm.color,
+        company_id: user.company_id,
+      });
+      setShowCreate(false);
+      setCreateForm({ name: '', status: 'active', color: PROJECT_COLORS[0] });
+    } finally {
+      setCreateSaving(false);
+    }
+  }
+
+  async function handleDeleteProject() {
+    if (!deleteTarget) return;
+    setDeleteSaving(true);
+    try {
+      await deleteProject(deleteTarget.id);
+      setDeleteTarget(null);
+    } finally {
+      setDeleteSaving(false);
+    }
+  }
 
   // Compute metrics for all projects
   const allMetrics = useMemo(
@@ -123,7 +174,7 @@ export default function ProjectsPage() {
                 key={kpi.label}
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.06, duration: 0.35 }}
+                transition={{ delay: i * 0.06, duration: 0.44 }}
                 className="rounded-xl border border-border bg-card px-4 py-3"
               >
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">{kpi.label}</p>
@@ -136,7 +187,7 @@ export default function ProjectsPage() {
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.35 }}
+            transition={{ delay: 0.2, duration: 0.44 }}
             className="sticky top-14 z-20 -mx-4 space-y-3 bg-bg/95 px-4 pb-3 pt-2 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
           >
             {/* Search + Actions */}
@@ -204,6 +255,17 @@ export default function ProjectsPage() {
                   )}
                 </AnimatePresence>
               </div>
+
+              {/* Add project button */}
+              {canEdit && (
+                <button
+                  onClick={() => setShowCreate(true)}
+                  className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-[12px] font-semibold text-white transition-colors hover:bg-accent-light"
+                >
+                  <PlusIcon className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Add Project</span>
+                </button>
+              )}
 
               {/* View toggle */}
               <div className="flex rounded-lg border border-border bg-card p-0.5">
@@ -295,7 +357,10 @@ export default function ProjectsPage() {
                     show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] } },
                   }}
                 >
-                  <ProjectKPICard metrics={m} />
+                  <ProjectKPICard
+                    metrics={m}
+                    onDelete={canEdit ? () => setDeleteTarget({ id: m.project.id, name: m.project.name }) : undefined}
+                  />
                 </motion.div>
               ))}
             </motion.div>
@@ -329,13 +394,106 @@ export default function ProjectsPage() {
                     show: { opacity: 1, x: 0, transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] } },
                   }}
                 >
-                  <ProjectListRow metrics={m} />
+                  <ProjectListRow
+                    metrics={m}
+                    onDelete={canEdit ? () => setDeleteTarget({ id: m.project.id, name: m.project.name }) : undefined}
+                  />
                 </motion.div>
               ))}
             </motion.div>
           )}
         </div>
       )}
+      {/* Create Project Dialog */}
+      <Dialog open={showCreate} onClose={() => setShowCreate(false)} className="relative z-50">
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <DialogPanel className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-[15px] font-bold text-text">New Project</DialogTitle>
+              <button onClick={() => setShowCreate(false)} className="rounded-md p-1 text-muted hover:bg-bg hover:text-text">
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={handleCreateProject} className="mt-5 space-y-4">
+              <div>
+                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">Project Name</label>
+                <input
+                  type="text"
+                  required
+                  value={createForm.name}
+                  onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                  placeholder="e.g. Website Redesign"
+                  className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-[13px] text-text placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">Status</label>
+                <select
+                  value={createForm.status}
+                  onChange={(e) => setCreateForm({ ...createForm, status: e.target.value as ProjectStatus })}
+                  className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-[13px] text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
+                >
+                  <option value="active">Active</option>
+                  <option value="paused">Paused</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">Color</label>
+                <div className="flex flex-wrap gap-2">
+                  {PROJECT_COLORS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setCreateForm({ ...createForm, color: c })}
+                      className={cn(
+                        'h-7 w-7 rounded-lg transition-all',
+                        createForm.color === c ? 'ring-2 ring-accent ring-offset-2 ring-offset-card scale-110' : 'hover:scale-105'
+                      )}
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setShowCreate(false)} className="rounded-xl border border-border px-4 py-2 text-[13px] font-semibold text-muted transition-colors hover:bg-bg hover:text-text">Cancel</button>
+                <button type="submit" disabled={createSaving} className="rounded-xl bg-accent px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-accent-light disabled:opacity-50">
+                  {createSaving ? 'Creating...' : 'Create Project'}
+                </button>
+              </div>
+            </form>
+          </DialogPanel>
+        </div>
+      </Dialog>
+
+      {/* Delete Project Confirmation Dialog */}
+      <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} className="relative z-[60]">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <DialogPanel className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl">
+            <DialogTitle className="text-[15px] font-bold text-text">Delete Project</DialogTitle>
+            <p className="mt-2 text-[13px] text-muted">
+              Are you sure you want to delete <strong className="text-text">&ldquo;{deleteTarget?.name}&rdquo;</strong>? This will permanently remove the project and all its tasks, comments, and activity. This action cannot be undone.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                className="rounded-xl border border-border px-4 py-2 text-[13px] font-semibold text-muted transition-colors hover:bg-bg hover:text-text"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteProject}
+                disabled={deleteSaving}
+                className="rounded-xl bg-red px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-red/90 disabled:opacity-50"
+              >
+                {deleteSaving ? 'Deleting...' : 'Delete Project'}
+              </button>
+            </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
     </Shell>
   );
 }

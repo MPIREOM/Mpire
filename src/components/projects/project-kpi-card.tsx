@@ -23,10 +23,12 @@ import {
   CalendarIcon,
   ArrowRightIcon,
   ClockIcon,
+  TrashIcon,
 } from '@heroicons/react/24/outline';
 
 interface ProjectKPICardProps {
   metrics: ProjectMetrics;
+  onDelete?: () => void;
 }
 
 /* ── Animated count-up ── */
@@ -36,7 +38,7 @@ function AnimatedNum({ value, suffix = '' }: { value: number; suffix?: string })
   useEffect(() => {
     const start = prev.current;
     const end = value;
-    const dur = 600;
+    const dur = 750;
     const t0 = performance.now();
     function tick(now: number) {
       const p = Math.min((now - t0) / dur, 1);
@@ -83,7 +85,7 @@ function CompletionRing({
           strokeDasharray={c}
           initial={{ strokeDashoffset: c }}
           animate={{ strokeDashoffset: c - (c * percent) / 100 }}
-          transition={{ delay, duration: 1, ease: [0.4, 0, 0.2, 1] }}
+          transition={{ delay, duration: 1.25, ease: [0.4, 0, 0.2, 1] }}
         />
       </svg>
       <span className="absolute text-[9px] font-bold tabular-nums text-text">{percent}%</span>
@@ -135,7 +137,7 @@ function TeamAvatars({ metrics }: { metrics: ProjectMetrics }) {
 }
 
 /* ── Main KPI Card ── */
-export function ProjectKPICard({ metrics }: ProjectKPICardProps) {
+export function ProjectKPICard({ metrics, onDelete }: ProjectKPICardProps) {
   const m = metrics;
   const priorityColor = getPriorityColor(m.dominantPriority);
   const progressColor = getProgressColor(m.progressPercent, m.overdueTasks);
@@ -251,7 +253,7 @@ export function ProjectKPICard({ metrics }: ProjectKPICardProps) {
                 className={cn('h-full rounded-full', progressColor)}
                 initial={{ width: 0 }}
                 animate={{ width: `${m.progressPercent}%` }}
-                transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1], delay: 0.15 }}
+                transition={{ duration: 1.0, ease: [0.4, 0, 0.2, 1], delay: 0.15 }}
               />
             </div>
           </div>
@@ -287,10 +289,21 @@ export function ProjectKPICard({ metrics }: ProjectKPICardProps) {
             </div>
             {/* Mobile: minimal footer */}
             <span className="sm:hidden text-[9px] font-medium text-muted">{m.totalTasks} tasks</span>
-            <Button variant="ghost" size="sm" className="gap-1 text-accent !p-0 sm:!p-2" tabIndex={-1}>
-              <span className="hidden sm:inline">View Details</span>
-              <ArrowRightIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-            </Button>
+            <div className="flex items-center gap-1">
+              {onDelete && (
+                <button
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(); }}
+                  className="rounded-lg p-1.5 text-muted opacity-0 transition-all hover:bg-red-bg hover:text-red group-hover:opacity-100"
+                  title="Delete project"
+                >
+                  <TrashIcon className="h-3.5 w-3.5" />
+                </button>
+              )}
+              <Button variant="ghost" size="sm" className="gap-1 text-accent !p-0 sm:!p-2" tabIndex={-1}>
+                <span className="hidden sm:inline">View Details</span>
+                <ArrowRightIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+              </Button>
+            </div>
           </div>
         </div>
       </motion.div>
@@ -299,7 +312,7 @@ export function ProjectKPICard({ metrics }: ProjectKPICardProps) {
 }
 
 /* ── Compact list row variant ── */
-export function ProjectListRow({ metrics }: ProjectKPICardProps) {
+export function ProjectListRow({ metrics, onDelete }: ProjectKPICardProps) {
   const m = metrics;
   const priorityColor = getPriorityColor(m.dominantPriority);
   const progressColor = getProgressColor(m.progressPercent, m.overdueTasks);
@@ -333,7 +346,7 @@ export function ProjectListRow({ metrics }: ProjectKPICardProps) {
               className={cn('h-full rounded-full', progressColor)}
               initial={{ width: 0 }}
               animate={{ width: `${m.progressPercent}%` }}
-              transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+              transition={{ duration: 0.75, ease: [0.4, 0, 0.2, 1] }}
             />
           </div>
           <span className="text-[10px] font-semibold tabular-nums text-muted">{m.progressPercent}%</span>
@@ -353,6 +366,16 @@ export function ProjectListRow({ metrics }: ProjectKPICardProps) {
         <div className="hidden lg:block">
           <TeamAvatars metrics={m} />
         </div>
+
+        {onDelete && (
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(); }}
+            className="rounded-lg p-1.5 text-muted transition-colors hover:bg-red-bg hover:text-red"
+            title="Delete project"
+          >
+            <TrashIcon className="h-4 w-4" />
+          </button>
+        )}
 
         <ArrowRightIcon className="h-4 w-4 shrink-0 text-muted transition-colors group-hover:text-text" />
       </motion.div>

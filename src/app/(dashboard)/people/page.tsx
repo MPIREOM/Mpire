@@ -2,12 +2,14 @@
 
 import { useState } from 'react';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
-import { XMarkIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, PlusIcon, PencilIcon } from '@heroicons/react/24/outline';
 import { Shell } from '@/components/layout/shell';
 import { useTeam } from '@/hooks/use-team';
 import { useUser } from '@/hooks/use-user';
-import { canManage } from '@/lib/roles';
-import type { Role } from '@/types/database';
+import { useProjects } from '@/hooks/use-projects';
+import { canManage, isOwner } from '@/lib/roles';
+import { createClient } from '@/lib/supabase/client';
+import type { Role, User } from '@/types/database';
 
 const roleOptions: { value: Role; label: string }[] = [
   { value: 'staff', label: 'Staff' },
@@ -19,6 +21,8 @@ const roleOptions: { value: Role; label: string }[] = [
 export default function PeoplePage() {
   const { team, isLoading, mutate } = useTeam();
   const { user } = useUser();
+  const { projects } = useProjects();
+  const supabase = createClient();
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({
     email: '',
@@ -29,7 +33,62 @@ export default function PeoplePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  // Edit user state (owner only)
+  const [editUser, setEditUser] = useState<User | null>(null);
+  const [editForm, setEditForm] = useState({ role: 'staff' as Role, allowed_project_ids: [] as string[] });
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState('');
+
   const showManage = user && canManage(user.role);
+  const ownerMode = user && isOwner(user.role);
+
+  function openEditUser(u: User) {
+    setEditUser(u);
+    setEditForm({
+      role: u.role,
+      allowed_project_ids: u.allowed_project_ids ?? [],
+    });
+    setEditError('');
+  }
+
+  async function handleEditSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editUser) return;
+    setEditSaving(true);
+    setEditError('');
+    try {
+      const updates: Record<string, unknown> = { role: editForm.role };
+      // Empty array = no restriction (null), otherwise set specific projects
+      updates.allowed_project_ids = editForm.allowed_project_ids.length > 0
+        ? editForm.allowed_project_ids
+        : null;
+
+      const { error: err } = await supabase
+        .from('users')
+        .update(updates)
+        .eq('id', editUser.id);
+
+      if (err) throw err;
+      setEditUser(null);
+      mutate();
+    } catch (err: unknown) {
+      setEditError(err instanceof Error ? err.message : 'Failed to update user');
+    } finally {
+      setEditSaving(false);
+    }
+  }
+
+  function toggleProjectAccess(projectId: string) {
+    setEditForm((prev) => {
+      const has = prev.allowed_project_ids.includes(projectId);
+      return {
+        ...prev,
+        allowed_project_ids: has
+          ? prev.allowed_project_ids.filter((id) => id !== projectId)
+          : [...prev.allowed_project_ids, projectId],
+      };
+    });
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -90,25 +149,138 @@ export default function PeoplePage() {
           {team.map((u) => (
             <div
               key={u.id}
-              className="rounded-xl border border-border bg-card p-5 transition-shadow hover:shadow-sm"
+              className="group rounded-xl border border-border bg-card p-5 transition-shadow hover:shadow-sm"
             >
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-sm font-bold text-white">
                   {u.full_name.charAt(0)}
                 </div>
-                <div>
+                <div className="min-w-0 flex-1">
                   <h3 className="text-[14px] font-semibold text-text">
                     {u.full_name}
                   </h3>
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">
                     {u.role}
+                    {u.allowed_project_ids && u.allowed_project_ids.length > 0 && (
+                      <span className="ml-1 normal-case text-accent">
+                        · {u.allowed_project_ids.length} project{u.allowed_project_ids.length !== 1 ? 's' : ''}
+                      </span>
+                    )}
                   </p>
                 </div>
+                {ownerMode && u.id !== user.id && (
+                  <button
+                    onClick={() => openEditUser(u)}
+                    className="rounded-lg p-1.5 text-muted opacity-0 transition-all hover:bg-bg hover:text-text group-hover:opacity-100"
+                    title="Edit role & project access"
+                  >
+                    <PencilIcon className="h-4 w-4" />
+                  </button>
+                )}
               </div>
             </div>
           ))}
         </div>
       )}
+
+      {/* Edit User Role & Access Dialog (owner only) */}
+      <Dialog open={!!editUser} onClose={() => setEditUser(null)} className="relative z-50">
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <DialogPanel className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-[15px] font-bold text-text">
+                Edit {editUser?.full_name}
+              </DialogTitle>
+              <button onClick={() => setEditUser(null)} className="rounded-md p-1 text-muted hover:bg-bg hover:text-text">
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="mt-5 space-y-4">
+              <div>
+                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">
+                  Role
+                </label>
+                <select
+                  value={editForm.role}
+                  onChange={(e) => setEditForm({ ...editForm, role: e.target.value as Role })}
+                  className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-[13px] text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
+                >
+                  {roleOptions.map((r) => (
+                    <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">
+                  Project Access
+                </label>
+                <p className="mb-2 text-[11px] text-muted">
+                  Select which projects this user can see. Leave all unchecked for full access.
+                </p>
+                <div className="max-h-48 space-y-1.5 overflow-y-auto rounded-xl border border-border bg-bg p-3">
+                  {projects.map((p) => {
+                    const checked = editForm.allowed_project_ids.includes(p.id);
+                    return (
+                      <label
+                        key={p.id}
+                        className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-card"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleProjectAccess(p.id)}
+                          className="h-3.5 w-3.5 rounded border-border text-accent focus:ring-accent-muted"
+                        />
+                        <span
+                          className="h-2 w-2 shrink-0 rounded-full"
+                          style={{ backgroundColor: p.color }}
+                        />
+                        <span className="text-[12px] font-medium text-text">{p.name}</span>
+                      </label>
+                    );
+                  })}
+                  {projects.length === 0 && (
+                    <p className="py-2 text-center text-[11px] text-muted">No projects yet</p>
+                  )}
+                </div>
+                {editForm.allowed_project_ids.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setEditForm({ ...editForm, allowed_project_ids: [] })}
+                    className="mt-2 text-[11px] font-semibold text-accent hover:text-accent-light"
+                  >
+                    Clear selection (allow all projects)
+                  </button>
+                )}
+              </div>
+
+              {editError && (
+                <p className="text-[12px] font-medium text-red">{editError}</p>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditUser(null)}
+                  className="rounded-xl border border-border px-4 py-2 text-[13px] font-semibold text-muted transition-colors hover:bg-bg hover:text-text"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editSaving}
+                  className="rounded-xl bg-accent px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-accent-light disabled:opacity-50"
+                >
+                  {editSaving ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </DialogPanel>
+        </div>
+      </Dialog>
 
       {/* Add Member Dialog */}
       <Dialog open={showAdd} onClose={() => setShowAdd(false)} className="relative z-50">

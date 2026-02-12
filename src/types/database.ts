@@ -23,6 +23,7 @@ export interface User {
   role: Role;
   company_id: string;
   avatar_url: string | null;
+  allowed_project_ids: string[] | null; // null = all projects visible
   created_at: string;
 }
 
