@@ -32,9 +32,17 @@ export function Shell({ title, subtitle, children }: ShellProps) {
     });
   }, []);
 
-  // Keyboard shortcut: [ to toggle sidebar collapse
+  // Keyboard shortcuts
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
+      // Cmd+K / Ctrl+K → open command palette
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setCommandOpen((prev) => !prev);
+        return;
+      }
+
+      // [ → toggle sidebar collapse (only outside inputs)
       if (e.key === '[' && !e.metaKey && !e.ctrlKey && !e.altKey) {
         const tag = (e.target as HTMLElement)?.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable)
@@ -79,7 +87,11 @@ export function Shell({ title, subtitle, children }: ShellProps) {
         </main>
       </div>
 
-      <CommandPalette open={commandOpen} onClose={() => setCommandOpen(false)} />
+      <CommandPalette
+        open={commandOpen}
+        onClose={() => setCommandOpen(false)}
+        onToggleSidebar={toggleCollapse}
+      />
     </div>
   );
 }
