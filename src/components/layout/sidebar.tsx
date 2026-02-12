@@ -249,8 +249,8 @@ function NavLink({
       href={item.href}
       onClick={onClick}
       className={cn(
-        'group relative flex items-center rounded-xl text-[13px] font-medium transition-all duration-200',
-        collapsed ? 'justify-center px-2 py-3' : 'gap-3 px-3 py-2.5',
+        'group relative flex items-center rounded-xl pl-2 py-2.5 text-[13px] font-medium transition-all duration-200',
+        !collapsed && 'gap-2',
         isActive
           ? 'bg-gradient-to-r from-blue-600/90 to-purple-600/90 text-white shadow-lg shadow-blue-500/20'
           : 'text-gray-400 hover:bg-white/[0.06] hover:text-white'
@@ -265,16 +265,16 @@ function NavLink({
         />
       )}
 
-      {/* Emoji icon */}
+      {/* Emoji icon — fixed-width slot so it stays pinned when collapsing */}
       <motion.span
         whileHover={{ scale: 1.15 }}
         transition={{ duration: 0.15 }}
-        className="relative text-[22px] leading-none shrink-0"
+        className="relative flex w-10 shrink-0 items-center justify-center text-[22px] leading-none"
       >
         {item.emoji}
         {/* Notification badge */}
         {item.badge != null && item.badge > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white shadow-sm">
+          <span className="absolute -top-1.5 -right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white shadow-sm">
             {item.badge > 99 ? '99+' : item.badge}
           </span>
         )}
