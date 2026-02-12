@@ -1,11 +1,21 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { clsx } from 'clsx';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import {
+  CalendarIcon,
+  ExclamationCircleIcon,
+  ArrowPathIcon,
+  CheckCircleIcon,
+} from '@heroicons/react/24/outline';
 import type { Task, User, Project, TaskStatus } from '@/types/database';
 import { isOverdue, isDueToday, isDueThisWeek, formatDate } from '@/lib/dates';
 import { subDays, isAfter, parseISO } from 'date-fns';
 import { TaskDetailDrawer } from '@/components/operations/task-detail-drawer';
+import { Badge } from '@/components/ui/badge';
+import { Avatar } from '@/components/ui/avatar';
+import { EmptyState } from '@/components/ui/empty-state';
 import { useTeam } from '@/hooks/use-team';
 
 type TabKey = 'today' | 'week' | 'overdue' | 'all';
@@ -39,7 +49,6 @@ export function StaffDashboard({
     [tasks, currentUser.id]
   );
 
-  // KPIs for me
   const kpis = useMemo(() => {
     const dueToday = myTasks.filter((t) => isDueToday(t.due_date)).length;
     const overdue = myTasks.filter((t) => isOverdue(t.due_date, t.status)).length;
@@ -55,7 +64,6 @@ export function StaffDashboard({
     return { dueToday, overdue, inProgress, completionRate };
   }, [myTasks, tasks, currentUser.id]);
 
-  // Tab filtering
   const filtered = useMemo(() => {
     switch (tab) {
       case 'today':
@@ -77,35 +85,51 @@ export function StaffDashboard({
   ];
 
   const kpiCards = [
-    { label: 'Due Today', value: kpis.dueToday, color: kpis.dueToday > 0 ? 'text-yellow' : 'text-green' },
-    { label: 'Overdue', value: kpis.overdue, color: kpis.overdue > 0 ? 'text-red' : 'text-green' },
-    { label: 'In Progress', value: kpis.inProgress, color: 'text-blue' },
-    { label: 'Done (7d)', value: `${kpis.completionRate}%`, color: kpis.completionRate >= 70 ? 'text-green' : kpis.completionRate >= 40 ? 'text-yellow' : 'text-red' },
+    { label: 'Due Today', value: kpis.dueToday, color: kpis.dueToday > 0 ? 'text-yellow' : 'text-green', icon: CalendarIcon, iconBg: 'bg-yellow-bg', iconColor: 'text-yellow' },
+    { label: 'Overdue', value: kpis.overdue, color: kpis.overdue > 0 ? 'text-red' : 'text-green', icon: ExclamationCircleIcon, iconBg: 'bg-red-bg', iconColor: 'text-red' },
+    { label: 'In Progress', value: kpis.inProgress, color: 'text-blue', icon: ArrowPathIcon, iconBg: 'bg-blue-bg', iconColor: 'text-blue' },
+    { label: 'Done (7d)', value: `${kpis.completionRate}%`, color: kpis.completionRate >= 70 ? 'text-green' : kpis.completionRate >= 40 ? 'text-yellow' : 'text-red', icon: CheckCircleIcon, iconBg: 'bg-green-bg', iconColor: 'text-green' },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* My KPIs */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {kpiCards.map((c) => (
-          <div key={c.label} className="rounded-xl border border-border bg-card p-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        {kpiCards.map((c, i) => (
+          <motion.div
+            key={c.label}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.08, duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+            whileHover={{ y: -2, transition: { duration: 0.2 } }}
+            className="rounded-xl border border-border bg-card p-5 transition-shadow hover:shadow-md"
+          >
+            <div className="mb-3 flex items-center gap-2">
+              <div className={cn('rounded-lg p-1.5', c.iconBg)}>
+                <c.icon className={cn('h-4 w-4', c.iconColor)} />
+              </div>
+            </div>
             <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted">{c.label}</p>
-            <p className={clsx('text-2xl font-bold tabular-nums', c.color)}>{c.value}</p>
-          </div>
+            <p className={cn('text-2xl font-bold tabular-nums tracking-tight', c.color)}>{c.value}</p>
+          </motion.div>
         ))}
       </div>
 
       {/* My Work */}
-      <div>
-        <h3 className="mb-3 text-[13px] font-bold text-text">My Work</h3>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.4 }}
+      >
+        <h3 className="mb-4 text-[14px] font-bold text-text">My Work</h3>
 
         {/* Tabs */}
-        <div className="mb-3 flex gap-1 border-b border-border">
+        <div className="mb-4 flex gap-1 border-b border-border">
           {tabs.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={clsx(
+              className={cn(
                 'relative px-3 py-2 text-[12px] font-semibold transition-colors',
                 tab === t.key ? 'text-accent' : 'text-muted hover:text-text'
               )}
@@ -113,7 +137,7 @@ export function StaffDashboard({
               {t.label}
               {t.count > 0 && (
                 <span
-                  className={clsx(
+                  className={cn(
                     'ml-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-bold',
                     tab === t.key ? 'bg-accent-muted text-accent' : 'bg-bg text-muted'
                   )}
@@ -122,7 +146,11 @@ export function StaffDashboard({
                 </span>
               )}
               {tab === t.key && (
-                <span className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full bg-accent" />
+                <motion.span
+                  layoutId="staff-tab-indicator"
+                  className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full bg-accent"
+                  transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
+                />
               )}
             </button>
           ))}
@@ -130,18 +158,22 @@ export function StaffDashboard({
 
         {/* Compact task rows */}
         {filtered.length === 0 ? (
-          <div className="py-12 text-center">
-            <p className="text-[13px] text-muted">No tasks here — nice work!</p>
-          </div>
+          <EmptyState
+            title="No tasks here"
+            description="Nice work! Nothing to show in this view."
+          />
         ) : (
           <div className="rounded-xl border border-border bg-card">
             {filtered.map((task, idx) => {
               const overdue = isOverdue(task.due_date, task.status);
               return (
-                <div
+                <motion.div
                   key={task.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.03, duration: 0.3 }}
                   onClick={() => setSelectedTask(task)}
-                  className={clsx(
+                  className={cn(
                     'flex cursor-pointer items-center gap-3 px-4 py-2.5 transition-colors hover:bg-bg',
                     idx !== filtered.length - 1 && 'border-b border-border'
                   )}
@@ -160,7 +192,7 @@ export function StaffDashboard({
                       e.stopPropagation();
                       onUpdateTask(task.id, { status: e.target.value as TaskStatus });
                     }}
-                    className={clsx(
+                    className={cn(
                       'h-6 shrink-0 cursor-pointer rounded-md border-0 px-1 text-[10px] font-semibold focus:outline-none focus:ring-1 focus:ring-accent-muted',
                       task.status === 'in_progress' ? 'bg-blue-bg text-blue' :
                       task.status === 'blocked' ? 'bg-red-bg text-red' : 'bg-bg text-muted'
@@ -176,9 +208,14 @@ export function StaffDashboard({
                     {task.title}
                   </p>
 
+                  {/* Assignee avatar */}
+                  {task.assignee && (
+                    <Avatar name={task.assignee.full_name} src={task.assignee.avatar_url} size="sm" />
+                  )}
+
                   {/* Priority dot */}
                   <span
-                    className={clsx(
+                    className={cn(
                       'h-2 w-2 shrink-0 rounded-full',
                       task.priority === 'high' ? 'bg-red' : task.priority === 'medium' ? 'bg-yellow' : 'bg-blue'
                     )}
@@ -187,7 +224,7 @@ export function StaffDashboard({
                   {/* Due date */}
                   {task.due_date && (
                     <span
-                      className={clsx(
+                      className={cn(
                         'shrink-0 text-[11px] tabular-nums',
                         overdue ? 'font-semibold text-red' : 'text-muted'
                       )}
@@ -195,12 +232,12 @@ export function StaffDashboard({
                       {formatDate(task.due_date)}
                     </span>
                   )}
-                </div>
+                </motion.div>
               );
             })}
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Task Detail Drawer */}
       <TaskDetailDrawer

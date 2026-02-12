@@ -31,6 +31,22 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Smooth page transitions */
+main {
+  animation: fadeInUp 0.4s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
@@ -52,4 +68,10 @@ body {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* Selection color */
+::selection {
+  background: rgba(176, 138, 62, 0.15);
+  color: var(--color-text);
 }

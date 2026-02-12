@@ -1,8 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, FunnelIcon } from '@heroicons/react/24/outline';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import type { Project, User, TaskStatus, TaskPriority } from '@/types/database';
 
 export interface FilterState {
@@ -42,6 +46,31 @@ const dueOptions = [
   { value: 'week', label: 'This Week' },
 ];
 
+function FilterChip({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <motion.button
+      whileTap={{ scale: 0.95 }}
+      onClick={onClick}
+      className={cn(
+        'rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-all duration-200',
+        active
+          ? 'border-accent bg-accent-muted text-accent shadow-sm'
+          : 'border-border text-muted hover:border-border-hover hover:text-text'
+      )}
+    >
+      {label}
+    </motion.button>
+  );
+}
+
 export function FilterDrawer({
   open,
   onClose,
@@ -64,21 +93,42 @@ export function FilterDrawer({
     }));
   }
 
+  const activeCount = Object.values(local).filter(Boolean).length;
+
   return (
     <Dialog open={open} onClose={onClose} className="relative z-50">
-      <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" />
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/20 backdrop-blur-sm"
+      />
 
       <div className="fixed inset-y-0 right-0 flex max-w-full">
-        <DialogPanel className="w-screen max-w-xs transform border-l border-border bg-card shadow-lg transition-transform sm:max-w-sm">
-          <div className="flex h-full flex-col">
+        <DialogPanel className="w-screen max-w-xs sm:max-w-sm">
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+            className="flex h-full flex-col border-l border-border bg-card shadow-xl"
+          >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border px-5 py-4">
-              <DialogTitle className="text-[15px] font-bold text-text">
-                Filters
-              </DialogTitle>
+              <div className="flex items-center gap-2.5">
+                <div className="rounded-lg bg-accent-muted p-1.5">
+                  <FunnelIcon className="h-4 w-4 text-accent" />
+                </div>
+                <DialogTitle className="text-[15px] font-bold text-text">
+                  Filters
+                </DialogTitle>
+                {activeCount > 0 && (
+                  <Badge variant="accent">{activeCount}</Badge>
+                )}
+              </div>
               <button
                 onClick={onClose}
-                className="rounded-md p-1 text-muted hover:bg-bg hover:text-text"
+                className="rounded-lg p-1.5 text-muted transition-colors hover:bg-bg hover:text-text"
               >
                 <XMarkIcon className="h-5 w-5" />
               </button>
@@ -88,121 +138,86 @@ export function FilterDrawer({
             <div className="flex-1 space-y-6 overflow-y-auto p-5">
               {/* Due Date */}
               <fieldset>
-                <legend className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted">
+                <legend className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
                   Due Date
                 </legend>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   {dueOptions.map((opt) => (
-                    <button
+                    <FilterChip
                       key={opt.value}
-                      onClick={() =>
-                        handleSelect('dueRange', opt.value)
-                      }
-                      className={`rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-colors ${
-                        local.dueRange === opt.value
-                          ? 'border-accent bg-accent-muted text-accent'
-                          : 'border-border text-muted hover:border-border-hover hover:text-text'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
+                      label={opt.label}
+                      active={local.dueRange === opt.value}
+                      onClick={() => handleSelect('dueRange', opt.value)}
+                    />
                   ))}
                 </div>
               </fieldset>
 
               {/* Status */}
               <fieldset>
-                <legend className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted">
+                <legend className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
                   Status
                 </legend>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   {statusOptions.map((opt) => (
-                    <button
+                    <FilterChip
                       key={opt.value}
-                      onClick={() =>
-                        handleSelect('status', opt.value)
-                      }
-                      className={`rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-colors ${
-                        local.status === opt.value
-                          ? 'border-accent bg-accent-muted text-accent'
-                          : 'border-border text-muted hover:border-border-hover hover:text-text'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
+                      label={opt.label}
+                      active={local.status === opt.value}
+                      onClick={() => handleSelect('status', opt.value)}
+                    />
                   ))}
                 </div>
               </fieldset>
 
               {/* Priority */}
               <fieldset>
-                <legend className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted">
+                <legend className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
                   Priority
                 </legend>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   {priorityOptions.map((opt) => (
-                    <button
+                    <FilterChip
                       key={opt.value}
-                      onClick={() =>
-                        handleSelect('priority', opt.value)
-                      }
-                      className={`rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-colors ${
-                        local.priority === opt.value
-                          ? 'border-accent bg-accent-muted text-accent'
-                          : 'border-border text-muted hover:border-border-hover hover:text-text'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
+                      label={opt.label}
+                      active={local.priority === opt.value}
+                      onClick={() => handleSelect('priority', opt.value)}
+                    />
                   ))}
                 </div>
               </fieldset>
 
               {/* Project */}
               <fieldset>
-                <legend className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted">
+                <legend className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
                   Project
                 </legend>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   {projects.map((p) => (
-                    <button
+                    <FilterChip
                       key={p.id}
-                      onClick={() =>
-                        handleSelect('projectId', p.id)
-                      }
-                      className={`rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-colors ${
-                        local.projectId === p.id
-                          ? 'border-accent bg-accent-muted text-accent'
-                          : 'border-border text-muted hover:border-border-hover hover:text-text'
-                      }`}
-                    >
-                      {p.name}
-                    </button>
+                      label={p.name}
+                      active={local.projectId === p.id}
+                      onClick={() => handleSelect('projectId', p.id)}
+                    />
                   ))}
                 </div>
               </fieldset>
 
-              {/* Assignee (manager/owner only) */}
+              {/* Assignee */}
               {team.length > 0 && (
                 <fieldset>
-                  <legend className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted">
+                  <legend className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
                     Assignee
                   </legend>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-2">
                     {team.map((u) => (
-                      <button
+                      <FilterChip
                         key={u.id}
-                        onClick={() =>
-                          handleSelect('assigneeId', u.id)
-                        }
-                        className={`rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-colors ${
-                          local.assigneeId === u.id
-                            ? 'border-accent bg-accent-muted text-accent'
-                            : 'border-border text-muted hover:border-border-hover hover:text-text'
-                        }`}
-                      >
-                        {u.full_name}
-                      </button>
+                        label={u.full_name}
+                        active={local.assigneeId === u.id}
+                        onClick={() => handleSelect('assigneeId', u.id)}
+                      />
                     ))}
                   </div>
                 </fieldset>
@@ -210,21 +225,15 @@ export function FilterDrawer({
             </div>
 
             {/* Footer */}
-            <div className="flex gap-2 border-t border-border p-4">
-              <button
-                onClick={onClear}
-                className="flex-1 rounded-xl border border-border px-4 py-2 text-[13px] font-semibold text-muted transition-colors hover:bg-bg hover:text-text"
-              >
-                Clear
-              </button>
-              <button
-                onClick={() => onApply(local)}
-                className="flex-1 rounded-xl bg-accent px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-accent-light"
-              >
-                Apply
-              </button>
+            <div className="flex gap-3 border-t border-border p-4">
+              <Button variant="outline" className="flex-1" onClick={onClear}>
+                Clear All
+              </Button>
+              <Button className="flex-1" onClick={() => onApply(local)}>
+                Apply Filters
+              </Button>
             </div>
-          </div>
+          </motion.div>
         </DialogPanel>
       </div>
     </Dialog>

@@ -1,6 +1,9 @@
 'use client';
 
-import { clsx } from 'clsx';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import { EmptyState } from '@/components/ui/empty-state';
+import { FolderIcon } from '@heroicons/react/24/outline';
 import type { ProjectHealth } from '@/types/database';
 
 interface ProjectHealthGridProps {
@@ -24,21 +27,37 @@ function barColor(health: 'green' | 'yellow' | 'red') {
 }
 
 export function ProjectHealthGrid({ projects }: ProjectHealthGridProps) {
-  if (projects.length === 0) return null;
+  if (projects.length === 0) {
+    return (
+      <EmptyState
+        icon={FolderIcon}
+        title="No projects yet"
+        description="Create your first project to see health metrics here."
+      />
+    );
+  }
 
   return (
-    <div>
-      <h3 className="mb-3 text-[13px] font-bold text-text">Project Health</h3>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {projects.map((ph) => (
-          <div
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+    >
+      <h3 className="mb-4 text-[14px] font-bold text-text">Project Health</h3>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {projects.map((ph, i) => (
+          <motion.div
             key={ph.project.id}
-            className="group cursor-pointer rounded-xl border border-border bg-card p-4 transition-all hover:border-border-hover hover:shadow-sm"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 + i * 0.05, duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+            whileHover={{ y: -2, transition: { duration: 0.2 } }}
+            className="group cursor-pointer rounded-xl border border-border bg-card p-5 transition-shadow hover:shadow-md"
           >
             <div className="mb-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span
-                  className={clsx(
+                  className={cn(
                     'h-2 w-2 rounded-full',
                     statusColor(ph.healthStatus)
                   )}
@@ -52,14 +71,16 @@ export function ProjectHealthGrid({ projects }: ProjectHealthGridProps) {
               </span>
             </div>
 
-            {/* Progress bar */}
+            {/* Animated progress bar */}
             <div className="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-bg">
-              <div
-                className={clsx(
-                  'h-full rounded-full transition-all',
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${ph.progressPercent}%` }}
+                transition={{ delay: 0.3 + i * 0.05, duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+                className={cn(
+                  'h-full rounded-full',
                   barColor(ph.healthStatus)
                 )}
-                style={{ width: `${ph.progressPercent}%` }}
               />
             </div>
 
@@ -82,9 +103,9 @@ export function ProjectHealthGrid({ projects }: ProjectHealthGridProps) {
                 </span>
               )}
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 }
