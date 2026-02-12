@@ -36,6 +36,7 @@ const navigation: NavItem[] = [
   { name: 'Dashboard', emoji: '📊', href: '/operations' },
   { name: 'Projects', emoji: '📁', href: '/projects', requiresManage: true },
   { name: 'Tasks', emoji: '✅', href: '/tasks' },
+  { name: 'Timesheet', emoji: '🕐', href: '/timesheet' },
   { name: 'People', emoji: '👥', href: '/people', requiresManage: true },
   { name: 'Finance', emoji: '💰', href: '/finance', requiresFinance: true },
 ];
