@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { Shell } from '@/components/layout/shell';
 import { CEODashboard } from '@/components/dashboard/ceo-dashboard';
 import { StaffDashboard } from '@/components/dashboard/staff-dashboard';
+import { PageSkeleton } from '@/components/ui/skeleton-loader';
 import { useUser } from '@/hooks/use-user';
 import { useTasks } from '@/hooks/use-tasks';
 import { useProjects } from '@/hooks/use-projects';
@@ -20,7 +21,6 @@ export default function OperationsPage() {
 
   const role = user?.role ?? 'staff';
 
-  // Compute project health (shared between views)
   const projectHealth: ProjectHealth[] = useMemo(() => {
     return projects
       .filter((p) => p.status === 'active')
@@ -58,9 +58,7 @@ export default function OperationsPage() {
   if (!user) {
     return (
       <Shell title="Overview" subtitle="Loading...">
-        <div className="flex h-64 items-center justify-center">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-        </div>
+        <PageSkeleton />
       </Shell>
     );
   }

@@ -1,9 +1,19 @@
 'use client';
 
-import { clsx } from 'clsx';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Avatar } from '@/components/ui/avatar';
 import type { Task, User, TaskStatus } from '@/types/database';
 import { isOverdue, formatDate } from '@/lib/dates';
 import { canManage } from '@/lib/roles';
+import { CheckCircleIcon } from '@heroicons/react/24/solid';
+import {
+  ClockIcon,
+  ExclamationCircleIcon,
+  NoSymbolIcon,
+  EllipsisHorizontalCircleIcon,
+} from '@heroicons/react/24/outline';
 
 interface TaskItemProps {
   task: Task;
@@ -12,10 +22,17 @@ interface TaskItemProps {
   onStatusChange: (status: string) => void;
 }
 
-const priorityStyles: Record<string, string> = {
-  high: 'bg-red-bg text-red',
-  medium: 'bg-yellow-bg text-yellow',
-  low: 'bg-blue-bg text-blue',
+const priorityConfig = {
+  high: { color: 'border-l-red', badge: 'danger' as const, label: 'High' },
+  medium: { color: 'border-l-yellow', badge: 'warning' as const, label: 'Med' },
+  low: { color: 'border-l-blue', badge: 'info' as const, label: 'Low' },
+};
+
+const statusConfig: Record<TaskStatus, { icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; color: string; badge: 'default' | 'success' | 'info' | 'danger' }> = {
+  todo: { icon: EllipsisHorizontalCircleIcon, color: 'text-muted', badge: 'default' },
+  in_progress: { icon: ClockIcon, color: 'text-blue', badge: 'info' },
+  done: { icon: CheckCircleIcon, color: 'text-green', badge: 'success' },
+  blocked: { icon: NoSymbolIcon, color: 'text-red', badge: 'danger' },
 };
 
 const statusOptions: { value: TaskStatus; label: string }[] = [
@@ -34,84 +51,89 @@ export function TaskItem({
   const overdue = isOverdue(task.due_date, task.status);
   const canChangeStatus =
     canManage(currentUser.role) || task.assignee_id === currentUser.id;
+  const priority = priorityConfig[task.priority];
+  const status = statusConfig[task.status];
+  const StatusIcon = status.icon;
 
   return (
-    <div
+    <motion.div
+      layout
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 10, transition: { duration: 0.15 } }}
+      transition={{ duration: 0.2 }}
       onClick={onClick}
-      className={clsx(
-        'group flex cursor-pointer items-center gap-3 rounded-xl border bg-card px-4 py-3 transition-all hover:border-border-hover hover:shadow-sm',
-        overdue ? 'border-red/20' : 'border-border'
+      className={cn(
+        'group relative flex cursor-pointer items-center gap-4 rounded-xl border border-l-[3px] bg-card px-4 py-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md',
+        overdue ? 'border-border border-l-red' : `border-border ${priority.color}`
       )}
     >
-      {/* Status dropdown */}
-      <select
-        value={task.status}
-        onChange={(e) => {
-          e.stopPropagation();
-          onStatusChange(e.target.value);
-        }}
-        onClick={(e) => e.stopPropagation()}
-        disabled={!canChangeStatus}
-        className={clsx(
-          'h-7 shrink-0 cursor-pointer rounded-lg border-0 px-1.5 text-[11px] font-semibold focus:outline-none focus:ring-1 focus:ring-accent-muted',
-          task.status === 'done'
-            ? 'bg-green-bg text-green'
-            : task.status === 'in_progress'
-            ? 'bg-blue-bg text-blue'
-            : task.status === 'blocked'
-            ? 'bg-red-bg text-red'
-            : 'bg-bg text-muted'
-        )}
-      >
-        {statusOptions.map((s) => (
-          <option key={s.value} value={s.value}>
-            {s.label}
-          </option>
-        ))}
-      </select>
+      {/* Status icon button */}
+      <div className="relative">
+        <select
+          value={task.status}
+          onChange={(e) => {
+            e.stopPropagation();
+            onStatusChange(e.target.value);
+          }}
+          onClick={(e) => e.stopPropagation()}
+          disabled={!canChangeStatus}
+          className="absolute inset-0 cursor-pointer opacity-0"
+        >
+          {statusOptions.map((s) => (
+            <option key={s.value} value={s.value}>{s.label}</option>
+          ))}
+        </select>
+        <motion.div
+          whileTap={{ scale: 0.85 }}
+          className={cn('rounded-lg p-1', status.color)}
+        >
+          <StatusIcon className="h-5 w-5" />
+        </motion.div>
+      </div>
 
       {/* Content */}
       <div className="min-w-0 flex-1">
         <p
-          className={clsx(
-            'truncate text-[13px] font-medium',
+          className={cn(
+            'truncate text-[13px] font-medium leading-tight',
             task.status === 'done' ? 'text-muted line-through' : 'text-text'
           )}
         >
           {task.title}
         </p>
-        <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted">
+        <div className="mt-1 flex items-center gap-2 text-[11px] text-muted">
           {task.project && (
             <span
-              className="rounded px-1 py-0.5 font-semibold"
+              className="rounded-md px-1.5 py-0.5 font-semibold"
               style={{
-                background: `${task.project.color}10`,
+                background: `${task.project.color}12`,
                 color: task.project.color,
               }}
             >
               {task.project.name}
             </span>
           )}
-          {task.assignee && (
-            <span>{task.assignee.full_name}</span>
-          )}
           {task.due_date && (
-            <span className={overdue ? 'font-semibold text-red' : ''}>
+            <span className={cn('flex items-center gap-1', overdue && 'font-semibold text-red')}>
+              {overdue && <ExclamationCircleIcon className="h-3 w-3" />}
               {formatDate(task.due_date)}
             </span>
           )}
         </div>
       </div>
 
-      {/* Priority badge */}
-      <span
-        className={clsx(
-          'shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase',
-          priorityStyles[task.priority]
+      {/* Right side: priority badge + assignee */}
+      <div className="flex items-center gap-3">
+        <Badge variant={priority.badge}>{priority.label}</Badge>
+        {task.assignee && (
+          <Avatar
+            name={task.assignee.full_name}
+            src={task.assignee.avatar_url}
+            size="sm"
+          />
         )}
-      >
-        {task.priority}
-      </span>
-    </div>
+      </div>
+    </motion.div>
   );
 }

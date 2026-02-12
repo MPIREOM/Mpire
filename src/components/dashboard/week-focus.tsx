@@ -1,7 +1,9 @@
 'use client';
 
 import { useMemo } from 'react';
-import { clsx } from 'clsx';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 import type { Task } from '@/types/database';
 import { isOverdue, isDueToday, isDueThisWeek, formatDate } from '@/lib/dates';
 
@@ -11,7 +13,6 @@ interface WeekFocusProps {
 
 export function WeekFocus({ tasks }: WeekFocusProps) {
   const focusItems = useMemo(() => {
-    // Pick the most important tasks this week: overdue high first, then due today, then due this week high/medium
     const candidates = tasks.filter(
       (t) => t.status !== 'done' && t.status !== 'blocked'
     );
@@ -24,7 +25,6 @@ export function WeekFocus({ tasks }: WeekFocusProps) {
         if (isDueToday(t.due_date)) score += 50;
         if (t.priority === 'high') score += 30;
         if (t.priority === 'medium') score += 10;
-        // Blocking others if has dependents (approximation: high priority overdue = blocking)
         const isBlocking = isOverdue(t.due_date, t.status) && t.priority === 'high';
         return { task: t, score, isBlocking };
       })
@@ -37,13 +37,20 @@ export function WeekFocus({ tasks }: WeekFocusProps) {
   if (focusItems.length === 0) return null;
 
   return (
-    <div>
-      <h3 className="mb-3 text-[13px] font-bold text-text">This Week Focus</h3>
-      <div className="rounded-xl border border-border bg-card">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.4, duration: 0.4 }}
+    >
+      <h3 className="mb-4 text-[14px] font-bold text-text">This Week Focus</h3>
+      <div className="rounded-xl border border-border bg-card transition-shadow hover:shadow-md">
         {focusItems.map(({ task, isBlocking }, idx) => (
-          <div
+          <motion.div
             key={task.id}
-            className={clsx(
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45 + idx * 0.04, duration: 0.3 }}
+            className={cn(
               'flex items-center gap-3 px-4 py-2.5',
               idx !== focusItems.length - 1 && 'border-b border-border'
             )}
@@ -64,26 +71,20 @@ export function WeekFocus({ tasks }: WeekFocusProps) {
               </p>
             </div>
 
-            {/* Impact tag */}
+            {/* Impact tags using Badge */}
             {isBlocking && (
-              <span className="shrink-0 rounded-md bg-red-bg px-1.5 py-0.5 text-[10px] font-semibold text-red">
-                Blocking
-              </span>
+              <Badge variant="danger">Blocking</Badge>
             )}
             {!isBlocking && isOverdue(task.due_date, task.status) && (
-              <span className="shrink-0 rounded-md bg-red-bg px-1.5 py-0.5 text-[10px] font-semibold text-red">
-                Overdue
-              </span>
+              <Badge variant="danger">Overdue</Badge>
             )}
             {!isBlocking && !isOverdue(task.due_date, task.status) && isDueToday(task.due_date) && (
-              <span className="shrink-0 rounded-md bg-yellow-bg px-1.5 py-0.5 text-[10px] font-semibold text-yellow">
-                Today
-              </span>
+              <Badge variant="warning">Today</Badge>
             )}
 
             {/* Priority dot */}
             <span
-              className={clsx(
+              className={cn(
                 'h-2 w-2 shrink-0 rounded-full',
                 task.priority === 'high' ? 'bg-red' : task.priority === 'medium' ? 'bg-yellow' : 'bg-blue'
               )}
@@ -93,9 +94,9 @@ export function WeekFocus({ tasks }: WeekFocusProps) {
             <span className="shrink-0 text-[11px] tabular-nums text-muted">
               {formatDate(task.due_date)}
             </span>
-          </div>
+          </motion.div>
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 }
