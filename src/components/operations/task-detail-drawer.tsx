@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
 import type { Task, User, TaskComment, TaskActivity, TaskStatus, TaskPriority } from '@/types/database';
+import { TimeReviewDialog, type TimeEntry } from '@/components/tasks/time-review-dialog';
 
 interface TaskDetailDrawerProps {
   task: Task | null;
@@ -21,6 +22,7 @@ interface TaskDetailDrawerProps {
   team: User[];
   onUpdateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
   onDeleteTask?: (taskId: string) => Promise<void>;
+  onCompleteTask?: (taskId: string, userId: string, timeEntries: TimeEntry[]) => Promise<void>;
 }
 
 const statusOptions: { value: TaskStatus; label: string }[] = [
@@ -43,6 +45,7 @@ export function TaskDetailDrawer({
   team,
   onUpdateTask,
   onDeleteTask,
+  onCompleteTask,
 }: TaskDetailDrawerProps) {
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [activity, setActivity] = useState<TaskActivity[]>([]);
@@ -51,6 +54,7 @@ export function TaskDetailDrawer({
   const [sending, setSending] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showTimeReview, setShowTimeReview] = useState(false);
 
   const supabase = createClient();
   const canAssign = canAssignTasks(currentUser.role);
@@ -109,6 +113,13 @@ export function TaskDetailDrawer({
 
   async function handleFieldChange(field: string, value: string) {
     if (!task) return;
+
+    // Intercept status→done: show time review dialog instead
+    if (field === 'status' && value === 'done' && onCompleteTask) {
+      setShowTimeReview(true);
+      return;
+    }
+
     await onUpdateTask(task.id, { [field]: value || null });
 
     await supabase.from('task_activity').insert({
@@ -117,6 +128,13 @@ export function TaskDetailDrawer({
       action: `${field}_changed`,
       meta: { from: (task as unknown as Record<string, unknown>)[field], to: value },
     });
+  }
+
+  async function handleTimeReviewConfirm(taskId: string, entries: TimeEntry[]) {
+    if (onCompleteTask) {
+      await onCompleteTask(taskId, currentUser.id, entries);
+    }
+    setShowTimeReview(false);
   }
 
   async function handleDelete() {
@@ -398,6 +416,14 @@ export function TaskDetailDrawer({
         </DialogPanel>
       </div>
     </Dialog>
+
+    {/* Time Review Dialog — shown when marking task as done */}
+    <TimeReviewDialog
+      task={task}
+      open={showTimeReview}
+      onConfirm={handleTimeReviewConfirm}
+      onCancel={() => setShowTimeReview(false)}
+    />
 
     {/* Delete confirmation dialog */}
     <Dialog open={confirmDelete} onClose={() => setConfirmDelete(false)} className="relative z-[60]">

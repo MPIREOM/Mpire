@@ -92,6 +92,42 @@ export function useTasks(options?: UseTasksOptions) {
     [supabase, mutate]
   );
 
+  const completeTask = useCallback(
+    async (
+      taskId: string,
+      userId: string,
+      timeEntries: { date: string; hours: number }[]
+    ) => {
+      // Log a time_logged activity entry for each day
+      if (timeEntries.length > 0) {
+        const rows = timeEntries.map((entry) => ({
+          task_id: taskId,
+          user_id: userId,
+          action: 'time_logged',
+          meta: { date: entry.date, hours: entry.hours },
+        }));
+        await supabase.from('task_activity').insert(rows);
+      }
+
+      // Log the status change activity
+      await supabase.from('task_activity').insert({
+        task_id: taskId,
+        user_id: userId,
+        action: 'status_changed',
+        meta: { from: 'in_progress', to: 'done' },
+      });
+
+      // Update task status to done
+      const { error } = await supabase
+        .from('tasks')
+        .update({ status: 'done' })
+        .eq('id', taskId);
+      if (error) throw error;
+      mutate();
+    },
+    [supabase, mutate]
+  );
+
   return {
     tasks: data ?? [],
     isLoading,
@@ -100,5 +136,6 @@ export function useTasks(options?: UseTasksOptions) {
     updateTask,
     createTask,
     deleteTask,
+    completeTask,
   };
 }
