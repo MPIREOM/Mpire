@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
+import { loadEnvConfig } from "@next/env";
+
+// Ensure .env.local is loaded before config evaluation (Turbopack compatibility)
+loadEnvConfig(process.cwd());
 
 const nextConfig: NextConfig = {
-  // Explicitly expose server-side env vars for Route Handlers (Turbopack compatibility)
   env: {
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   },
