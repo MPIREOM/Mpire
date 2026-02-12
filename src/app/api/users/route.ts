@@ -1,10 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createServerSupabase } from '@/lib/supabase/server';
-import { loadEnvConfig } from '@next/env';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
-// Ensure .env.local vars are available in Turbopack runtime
-loadEnvConfig(process.cwd());
+// Read a server-only env var, bypassing Turbopack's compile-time replacement.
+// Falls back to reading .env.local directly from disk.
+function getServerEnv(key: string): string | undefined {
+  // Bracket notation avoids Turbopack static replacement
+  const val = process.env[key];
+  if (val) return val;
+
+  // Fallback: parse .env.local at runtime
+  try {
+    const content = readFileSync(join(process.cwd(), '.env.local'), 'utf8');
+    const match = content.match(new RegExp(`^${key}=(.+)$`, 'm'));
+    return match?.[1]?.trim();
+  } catch {
+    return undefined;
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -57,9 +72,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Create auth user via admin API using service role key
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const serviceRoleKey = getServerEnv('SUPABASE_SERVICE_ROLE_KEY');
     if (!serviceRoleKey) {
-      console.error('SUPABASE_SERVICE_ROLE_KEY is not set. Check .env.local and next.config.ts env settings.');
+      console.error('SUPABASE_SERVICE_ROLE_KEY missing from both process.env and .env.local');
       return NextResponse.json(
         { error: 'Server configuration error — please contact the administrator' },
         { status: 500 }
