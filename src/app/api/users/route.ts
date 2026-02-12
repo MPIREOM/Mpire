@@ -1,40 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createServerSupabase } from '@/lib/supabase/server';
-import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
 
-// Force Node.js runtime (not Edge) so fs is available
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-
-function getServerEnv(key: string): string | undefined {
-  // Strategy 1: bracket notation to avoid Turbopack static replacement
-  const val = process.env[key];
-  if (val) return val;
-
-  // Strategy 2: read .env.local from cwd
-  const cwd = process.cwd();
-  const paths = [
-    join(cwd, '.env.local'),
-    join(cwd, '..', '.env.local'),
-    '/home/user/Mpire/.env.local',
-  ];
-
-  for (const p of paths) {
-    try {
-      if (existsSync(p)) {
-        const content = readFileSync(p, 'utf8');
-        const match = content.match(new RegExp(`^${key}=(.+)$`, 'm'));
-        if (match) return match[1].trim();
-      }
-    } catch {
-      continue;
-    }
-  }
-
-  return undefined;
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -86,38 +55,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Only owners and managers can add team members' }, { status: 403 });
     }
 
-    // Create auth user via admin API using service role key
-    const serviceRoleKey = getServerEnv('SUPABASE_SERVICE_ROLE_KEY');
+    // Service role key is inlined at build time via next.config.ts env option
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!serviceRoleKey) {
-      // Temporary diagnostics — will remove once fixed
-      const cwd = process.cwd();
-      const envPath = join(cwd, '.env.local');
-      let fileExists = false;
-      let fileKeys: string[] = [];
-      try {
-        fileExists = existsSync(envPath);
-        if (fileExists) {
-          const lines = readFileSync(envPath, 'utf8').split('\n');
-          fileKeys = lines
-            .filter((l: string) => l.includes('=') && !l.startsWith('#'))
-            .map((l: string) => l.split('=')[0]);
-        }
-      } catch {}
-      const supaKeys = Object.keys(process.env).filter(k => k.includes('SUPA'));
-
       return NextResponse.json(
-        {
-          error: 'Service role key not found',
-          debug: {
-            cwd,
-            envPath,
-            fileExists,
-            fileKeys,
-            processEnvSupaKeys: supaKeys,
-            totalEnvKeys: Object.keys(process.env).length,
-            runtimeExport: 'nodejs',
-          },
-        },
+        { error: 'Server configuration error — please contact the administrator' },
         { status: 500 }
       );
     }
