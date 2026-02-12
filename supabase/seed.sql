@@ -6,9 +6,9 @@
 -- created via Supabase Auth (Dashboard > Authentication > Users).
 --
 -- Sample credentials to create in Supabase Auth:
---   almuhannad@mpire.com  / Owner2024!
---   fajar@mpire.com       / Manager2024!
---   harith@mpire.com      / Staff2024!
+--   almuhannad@mpireom.com  / Owner2024!
+--   fajar@mpireom.com       / Manager2024!
+--   harith@mpireom.com      / Staff2024!
 -- ============================================================
 
 -- Placeholder UUIDs — replace with real auth.users IDs
@@ -39,9 +39,9 @@ insert into public.business_units (id, company_id, name) values (gen_random_uuid
 
 -- Users (must match auth.users IDs)
 insert into public.users (id, email, full_name, role, company_id) values
-  (v_owner_id, 'almuhannad@mpire.com', 'Al Muhannad', 'owner', v_company_id),
-  (v_manager_id, 'fajar@mpire.com', 'Fajar', 'manager', v_company_id),
-  (v_staff_id, 'harith@mpire.com', 'Harith', 'staff', v_company_id);
+  (v_owner_id, 'almuhannad@mpireom.com', 'Al Muhannad', 'owner', v_company_id),
+  (v_manager_id, 'fajar@mpireom.com', 'Fajar', 'manager', v_company_id),
+  (v_staff_id, 'harith@mpireom.com', 'Harith', 'staff', v_company_id);
 
 -- Projects
 insert into public.projects (id, company_id, business_unit_id, name, status, color) values
