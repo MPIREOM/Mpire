@@ -4,12 +4,14 @@ import { useState, useMemo } from 'react';
 import { clsx } from 'clsx';
 import {
   MagnifyingGlassIcon,
-  ChevronDownIcon,
   CheckIcon,
+  PlusIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
+import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import type { Task, User, Project, TaskStatus, TaskPriority } from '@/types/database';
 import { isOverdue, isDueToday, isDueThisWeek, formatDate } from '@/lib/dates';
-import { canViewAllTasks, canAssignTasks } from '@/lib/roles';
+import { canViewAllTasks, canAssignTasks, canCreateTasks } from '@/lib/roles';
 import { TaskDetailDrawer } from '@/components/operations/task-detail-drawer';
 
 type TabKey = 'today' | 'week' | 'overdue' | 'all';
@@ -22,6 +24,8 @@ interface TaskTableProps {
   team: User[];
   projects: Project[];
   onUpdateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
+  onCreateTask?: (task: Omit<Task, 'id' | 'created_at' | 'updated_at' | 'project' | 'assignee'>) => Promise<void>;
+  onDeleteTask?: (taskId: string) => Promise<void>;
 }
 
 const statusOptions: { value: TaskStatus; label: string }[] = [
@@ -39,6 +43,8 @@ export function TaskTable({
   team,
   projects,
   onUpdateTask,
+  onCreateTask,
+  onDeleteTask,
 }: TaskTableProps) {
   const [tab, setTab] = useState<TabKey>('today');
   const [viewMode, setViewMode] = useState<'my' | 'all'>('my');
@@ -46,20 +52,34 @@ export function TaskTable({
   const [groupBy, setGroupBy] = useState<GroupBy>('none');
   const [sortBy, setSortBy] = useState<SortBy>('due_date');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    title: '',
+    project_id: '',
+    priority: 'medium' as TaskPriority,
+    due_date: '',
+    assignee_id: '',
+  });
+  const [createSaving, setCreateSaving] = useState(false);
 
   const canSeeAll = canViewAllTasks(currentUser.role);
+  const canCreate = canCreateTasks(currentUser.role);
+
+  // Resolve selectedTask from live tasks array (fixes stale data bug)
+  const selectedTask = useMemo(
+    () => tasks.find((t) => t.id === selectedTaskId) ?? null,
+    [tasks, selectedTaskId]
+  );
 
   // Filter pipeline
   const filtered = useMemo(() => {
     let result = tasks.filter((t) => t.status !== 'done');
 
-    // View mode
     if (viewMode === 'my') {
       result = result.filter((t) => t.assignee_id === currentUser.id);
     }
 
-    // Tab
     switch (tab) {
       case 'today':
         result = result.filter((t) => isDueToday(t.due_date));
@@ -72,7 +92,6 @@ export function TaskTable({
         break;
     }
 
-    // Search
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(
@@ -83,11 +102,9 @@ export function TaskTable({
       );
     }
 
-    // Sort
     result = [...result].sort((a, b) => {
       if (sortBy === 'priority') return priorityOrder[a.priority] - priorityOrder[b.priority];
       if (sortBy === 'updated_at') return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
-      // due_date (default)
       if (!a.due_date) return 1;
       if (!b.due_date) return -1;
       return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
@@ -96,10 +113,8 @@ export function TaskTable({
     return result;
   }, [tasks, viewMode, tab, search, sortBy, currentUser.id]);
 
-  // Grouping
   const groups = useMemo(() => {
     if (groupBy === 'none') return [{ label: '', tasks: filtered }];
-
     const map = new Map<string, Task[]>();
     for (const t of filtered) {
       let key = '';
@@ -124,7 +139,6 @@ export function TaskTable({
     ];
   }, [tasks, viewMode, currentUser.id]);
 
-  // Bulk actions
   function toggleSelect(id: string) {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -135,25 +149,42 @@ export function TaskTable({
   }
 
   function toggleSelectAll() {
-    if (selectedIds.size === filtered.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(filtered.map((t) => t.id)));
-    }
+    if (selectedIds.size === filtered.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(filtered.map((t) => t.id)));
   }
 
   async function bulkUpdateStatus(status: TaskStatus) {
-    await Promise.all(
-      Array.from(selectedIds).map((id) => onUpdateTask(id, { status }))
-    );
+    await Promise.all(Array.from(selectedIds).map((id) => onUpdateTask(id, { status })));
     setSelectedIds(new Set());
   }
 
-  async function bulkUpdateAssignee(assigneeId: string) {
-    await Promise.all(
-      Array.from(selectedIds).map((id) => onUpdateTask(id, { assignee_id: assigneeId || null }))
-    );
+  async function bulkUpdateAssignee(assigneeId: string | null) {
+    await Promise.all(Array.from(selectedIds).map((id) => onUpdateTask(id, { assignee_id: assigneeId })));
     setSelectedIds(new Set());
+  }
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!onCreateTask || !createForm.title.trim() || !createForm.project_id) return;
+    setCreateSaving(true);
+    try {
+      await onCreateTask({
+        title: createForm.title.trim(),
+        project_id: createForm.project_id,
+        priority: createForm.priority,
+        due_date: createForm.due_date || null,
+        assignee_id: createForm.assignee_id || null,
+        description: null,
+        status: 'todo',
+        created_by: currentUser.id,
+        recurring_rule: null,
+        tags: [],
+      });
+      setShowCreate(false);
+      setCreateForm({ title: '', project_id: '', priority: 'medium', due_date: '', assignee_id: '' });
+    } finally {
+      setCreateSaving(false);
+    }
   }
 
   const allSelected = filtered.length > 0 && selectedIds.size === filtered.length;
@@ -162,7 +193,6 @@ export function TaskTable({
     <div>
       {/* Controls */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        {/* View toggle */}
         <div className="flex rounded-lg border border-border bg-card p-0.5">
           <button
             onClick={() => setViewMode('my')}
@@ -186,7 +216,6 @@ export function TaskTable({
           )}
         </div>
 
-        {/* Search */}
         <div className="relative min-w-[160px] flex-1">
           <MagnifyingGlassIcon className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
           <input
@@ -198,7 +227,6 @@ export function TaskTable({
           />
         </div>
 
-        {/* Group by */}
         <select
           value={groupBy}
           onChange={(e) => setGroupBy(e.target.value as GroupBy)}
@@ -210,7 +238,6 @@ export function TaskTable({
           <option value="priority">By Priority</option>
         </select>
 
-        {/* Sort */}
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as SortBy)}
@@ -220,6 +247,17 @@ export function TaskTable({
           <option value="priority">Sort: Priority</option>
           <option value="updated_at">Sort: Last updated</option>
         </select>
+
+        {/* Create task button */}
+        {canCreate && onCreateTask && (
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-[12px] font-semibold text-white transition-colors hover:bg-accent-light"
+          >
+            <PlusIcon className="h-3.5 w-3.5" />
+            Add Task
+          </button>
+        )}
       </div>
 
       {/* Tabs */}
@@ -252,9 +290,7 @@ export function TaskTable({
       {/* Bulk actions bar */}
       {selectedIds.size > 0 && (
         <div className="mb-3 flex items-center gap-2 rounded-lg border border-accent bg-accent-muted px-3 py-2">
-          <span className="text-[12px] font-semibold text-accent">
-            {selectedIds.size} selected
-          </span>
+          <span className="text-[12px] font-semibold text-accent">{selectedIds.size} selected</span>
           <select
             onChange={(e) => { if (e.target.value) bulkUpdateStatus(e.target.value as TaskStatus); e.target.value = ''; }}
             className="rounded-md border border-border bg-card px-2 py-1 text-[11px] font-medium text-text focus:outline-none"
@@ -267,23 +303,23 @@ export function TaskTable({
           </select>
           {canAssignTasks(currentUser.role) && (
             <select
-              onChange={(e) => { if (e.target.value !== '') bulkUpdateAssignee(e.target.value); e.target.value = ''; }}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === '__unassign') bulkUpdateAssignee(null);
+                else if (v) bulkUpdateAssignee(v);
+                e.target.value = '';
+              }}
               className="rounded-md border border-border bg-card px-2 py-1 text-[11px] font-medium text-text focus:outline-none"
               defaultValue=""
             >
               <option value="" disabled>Assign to...</option>
-              <option value="">Unassigned</option>
+              <option value="__unassign">Unassigned</option>
               {team.map((u) => (
                 <option key={u.id} value={u.id}>{u.full_name}</option>
               ))}
             </select>
           )}
-          <button
-            onClick={() => setSelectedIds(new Set())}
-            className="ml-auto text-[11px] font-semibold text-muted hover:text-text"
-          >
-            Clear
-          </button>
+          <button onClick={() => setSelectedIds(new Set())} className="ml-auto text-[11px] font-semibold text-muted hover:text-text">Clear</button>
         </div>
       )}
 
@@ -297,12 +333,9 @@ export function TaskTable({
           {groups.map((group) => (
             <div key={group.label || 'default'}>
               {group.label && (
-                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
-                  {group.label}
-                </p>
+                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">{group.label}</p>
               )}
               <div className="rounded-xl border border-border bg-card">
-                {/* Select all header */}
                 <div className="flex items-center gap-3 border-b border-border px-4 py-1.5">
                   <button
                     onClick={toggleSelectAll}
@@ -330,7 +363,6 @@ export function TaskTable({
                         selected && 'bg-accent-muted'
                       )}
                     >
-                      {/* Checkbox */}
                       <button
                         onClick={() => toggleSelect(task.id)}
                         className={clsx(
@@ -340,14 +372,7 @@ export function TaskTable({
                       >
                         {selected && <CheckIcon className="h-3 w-3" />}
                       </button>
-
-                      {/* Project stripe */}
-                      <div
-                        className="h-6 w-1 shrink-0 rounded-full"
-                        style={{ backgroundColor: task.project?.color ?? '#6b7280' }}
-                      />
-
-                      {/* Status */}
+                      <div className="h-6 w-1 shrink-0 rounded-full" style={{ backgroundColor: task.project?.color ?? '#6b7280' }} />
                       <select
                         value={task.status}
                         onClick={(e) => e.stopPropagation()}
@@ -363,25 +388,13 @@ export function TaskTable({
                           <option key={s.value} value={s.value}>{s.label}</option>
                         ))}
                       </select>
-
-                      {/* Title (clickable) */}
-                      <button
-                        onClick={() => setSelectedTask(task)}
-                        className="min-w-0 flex-1 truncate text-left text-[12px] font-medium text-text hover:text-accent"
-                      >
+                      <button onClick={() => setSelectedTaskId(task.id)} className="min-w-0 flex-1 truncate text-left text-[12px] font-medium text-text hover:text-accent">
                         {task.title}
                       </button>
-
-                      {/* Priority dot */}
                       <span
-                        className={clsx(
-                          'h-2 w-2 shrink-0 rounded-full',
-                          task.priority === 'high' ? 'bg-red' : task.priority === 'medium' ? 'bg-yellow' : 'bg-blue'
-                        )}
+                        className={clsx('h-2 w-2 shrink-0 rounded-full', task.priority === 'high' ? 'bg-red' : task.priority === 'medium' ? 'bg-yellow' : 'bg-blue')}
                         title={task.priority}
                       />
-
-                      {/* Assignee */}
                       <span className="hidden w-20 truncate text-[11px] text-muted sm:block">
                         {task.assignee ? (
                           <span className="flex items-center gap-1.5">
@@ -394,14 +407,7 @@ export function TaskTable({
                           <span className="text-muted/50">—</span>
                         )}
                       </span>
-
-                      {/* Due date */}
-                      <span
-                        className={clsx(
-                          'w-16 shrink-0 text-right text-[11px] tabular-nums',
-                          overdue ? 'font-semibold text-red' : 'text-muted'
-                        )}
-                      >
+                      <span className={clsx('w-16 shrink-0 text-right text-[11px] tabular-nums', overdue ? 'font-semibold text-red' : 'text-muted')}>
                         {task.due_date ? formatDate(task.due_date) : '—'}
                       </span>
                     </div>
@@ -416,11 +422,69 @@ export function TaskTable({
       {/* Detail drawer */}
       <TaskDetailDrawer
         task={selectedTask}
-        onClose={() => setSelectedTask(null)}
+        onClose={() => setSelectedTaskId(null)}
         currentUser={currentUser}
         team={team}
         onUpdateTask={onUpdateTask}
+        onDeleteTask={onDeleteTask}
       />
+
+      {/* Create Task Dialog */}
+      <Dialog open={showCreate} onClose={() => setShowCreate(false)} className="relative z-50">
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <DialogPanel className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-[15px] font-bold text-text">New Task</DialogTitle>
+              <button onClick={() => setShowCreate(false)} className="rounded-md p-1 text-muted hover:bg-bg hover:text-text">
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={handleCreate} className="mt-5 space-y-4">
+              <div>
+                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">Title</label>
+                <input type="text" required value={createForm.title} onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })} placeholder="What needs to be done?" className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-[13px] text-text placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted" />
+              </div>
+              <div>
+                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">Project</label>
+                <select required value={createForm.project_id} onChange={(e) => setCreateForm({ ...createForm, project_id: e.target.value })} className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-[13px] text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted">
+                  <option value="">Select project...</option>
+                  {projects.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">Priority</label>
+                  <select value={createForm.priority} onChange={(e) => setCreateForm({ ...createForm, priority: e.target.value as TaskPriority })} className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-[13px] text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted">
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">Due Date</label>
+                  <input type="date" value={createForm.due_date} onChange={(e) => setCreateForm({ ...createForm, due_date: e.target.value })} className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-[13px] text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted" />
+                </div>
+              </div>
+              {canAssignTasks(currentUser.role) && (
+                <div>
+                  <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">Assignee</label>
+                  <select value={createForm.assignee_id} onChange={(e) => setCreateForm({ ...createForm, assignee_id: e.target.value })} className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-[13px] text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted">
+                    <option value="">Unassigned</option>
+                    {team.map((u) => (<option key={u.id} value={u.id}>{u.full_name}</option>))}
+                  </select>
+                </div>
+              )}
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setShowCreate(false)} className="rounded-xl border border-border px-4 py-2 text-[13px] font-semibold text-muted transition-colors hover:bg-bg hover:text-text">Cancel</button>
+                <button type="submit" disabled={createSaving} className="rounded-xl bg-accent px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-accent-light disabled:opacity-50">
+                  {createSaving ? 'Creating...' : 'Create Task'}
+                </button>
+              </div>
+            </form>
+          </DialogPanel>
+        </div>
+      </Dialog>
     </div>
   );
 }

@@ -3,11 +3,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
-import { XMarkIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, PaperAirplaneIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
-import { canAssignTasks } from '@/lib/roles';
+import { canAssignTasks, canDeleteTasks } from '@/lib/roles';
 import { formatDate, isOverdue } from '@/lib/dates';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ interface TaskDetailDrawerProps {
   currentUser: User;
   team: User[];
   onUpdateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
+  onDeleteTask?: (taskId: string) => Promise<void>;
 }
 
 const statusOptions: { value: TaskStatus; label: string }[] = [
@@ -41,15 +42,19 @@ export function TaskDetailDrawer({
   currentUser,
   team,
   onUpdateTask,
+  onDeleteTask,
 }: TaskDetailDrawerProps) {
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [activity, setActivity] = useState<TaskActivity[]>([]);
   const [newComment, setNewComment] = useState('');
   const [activeTab, setActiveTab] = useState<'comments' | 'activity'>('comments');
   const [sending, setSending] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const supabase = createClient();
   const canAssign = canAssignTasks(currentUser.role);
+  const canDelete = canDeleteTasks(currentUser.role);
 
   const loadDetails = useCallback(async () => {
     if (!task) return;
@@ -114,9 +119,22 @@ export function TaskDetailDrawer({
     });
   }
 
+  async function handleDelete() {
+    if (!task || !onDeleteTask) return;
+    setDeleting(true);
+    try {
+      await onDeleteTask(task.id);
+      setConfirmDelete(false);
+      onClose();
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   const overdue = task ? isOverdue(task.due_date, task.status) : false;
 
   return (
+  <>
     <Dialog open={!!task} onClose={onClose} className="relative z-50">
       <motion.div
         initial={{ opacity: 0 }}
@@ -152,12 +170,23 @@ export function TaskDetailDrawer({
                   </div>
                 )}
               </div>
-              <button
-                onClick={onClose}
-                className="ml-3 shrink-0 rounded-lg p-1.5 text-muted transition-colors hover:bg-bg hover:text-text"
-              >
-                <XMarkIcon className="h-5 w-5" />
-              </button>
+              <div className="ml-3 flex shrink-0 items-center gap-1">
+                {canDelete && onDeleteTask && (
+                  <button
+                    onClick={() => setConfirmDelete(true)}
+                    className="rounded-lg p-1.5 text-muted transition-colors hover:bg-red-bg hover:text-red"
+                    title="Delete task"
+                  >
+                    <TrashIcon className="h-5 w-5" />
+                  </button>
+                )}
+                <button
+                  onClick={onClose}
+                  className="rounded-lg p-1.5 text-muted transition-colors hover:bg-bg hover:text-text"
+                >
+                  <XMarkIcon className="h-5 w-5" />
+                </button>
+              </div>
             </div>
 
             {/* Fields */}
@@ -369,5 +398,34 @@ export function TaskDetailDrawer({
         </DialogPanel>
       </div>
     </Dialog>
+
+    {/* Delete confirmation dialog */}
+    <Dialog open={confirmDelete} onClose={() => setConfirmDelete(false)} className="relative z-[60]">
+      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
+      <div className="fixed inset-0 flex items-center justify-center p-4">
+        <DialogPanel className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl">
+          <DialogTitle className="text-[15px] font-bold text-text">Delete Task</DialogTitle>
+          <p className="mt-2 text-[13px] text-muted">
+            Are you sure you want to delete &ldquo;{task?.title}&rdquo;? This will also remove all comments and activity. This action cannot be undone.
+          </p>
+          <div className="mt-5 flex justify-end gap-2">
+            <button
+              onClick={() => setConfirmDelete(false)}
+              className="rounded-xl border border-border px-4 py-2 text-[13px] font-semibold text-muted transition-colors hover:bg-bg hover:text-text"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="rounded-xl bg-red px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-red/90 disabled:opacity-50"
+            >
+              {deleting ? 'Deleting...' : 'Delete'}
+            </button>
+          </div>
+        </DialogPanel>
+      </div>
+    </Dialog>
+  </>
   );
 }

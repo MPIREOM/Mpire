@@ -80,6 +80,18 @@ export function useTasks(options?: UseTasksOptions) {
     [supabase, mutate]
   );
 
+  const deleteTask = useCallback(
+    async (taskId: string) => {
+      // Delete comments and activity first (FK constraints)
+      await supabase.from('task_comments').delete().eq('task_id', taskId);
+      await supabase.from('task_activity').delete().eq('task_id', taskId);
+      const { error } = await supabase.from('tasks').delete().eq('id', taskId);
+      if (error) throw error;
+      mutate();
+    },
+    [supabase, mutate]
+  );
+
   return {
     tasks: data ?? [],
     isLoading,
@@ -87,5 +99,6 @@ export function useTasks(options?: UseTasksOptions) {
     mutate,
     updateTask,
     createTask,
+    deleteTask,
   };
 }
