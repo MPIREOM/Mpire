@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createServerSupabase } from '@/lib/supabase/server';
+import { loadEnvConfig } from '@next/env';
+
+// Ensure .env.local vars are available in Turbopack runtime
+loadEnvConfig(process.cwd());
 
 export async function POST(request: NextRequest) {
   try {
