@@ -285,7 +285,7 @@ export default function ProjectsPage() {
               }}
               initial="hidden"
               animate="show"
-              className="grid grid-cols-1 gap-5 lg:grid-cols-2"
+              className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-5"
             >
               {displayed.map((m) => (
                 <motion.div
@@ -367,39 +367,50 @@ function ProjectsPageSkeleton() {
         <Skeleton className="h-8 w-20 rounded-lg" />
       </div>
 
-      {/* Card skeletons */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      {/* Card skeletons — matches 2-col mobile layout */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-5">
         {Array.from({ length: 4 }).map((_, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 + i * 0.08 }}
-            className="rounded-xl border border-border bg-card p-6"
+            className="rounded-xl border border-border bg-card p-2.5 sm:p-4 md:p-6"
           >
-            <div className="mb-4 flex items-start justify-between">
-              <div className="space-y-2">
-                <Skeleton className="h-5 w-40" />
-                <Skeleton className="h-3 w-24" />
+            {/* Header */}
+            <div className="mb-2 sm:mb-4 flex items-start justify-between">
+              <div className="space-y-1 sm:space-y-2">
+                <Skeleton className="h-3.5 w-20 sm:h-5 sm:w-40" />
+                <Skeleton className="hidden sm:block h-3 w-24" />
               </div>
-              <Skeleton className="h-5 w-16 rounded-md" />
+              <Skeleton className="hidden sm:block h-5 w-16 rounded-md" />
             </div>
-            <div className="mb-5 grid grid-cols-4 gap-3">
-              {Array.from({ length: 4 }).map((_, j) => (
-                <div key={j} className="rounded-lg bg-bg/50 px-3 py-2.5">
+            {/* KPI row */}
+            <div className="mb-2 sm:mb-5 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+              {Array.from({ length: 2 }).map((_, j) => (
+                <div key={j}>
+                  <Skeleton className="mb-0.5 h-2 w-8 sm:mb-1 sm:h-2.5 sm:w-12" />
+                  <Skeleton className="h-4 w-6 sm:h-5 sm:w-8" />
+                </div>
+              ))}
+              {/* Extra KPI cols on desktop */}
+              {Array.from({ length: 2 }).map((_, j) => (
+                <div key={`d-${j}`} className="hidden sm:block">
                   <Skeleton className="mb-1 h-2.5 w-12" />
                   <Skeleton className="h-5 w-8" />
                 </div>
               ))}
             </div>
-            <Skeleton className="mb-4 h-2 w-full rounded-full" />
-            <div className="flex items-center justify-between border-t border-border pt-4">
-              <div className="flex -space-x-1.5">
+            {/* Progress bar */}
+            <Skeleton className="mb-2 sm:mb-4 h-1 sm:h-2 w-full rounded-full" />
+            {/* Footer */}
+            <div className="flex items-center justify-between border-t border-border pt-1.5 sm:pt-4">
+              <Skeleton className="h-3 w-12 sm:h-4 sm:w-16" />
+              <div className="hidden sm:flex -space-x-1.5">
                 {Array.from({ length: 3 }).map((_, k) => (
                   <Skeleton key={k} className="h-6 w-6 rounded-lg" />
                 ))}
               </div>
-              <Skeleton className="h-7 w-24 rounded-md" />
             </div>
           </motion.div>
         ))}
