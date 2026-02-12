@@ -37,7 +37,7 @@ const navigation: NavItem[] = [
   { name: 'Finance', href: '/finance', icon: CurrencyDollarIcon, section: 'Main', requiresFinance: true },
   { name: 'People', href: '/people', icon: UsersIcon, section: 'Team', requiresManage: true },
   { name: 'Time Tracking', href: '/people/time', icon: ClockIcon, section: 'Team', requiresManage: true },
-  { name: 'Tasks', href: '/operations?view=tasks', icon: ClipboardDocumentListIcon, section: 'Work' },
+  { name: 'Tasks', href: '/tasks', icon: ClipboardDocumentListIcon, section: 'Work' },
   { name: 'Settings', href: '/settings', icon: Cog6ToothIcon, section: 'System', requiresSettings: true },
 ];
 
@@ -101,7 +101,8 @@ export function Sidebar({ open, onClose }: SidebarProps) {
                 .map((item) => {
                   const isActive =
                     pathname === item.href ||
-                    (item.href === '/operations' && pathname === '/');
+                    (item.href === '/operations' && pathname === '/') ||
+                    (item.href === '/projects' && pathname.startsWith('/projects/'));
 
                   return (
                     <Link
