@@ -2,7 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Bars3Icon, ArrowRightOnRectangleIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import {
+  Bars3Icon,
+  ArrowRightOnRectangleIcon,
+  MagnifyingGlassIcon,
+  BellIcon,
+} from '@heroicons/react/24/outline';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -59,10 +64,12 @@ export function TopNav({ title, subtitle, onMenuClick, onCommandPalette }: TopNa
         </motion.div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         {/* Command palette trigger */}
         {onCommandPalette && (
-          <button
+          <motion.button
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
             onClick={onCommandPalette}
             className="hidden items-center gap-2 rounded-lg border border-border bg-bg px-3 py-1.5 text-[12px] text-muted transition-all hover:border-border-hover hover:text-text sm:flex"
           >
@@ -71,8 +78,21 @@ export function TopNav({ title, subtitle, onMenuClick, onCommandPalette }: TopNa
             <kbd className="rounded border border-border bg-card px-1.5 py-0.5 text-[10px] font-medium">
               &#x2318;K
             </kbd>
-          </button>
+          </motion.button>
         )}
+
+        {/* Notifications bell */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative text-muted hover:text-text"
+        >
+          <BellIcon className="h-4 w-4" />
+          <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-accent" />
+        </Button>
+
+        {/* Divider */}
+        <div className="mx-1 hidden h-5 w-px bg-border sm:block" />
 
         <Button
           variant="ghost"
