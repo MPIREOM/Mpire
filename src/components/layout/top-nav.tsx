@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   Bars3Icon,
   ArrowRightOnRectangleIcon,
   MagnifyingGlassIcon,
   BellIcon,
+  SunIcon,
+  MoonIcon,
 } from '@heroicons/react/24/outline';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -23,6 +25,19 @@ interface TopNavProps {
 export function TopNav({ title, subtitle, onMenuClick, onCommandPalette }: TopNavProps) {
   const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
+  const [dark, setDark] = useState(false);
+
+  // Sync initial state from DOM (set by inline script in layout)
+  useEffect(() => {
+    setDark(document.documentElement.classList.contains('dark'));
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    const next = !dark;
+    setDark(next);
+    document.documentElement.classList.toggle('dark', next);
+    localStorage.setItem('theme', next ? 'dark' : 'light');
+  }, [dark]);
 
   useEffect(() => {
     function handleScroll() {
@@ -80,6 +95,24 @@ export function TopNav({ title, subtitle, onMenuClick, onCommandPalette }: TopNa
             </kbd>
           </motion.button>
         )}
+
+        {/* Dark mode toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleTheme}
+          className="text-muted hover:text-text"
+          title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          <motion.div
+            key={dark ? 'moon' : 'sun'}
+            initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
+            animate={{ rotate: 0, opacity: 1, scale: 1 }}
+            transition={{ duration: 0.2 }}
+          >
+            {dark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
+          </motion.div>
+        </Button>
 
         {/* Notifications bell */}
         <Button

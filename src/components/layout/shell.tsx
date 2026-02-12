@@ -17,17 +17,38 @@ export function Shell({ title, subtitle, children }: ShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [pinned, setPinned] = useState(false);
 
-  // Restore persisted collapse preference
+  // Restore persisted preferences
   useEffect(() => {
-    const saved = localStorage.getItem('sidebar-collapsed');
-    if (saved === 'true') setCollapsed(true);
+    const savedCollapsed = localStorage.getItem('sidebar-collapsed');
+    const savedPinned = localStorage.getItem('sidebar-pinned');
+    if (savedPinned === 'true') {
+      setPinned(true);
+      setCollapsed(false); // pinned means always expanded
+    } else if (savedCollapsed === 'true') {
+      setCollapsed(true);
+    }
   }, []);
 
   const toggleCollapse = useCallback(() => {
+    if (pinned) return; // can't collapse when pinned
     setCollapsed((prev) => {
       const next = !prev;
       localStorage.setItem('sidebar-collapsed', String(next));
+      return next;
+    });
+  }, [pinned]);
+
+  const togglePin = useCallback(() => {
+    setPinned((prev) => {
+      const next = !prev;
+      localStorage.setItem('sidebar-pinned', String(next));
+      if (next) {
+        // Pin: force expanded
+        setCollapsed(false);
+        localStorage.setItem('sidebar-collapsed', 'false');
+      }
       return next;
     });
   }, []);
@@ -42,7 +63,7 @@ export function Shell({ title, subtitle, children }: ShellProps) {
         return;
       }
 
-      // [ → toggle sidebar collapse (only outside inputs)
+      // [ → toggle sidebar collapse (only outside inputs, and only if not pinned)
       if (e.key === '[' && !e.metaKey && !e.ctrlKey && !e.altKey) {
         const tag = (e.target as HTMLElement)?.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable)
@@ -62,6 +83,8 @@ export function Shell({ title, subtitle, children }: ShellProps) {
         onClose={() => setSidebarOpen(false)}
         collapsed={collapsed}
         onToggleCollapse={toggleCollapse}
+        pinned={pinned}
+        onTogglePin={togglePin}
       />
 
       <div
