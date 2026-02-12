@@ -156,27 +156,27 @@ export function ProjectKPICard({ metrics }: ProjectKPICardProps) {
         {/* Shine sweep on hover */}
         <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/[0.03] to-transparent transition-transform duration-700 group-hover:translate-x-full" />
 
-        <div className="relative p-4 sm:p-5">
+        <div className="relative p-2.5 sm:p-4 md:p-5">
           {/* ── 1. Header: name, status ── */}
-          <div className="mb-3 flex items-start justify-between gap-3">
+          <div className="mb-1.5 sm:mb-3 flex items-start justify-between gap-1.5 sm:gap-3">
             <div className="min-w-0">
-              <div className="mb-0.5 flex items-center gap-2">
+              <div className="mb-0.5 flex items-center gap-1.5 sm:gap-2">
                 <div
-                  className="h-2 w-2 shrink-0 rounded-full"
+                  className="h-1.5 w-1.5 sm:h-2 sm:w-2 shrink-0 rounded-full"
                   style={{ backgroundColor: m.project.color }}
                 />
-                <h3 className="truncate text-[15px] font-bold leading-tight text-text">
+                <h3 className="truncate text-[11px] sm:text-[15px] font-bold leading-tight text-text">
                   {m.project.name}
                 </h3>
               </div>
-              <p className="text-[11px] text-muted">
+              <p className="hidden sm:block text-[11px] text-muted">
                 {m.totalTasks} tasks
                 {m.lastActivityAt && (
                   <> · Updated {m.lastActivityRelative}</>
                 )}
               </p>
             </div>
-            <div className="flex shrink-0 items-center gap-1.5">
+            <div className="hidden sm:flex shrink-0 items-center gap-1.5">
               <Badge variant={getStatusBadgeVariant(m.project.status)}>
                 {m.project.status}
               </Badge>
@@ -184,20 +184,34 @@ export function ProjectKPICard({ metrics }: ProjectKPICardProps) {
                 <Badge variant="danger">At Risk</Badge>
               )}
             </div>
+            {/* Mobile: just health dot */}
+            {m.health === 'red' && (
+              <div className="sm:hidden h-2 w-2 shrink-0 rounded-full bg-red" title="At Risk" />
+            )}
           </div>
 
           {/* ── 2. KPI Metrics — horizontal row ── */}
-          <div className="mb-3 grid grid-cols-2 gap-x-4 gap-y-2 border-b border-border pb-3 sm:flex sm:items-center sm:justify-between sm:gap-0">
+          {/* Mobile: compact 2-col with just numbers */}
+          <div className="mb-1.5 sm:mb-3 grid grid-cols-2 gap-x-2 gap-y-1 sm:gap-x-4 sm:gap-y-2 border-b border-border pb-1.5 sm:pb-3 sm:grid-cols-4 sm:flex sm:items-center sm:justify-between sm:gap-0">
             <div className="flex flex-col">
               <div className="flex items-center gap-1 text-muted">
-                <ClipboardDocumentListIcon className="h-3 w-3" />
-                <span className="text-[9px] font-semibold uppercase tracking-wide">Total</span>
+                <ClipboardDocumentListIcon className="hidden sm:block h-3 w-3" />
+                <span className="text-[8px] sm:text-[9px] font-semibold uppercase tracking-wide">Total</span>
               </div>
-              <p className="text-[20px] font-bold leading-tight tabular-nums text-text">
+              <p className="text-[15px] sm:text-[20px] font-bold leading-tight tabular-nums text-text">
                 <AnimatedNum value={m.totalTasks} />
               </p>
             </div>
             <div className="flex flex-col">
+              <div className="flex items-center gap-1">
+                <ExclamationTriangleIcon className={cn('hidden sm:block h-3 w-3', m.overdueTasks > 0 ? 'text-red' : 'text-muted')} />
+                <span className="text-[8px] sm:text-[9px] font-semibold uppercase tracking-wide text-muted">Overdue</span>
+              </div>
+              <p className={cn('text-[15px] sm:text-[20px] font-bold leading-tight tabular-nums', m.overdueTasks > 0 ? 'text-red' : 'text-muted/40')}>
+                <AnimatedNum value={m.overdueTasks} />
+              </p>
+            </div>
+            <div className="hidden sm:flex flex-col">
               <div className="flex items-center gap-1 text-blue">
                 <ArrowPathIcon className="h-3 w-3" />
                 <span className="text-[9px] font-semibold uppercase tracking-wide text-muted">In Prog</span>
@@ -206,16 +220,7 @@ export function ProjectKPICard({ metrics }: ProjectKPICardProps) {
                 <AnimatedNum value={m.inProgressTasks} />
               </p>
             </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1">
-                <ExclamationTriangleIcon className={cn('h-3 w-3', m.overdueTasks > 0 ? 'text-red' : 'text-muted')} />
-                <span className="text-[9px] font-semibold uppercase tracking-wide text-muted">Overdue</span>
-              </div>
-              <p className={cn('text-[20px] font-bold leading-tight tabular-nums', m.overdueTasks > 0 ? 'text-red' : 'text-muted/40')}>
-                <AnimatedNum value={m.overdueTasks} />
-              </p>
-            </div>
-            <div className="flex flex-col">
+            <div className="hidden sm:flex flex-col">
               <div className="flex items-center gap-1">
                 <NoSymbolIcon className={cn('h-3 w-3', m.blockedTasks > 0 ? 'text-yellow' : 'text-muted')} />
                 <span className="text-[9px] font-semibold uppercase tracking-wide text-muted">Blocked</span>
@@ -227,13 +232,13 @@ export function ProjectKPICard({ metrics }: ProjectKPICardProps) {
           </div>
 
           {/* ── 3. Progress bar ── */}
-          <div className="mb-3">
-            <div className="mb-1.5 flex items-center justify-between">
+          <div className="mb-1.5 sm:mb-3">
+            <div className="mb-1 sm:mb-1.5 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-semibold text-muted">Progress</span>
-                <Sparkline data={m.weeklyCompletions} color={progressRaw} />
+                <span className="text-[9px] sm:text-[11px] font-semibold text-muted">{m.progressPercent}%</span>
+                <span className="hidden sm:inline"><Sparkline data={m.weeklyCompletions} color={progressRaw} /></span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="hidden sm:flex items-center gap-2">
                 <span className="text-[11px] text-muted">
                   <CheckCircleIcon className="mr-0.5 inline h-3 w-3 text-green" />
                   {m.doneTasks}/{m.totalTasks}
@@ -241,7 +246,7 @@ export function ProjectKPICard({ metrics }: ProjectKPICardProps) {
                 <CompletionRing percent={m.progressPercent} color={progressRaw} delay={0.2} />
               </div>
             </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-border/40">
+            <div className="h-1 sm:h-1.5 w-full overflow-hidden rounded-full bg-border/40">
               <motion.div
                 className={cn('h-full rounded-full', progressColor)}
                 initial={{ width: 0 }}
@@ -251,9 +256,9 @@ export function ProjectKPICard({ metrics }: ProjectKPICardProps) {
             </div>
           </div>
 
-          {/* ── 4. Quick stats badges ── */}
+          {/* ── 4. Quick stats badges (desktop only) ── */}
           {(m.dueToday > 0 || m.dueThisWeek > 0 || m.highPriorityCount > 0) && (
-            <div className="mb-3 flex flex-wrap items-center gap-1.5">
+            <div className="hidden sm:flex mb-3 flex-wrap items-center gap-1.5">
               {m.dueToday > 0 && (
                 <span className="inline-flex items-center gap-1 rounded-md bg-yellow-bg px-1.5 py-0.5 text-[9px] font-bold text-yellow">
                   <CalendarIcon className="h-2.5 w-2.5" />
@@ -276,11 +281,15 @@ export function ProjectKPICard({ metrics }: ProjectKPICardProps) {
           )}
 
           {/* ── 5. Footer: team + action ── */}
-          <div className="flex items-center justify-between border-t border-border pt-3">
-            <TeamAvatars metrics={m} />
-            <Button variant="ghost" size="sm" className="gap-1 text-accent" tabIndex={-1}>
-              View Details
-              <ArrowRightIcon className="h-3.5 w-3.5" />
+          <div className="flex items-center justify-between border-t border-border pt-1.5 sm:pt-3">
+            <div className="hidden sm:block">
+              <TeamAvatars metrics={m} />
+            </div>
+            {/* Mobile: minimal footer */}
+            <span className="sm:hidden text-[9px] font-medium text-muted">{m.totalTasks} tasks</span>
+            <Button variant="ghost" size="sm" className="gap-1 text-accent !p-0 sm:!p-2" tabIndex={-1}>
+              <span className="hidden sm:inline">View Details</span>
+              <ArrowRightIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
             </Button>
           </div>
         </div>
