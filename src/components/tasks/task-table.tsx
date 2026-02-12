@@ -60,7 +60,7 @@ export function TaskTable({
   onDeleteTask,
   onCompleteTask,
 }: TaskTableProps) {
-  const [tab, setTab] = useState<TabKey>('today');
+  const [tab, setTab] = useState<TabKey>('all');
   const [viewMode, setViewMode] = useState<'my' | 'all'>('my');
   const [search, setSearch] = useState('');
   const [groupBy, setGroupBy] = useState<GroupBy>('project');
@@ -169,10 +169,10 @@ export function TaskTable({
       (t) => t.status !== 'done' && (viewMode === 'all' || t.assignee_id === currentUser.id)
     );
     return [
+      { key: 'all', label: 'All', count: base.length },
       { key: 'today', label: 'Today', count: base.filter((t) => isDueToday(t.due_date)).length },
       { key: 'week', label: 'This Week', count: base.filter((t) => isDueThisWeek(t.due_date)).length },
       { key: 'overdue', label: 'Overdue', count: base.filter((t) => isOverdue(t.due_date, t.status)).length },
-      { key: 'all', label: 'All', count: base.length },
     ];
   }, [tasks, viewMode, currentUser.id]);
 
@@ -234,7 +234,7 @@ export function TaskTable({
           <button
             onClick={() => setViewMode('my')}
             className={clsx(
-              'rounded-md px-3 py-1 text-[12px] font-semibold transition-colors',
+              'rounded-md px-3 py-1 text-[12px] font-semibold transition-all active:scale-95',
               viewMode === 'my' ? 'bg-accent text-white' : 'text-muted hover:text-text'
             )}
           >
@@ -244,7 +244,7 @@ export function TaskTable({
             <button
               onClick={() => setViewMode('all')}
               className={clsx(
-                'rounded-md px-3 py-1 text-[12px] font-semibold transition-colors',
+                'rounded-md px-3 py-1 text-[12px] font-semibold transition-all active:scale-95',
                 viewMode === 'all' ? 'bg-accent text-white' : 'text-muted hover:text-text'
               )}
             >
@@ -289,7 +289,7 @@ export function TaskTable({
         {canCreate && onCreateTask && (
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-[12px] font-semibold text-white transition-colors hover:bg-accent-light"
+            className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-[12px] font-semibold text-white transition-all hover:bg-accent-light active:scale-95"
           >
             <PlusIcon className="h-3.5 w-3.5" />
             Add Task
@@ -304,7 +304,7 @@ export function TaskTable({
             key={t.key}
             onClick={() => { setTab(t.key); setSelectedIds(new Set()); }}
             className={clsx(
-              'relative px-3 py-2 text-[12px] font-semibold transition-colors',
+              'relative px-3 py-2 text-[12px] font-semibold transition-all active:scale-95',
               tab === t.key ? 'text-accent' : 'text-muted hover:text-text'
             )}
           >
@@ -383,7 +383,7 @@ export function TaskTable({
                   <button
                     onClick={toggleSelectAll}
                     className={clsx(
-                      'flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors',
+                      'flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all active:scale-90',
                       allSelected ? 'border-accent bg-accent text-white' : 'border-border hover:border-accent'
                     )}
                   >
@@ -409,7 +409,7 @@ export function TaskTable({
                       <button
                         onClick={() => toggleSelect(task.id)}
                         className={clsx(
-                          'flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors',
+                          'flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all active:scale-90',
                           selected ? 'border-accent bg-accent text-white' : 'border-border hover:border-accent'
                         )}
                       >
@@ -431,7 +431,7 @@ export function TaskTable({
                           <option key={s.value} value={s.value}>{s.label}</option>
                         ))}
                       </select>
-                      <button onClick={() => setSelectedTaskId(task.id)} className="min-w-0 flex-1 truncate text-left text-[12px] font-medium text-text hover:text-accent">
+                      <button onClick={() => setSelectedTaskId(task.id)} className="min-w-0 flex-1 truncate text-left text-[12px] font-medium text-text transition-all hover:text-accent active:scale-[0.98]">
                         {task.title}
                       </button>
                       <span
@@ -532,8 +532,8 @@ export function TaskTable({
                 </div>
               )}
               <div className="flex justify-end gap-2 pt-2">
-                <button type="button" onClick={() => setShowCreate(false)} className="rounded-xl border border-border px-4 py-2 text-[13px] font-semibold text-muted transition-colors hover:bg-bg hover:text-text">Cancel</button>
-                <button type="submit" disabled={createSaving} className="rounded-xl bg-accent px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-accent-light disabled:opacity-50">
+                <button type="button" onClick={() => setShowCreate(false)} className="rounded-xl border border-border px-4 py-2 text-[13px] font-semibold text-muted transition-all hover:bg-bg hover:text-text active:scale-95">Cancel</button>
+                <button type="submit" disabled={createSaving} className="rounded-xl bg-accent px-4 py-2 text-[13px] font-semibold text-white transition-all hover:bg-accent-light active:scale-95 disabled:opacity-50">
                   {createSaving ? 'Creating...' : 'Create Task'}
                 </button>
               </div>

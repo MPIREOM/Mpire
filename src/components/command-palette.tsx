@@ -246,7 +246,7 @@ export function CommandPalette({ open, onClose, onToggleSidebar }: CommandPalett
                                 onClick={() => handleSelect(item)}
                                 onMouseEnter={() => setActiveIndex(itemIndex)}
                                 className={cn(
-                                  'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium transition-colors',
+                                  'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium transition-all active:scale-[0.98]',
                                   isActive
                                     ? 'bg-accent-muted text-accent'
                                     : 'text-text hover:bg-bg'

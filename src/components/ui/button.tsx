@@ -11,9 +11,9 @@ const buttonVariants = cva(
       variant: {
         default: 'bg-accent text-white shadow-sm hover:bg-accent-light active:scale-[0.98]',
         destructive: 'bg-red text-white shadow-sm hover:bg-red/90 active:scale-[0.98]',
-        outline: 'border border-border bg-card text-text shadow-sm hover:bg-bg hover:border-border-hover',
-        secondary: 'bg-bg text-text hover:bg-border/50',
-        ghost: 'text-muted hover:bg-bg hover:text-text',
+        outline: 'border border-border bg-card text-text shadow-sm hover:bg-bg hover:border-border-hover active:scale-[0.98]',
+        secondary: 'bg-bg text-text hover:bg-border/50 active:scale-[0.98]',
+        ghost: 'text-muted hover:bg-bg hover:text-text active:scale-95',
         link: 'text-accent underline-offset-4 hover:underline',
       },
       size: {

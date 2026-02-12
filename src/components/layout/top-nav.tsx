@@ -139,7 +139,7 @@ export function TopNav({ title, subtitle, onMenuClick, onCommandPalette }: TopNa
       <div className="flex items-center gap-3">
         <button
           onClick={onMenuClick}
-          className="rounded-lg p-1.5 text-muted transition-colors hover:bg-bg hover:text-text lg:hidden"
+          className="rounded-lg p-1.5 text-muted transition-all hover:bg-bg hover:text-text active:scale-90 lg:hidden"
         >
           <Bars3Icon className="h-5 w-5" />
         </button>
@@ -234,7 +234,7 @@ export function TopNav({ title, subtitle, onMenuClick, onCommandPalette }: TopNa
                     notifications.map((n) => (
                       <div
                         key={n.id}
-                        className="flex items-start gap-3 border-b border-border px-4 py-3 transition-colors last:border-0 hover:bg-bg"
+                        className="flex items-start gap-3 border-b border-border px-4 py-3 transition-all last:border-0 hover:bg-bg active:scale-[0.98]"
                       >
                         <div className={cn(
                           'mt-0.5 rounded-lg p-1.5',

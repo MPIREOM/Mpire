@@ -293,7 +293,7 @@ export function ProjectKPICard({ metrics, onDelete }: ProjectKPICardProps) {
               {onDelete && (
                 <button
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(); }}
-                  className="rounded-lg p-1.5 text-muted opacity-0 transition-all hover:bg-red-bg hover:text-red group-hover:opacity-100"
+                  className="rounded-lg p-1.5 text-muted transition-all hover:bg-red-bg hover:text-red active:scale-90"
                   title="Delete project"
                 >
                   <TrashIcon className="h-3.5 w-3.5" />
@@ -370,7 +370,7 @@ export function ProjectListRow({ metrics, onDelete }: ProjectKPICardProps) {
         {onDelete && (
           <button
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(); }}
-            className="rounded-lg p-1.5 text-muted transition-colors hover:bg-red-bg hover:text-red"
+            className="rounded-lg p-1.5 text-muted transition-all hover:bg-red-bg hover:text-red active:scale-90"
             title="Delete project"
           >
             <TrashIcon className="h-4 w-4" />
