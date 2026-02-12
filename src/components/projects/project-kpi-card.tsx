@@ -55,7 +55,7 @@ function AnimatedNum({ value, suffix = '' }: { value: number; suffix?: string })
   );
 }
 
-/* ── SVG Completion ring ── */
+/* ── SVG Completion ring (compact) ── */
 function CompletionRing({
   percent,
   color,
@@ -65,19 +65,19 @@ function CompletionRing({
   color: string;
   delay?: number;
 }) {
-  const r = 22;
-  const stroke = 3.5;
+  const r = 14;
+  const stroke = 2.5;
   const c = 2 * Math.PI * r;
   return (
     <div className="relative flex items-center justify-center">
-      <svg width={52} height={52} viewBox="0 0 52 52" className="-rotate-90">
+      <svg width={34} height={34} viewBox="0 0 34 34" className="-rotate-90">
         <circle
-          cx={26} cy={26} r={r}
+          cx={17} cy={17} r={r}
           fill="none" stroke="currentColor" strokeWidth={stroke}
           className="text-border/50"
         />
         <motion.circle
-          cx={26} cy={26} r={r}
+          cx={17} cy={17} r={r}
           fill="none" stroke={color} strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={c}
@@ -86,7 +86,7 @@ function CompletionRing({
           transition={{ delay, duration: 1, ease: [0.4, 0, 0.2, 1] }}
         />
       </svg>
-      <span className="absolute text-[11px] font-bold tabular-nums text-text">{percent}%</span>
+      <span className="absolute text-[9px] font-bold tabular-nums text-text">{percent}%</span>
     </div>
   );
 }
@@ -156,32 +156,25 @@ export function ProjectKPICard({ metrics }: ProjectKPICardProps) {
         {/* Shine sweep on hover */}
         <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/[0.03] to-transparent transition-transform duration-700 group-hover:translate-x-full" />
 
-        <div className="relative p-5 sm:p-6">
-          {/* ── Header: name, status, priority ── */}
-          <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="relative p-4 sm:p-5">
+          {/* ── 1. Header: name, status ── */}
+          <div className="mb-3 flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="mb-1 flex items-center gap-2">
+              <div className="mb-0.5 flex items-center gap-2">
                 <div
-                  className="h-2.5 w-2.5 shrink-0 rounded-full"
+                  className="h-2 w-2 shrink-0 rounded-full"
                   style={{ backgroundColor: m.project.color }}
                 />
-                <h3 className="truncate text-[16px] font-bold leading-tight text-text">
+                <h3 className="truncate text-[15px] font-bold leading-tight text-text">
                   {m.project.name}
                 </h3>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] text-muted">
-                  {m.totalTasks} tasks
-                </span>
+              <p className="text-[11px] text-muted">
+                {m.totalTasks} tasks
                 {m.lastActivityAt && (
-                  <>
-                    <span className="text-muted/40">·</span>
-                    <span className="text-[11px] text-muted">
-                      Updated {m.lastActivityRelative}
-                    </span>
-                  </>
+                  <> · Updated {m.lastActivityRelative}</>
                 )}
-              </div>
+              </p>
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
               <Badge variant={getStatusBadgeVariant(m.project.status)}>
@@ -193,60 +186,62 @@ export function ProjectKPICard({ metrics }: ProjectKPICardProps) {
             </div>
           </div>
 
-          {/* ── KPI Metrics Grid ── */}
-          <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {/* Total */}
-            <div className="rounded-lg bg-bg/80 px-3 py-2.5">
-              <div className="mb-0.5 flex items-center gap-1.5">
-                <ClipboardDocumentListIcon className="h-3.5 w-3.5 text-muted" />
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">Total</span>
+          {/* ── 2. KPI Metrics — horizontal row ── */}
+          <div className="mb-3 grid grid-cols-2 gap-x-4 gap-y-2 border-b border-border pb-3 sm:flex sm:items-center sm:justify-between sm:gap-0">
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1 text-muted">
+                <ClipboardDocumentListIcon className="h-3 w-3" />
+                <span className="text-[9px] font-semibold uppercase tracking-wide">Total</span>
               </div>
-              <p className="text-[18px] font-bold leading-tight text-text">
+              <p className="text-[20px] font-bold leading-tight tabular-nums text-text">
                 <AnimatedNum value={m.totalTasks} />
               </p>
             </div>
-            {/* In Progress */}
-            <div className="rounded-lg bg-bg/80 px-3 py-2.5">
-              <div className="mb-0.5 flex items-center gap-1.5">
-                <ArrowPathIcon className="h-3.5 w-3.5 text-blue" />
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">In Prog</span>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1 text-blue">
+                <ArrowPathIcon className="h-3 w-3" />
+                <span className="text-[9px] font-semibold uppercase tracking-wide text-muted">In Prog</span>
               </div>
-              <p className="text-[18px] font-bold leading-tight text-blue">
+              <p className="text-[20px] font-bold leading-tight tabular-nums text-blue">
                 <AnimatedNum value={m.inProgressTasks} />
               </p>
             </div>
-            {/* Overdue */}
-            <div className={cn('rounded-lg px-3 py-2.5', m.overdueTasks > 0 ? 'bg-red-bg' : 'bg-bg/80')}>
-              <div className="mb-0.5 flex items-center gap-1.5">
-                <ExclamationTriangleIcon className={cn('h-3.5 w-3.5', m.overdueTasks > 0 ? 'text-red' : 'text-muted')} />
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">Overdue</span>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1">
+                <ExclamationTriangleIcon className={cn('h-3 w-3', m.overdueTasks > 0 ? 'text-red' : 'text-muted')} />
+                <span className="text-[9px] font-semibold uppercase tracking-wide text-muted">Overdue</span>
               </div>
-              <p className={cn('text-[18px] font-bold leading-tight', m.overdueTasks > 0 ? 'text-red' : 'text-text')}>
+              <p className={cn('text-[20px] font-bold leading-tight tabular-nums', m.overdueTasks > 0 ? 'text-red' : 'text-muted/40')}>
                 <AnimatedNum value={m.overdueTasks} />
               </p>
             </div>
-            {/* Blocked */}
-            <div className={cn('rounded-lg px-3 py-2.5', m.blockedTasks > 0 ? 'bg-yellow-bg' : 'bg-bg/80')}>
-              <div className="mb-0.5 flex items-center gap-1.5">
-                <NoSymbolIcon className={cn('h-3.5 w-3.5', m.blockedTasks > 0 ? 'text-yellow' : 'text-muted')} />
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">Blocked</span>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1">
+                <NoSymbolIcon className={cn('h-3 w-3', m.blockedTasks > 0 ? 'text-yellow' : 'text-muted')} />
+                <span className="text-[9px] font-semibold uppercase tracking-wide text-muted">Blocked</span>
               </div>
-              <p className={cn('text-[18px] font-bold leading-tight', m.blockedTasks > 0 ? 'text-yellow' : 'text-text')}>
+              <p className={cn('text-[20px] font-bold leading-tight tabular-nums', m.blockedTasks > 0 ? 'text-yellow' : 'text-muted/40')}>
                 <AnimatedNum value={m.blockedTasks} />
               </p>
             </div>
           </div>
 
-          {/* ── Progress section ── */}
-          <div className="mb-5">
-            <div className="mb-2 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="text-[12px] font-semibold text-muted">Progress</span>
+          {/* ── 3. Progress bar ── */}
+          <div className="mb-3">
+            <div className="mb-1.5 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-semibold text-muted">Progress</span>
                 <Sparkline data={m.weeklyCompletions} color={progressRaw} />
               </div>
-              <CompletionRing percent={m.progressPercent} color={progressRaw} delay={0.2} />
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] text-muted">
+                  <CheckCircleIcon className="mr-0.5 inline h-3 w-3 text-green" />
+                  {m.doneTasks}/{m.totalTasks}
+                </span>
+                <CompletionRing percent={m.progressPercent} color={progressRaw} delay={0.2} />
+              </div>
             </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-border/40">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-border/40">
               <motion.div
                 className={cn('h-full rounded-full', progressColor)}
                 initial={{ width: 0 }}
@@ -254,39 +249,34 @@ export function ProjectKPICard({ metrics }: ProjectKPICardProps) {
                 transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1], delay: 0.15 }}
               />
             </div>
-            <div className="mt-1.5 flex items-center justify-between text-[10px] text-muted">
-              <span>
-                <CheckCircleIcon className="mr-0.5 inline h-3 w-3 text-green" />
-                {m.doneTasks} done
-              </span>
-              <span>{m.totalTasks - m.doneTasks} remaining</span>
+          </div>
+
+          {/* ── 4. Quick stats badges ── */}
+          {(m.dueToday > 0 || m.dueThisWeek > 0 || m.highPriorityCount > 0) && (
+            <div className="mb-3 flex flex-wrap items-center gap-1.5">
+              {m.dueToday > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-yellow-bg px-1.5 py-0.5 text-[9px] font-bold text-yellow">
+                  <CalendarIcon className="h-2.5 w-2.5" />
+                  {m.dueToday} today
+                </span>
+              )}
+              {m.dueThisWeek > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-blue-bg px-1.5 py-0.5 text-[9px] font-bold text-blue">
+                  <ClockIcon className="h-2.5 w-2.5" />
+                  {m.dueThisWeek} this week
+                </span>
+              )}
+              {m.highPriorityCount > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-red-bg px-1.5 py-0.5 text-[9px] font-bold text-red">
+                  <ExclamationTriangleIcon className="h-2.5 w-2.5" />
+                  {m.highPriorityCount} high
+                </span>
+              )}
             </div>
-          </div>
+          )}
 
-          {/* ── Quick stats row ── */}
-          <div className="mb-4 flex flex-wrap items-center gap-3">
-            {m.dueToday > 0 && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-yellow-bg px-2 py-1 text-[10px] font-bold text-yellow">
-                <CalendarIcon className="h-3 w-3" />
-                {m.dueToday} due today
-              </span>
-            )}
-            {m.dueThisWeek > 0 && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-blue-bg px-2 py-1 text-[10px] font-bold text-blue">
-                <ClockIcon className="h-3 w-3" />
-                {m.dueThisWeek} this week
-              </span>
-            )}
-            {m.highPriorityCount > 0 && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-red-bg px-2 py-1 text-[10px] font-bold text-red">
-                <ExclamationTriangleIcon className="h-3 w-3" />
-                {m.highPriorityCount} high priority
-              </span>
-            )}
-          </div>
-
-          {/* ── Footer: team + action ── */}
-          <div className="flex items-center justify-between border-t border-border pt-4">
+          {/* ── 5. Footer: team + action ── */}
+          <div className="flex items-center justify-between border-t border-border pt-3">
             <TeamAvatars metrics={m} />
             <Button variant="ghost" size="sm" className="gap-1 text-accent" tabIndex={-1}>
               View Details
