@@ -11,10 +11,12 @@ import {
 } from '@heroicons/react/24/outline';
 import type { Task, User, Project, TaskStatus } from '@/types/database';
 import { isOverdue, isDueToday, isDueThisWeek, formatDate } from '@/lib/dates';
+import { isAssignedTo, getTaskAssignees } from '@/lib/task-helpers';
 import { subDays, isAfter, parseISO } from 'date-fns';
 import { TaskDetailDrawer } from '@/components/operations/task-detail-drawer';
 import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
+import { AvatarStack } from '@/components/ui/assignee-picker';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useTeam } from '@/hooks/use-team';
 import type { TimeEntry } from '@/components/tasks/time-review-dialog';
@@ -28,6 +30,7 @@ interface StaffDashboardProps {
   onUpdateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
   onDeleteTask?: (taskId: string) => Promise<void>;
   onCompleteTask?: (taskId: string, userId: string, timeEntries: TimeEntry[]) => Promise<void>;
+  onSetAssignees?: (taskId: string, userIds: string[]) => Promise<void>;
 }
 
 const statusOptions: { value: TaskStatus; label: string }[] = [
@@ -44,6 +47,7 @@ export function StaffDashboard({
   onUpdateTask,
   onDeleteTask,
   onCompleteTask,
+  onSetAssignees,
 }: StaffDashboardProps) {
   const [tab, setTab] = useState<TabKey>('today');
   // Store ID instead of full task object to avoid stale references
@@ -57,7 +61,7 @@ export function StaffDashboard({
   );
 
   const myTasks = useMemo(
-    () => tasks.filter((t) => t.assignee_id === currentUser.id && t.status !== 'done'),
+    () => tasks.filter((t) => isAssignedTo(t, currentUser.id) && t.status !== 'done'),
     [tasks, currentUser.id]
   );
 
@@ -248,9 +252,9 @@ export function StaffDashboard({
                   </div>
 
                   {/* Assignee avatar — desktop only */}
-                  {task.assignee && (
+                  {getTaskAssignees(task).length > 0 && (
                     <div className="hidden sm:block">
-                      <Avatar name={task.assignee.full_name} src={task.assignee.avatar_url} size="sm" />
+                      <AvatarStack users={getTaskAssignees(task)} max={3} size="sm" />
                     </div>
                   )}
 
@@ -281,6 +285,7 @@ export function StaffDashboard({
         onUpdateTask={onUpdateTask}
         onDeleteTask={onDeleteTask}
         onCompleteTask={onCompleteTask}
+        onSetAssignees={onSetAssignees}
       />
     </div>
   );

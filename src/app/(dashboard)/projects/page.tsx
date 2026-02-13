@@ -36,6 +36,7 @@ import {
   CheckCircleIcon,
   PauseCircleIcon,
   PlusIcon,
+  PencilSquareIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
 
@@ -63,7 +64,7 @@ const PROJECT_COLORS = [
 ];
 
 export default function ProjectsPage() {
-  const { projects, isLoading: projectsLoading, createProject, deleteProject } = useProjects();
+  const { projects, isLoading: projectsLoading, createProject, updateProject, deleteProject } = useProjects();
   const { tasks, isLoading: tasksLoading } = useTasks();
   const { team } = useTeam();
   const { user } = useUser();
@@ -81,6 +82,11 @@ export default function ProjectsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [createForm, setCreateForm] = useState({ name: '', status: 'active' as ProjectStatus, color: PROJECT_COLORS[0] });
   const [createSaving, setCreateSaving] = useState(false);
+
+  // Edit project dialog state
+  const [editTarget, setEditTarget] = useState<{ id: string; name: string; status: ProjectStatus; color: string } | null>(null);
+  const [editForm, setEditForm] = useState({ name: '', status: 'active' as ProjectStatus, color: '' });
+  const [editSaving, setEditSaving] = useState(false);
 
   // Delete project dialog state
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
@@ -101,6 +107,27 @@ export default function ProjectsPage() {
       setCreateForm({ name: '', status: 'active', color: PROJECT_COLORS[0] });
     } finally {
       setCreateSaving(false);
+    }
+  }
+
+  function openEditDialog(project: { id: string; name: string; status: ProjectStatus; color: string }) {
+    setEditTarget(project);
+    setEditForm({ name: project.name, status: project.status, color: project.color });
+  }
+
+  async function handleEditProject(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editTarget || !editForm.name.trim()) return;
+    setEditSaving(true);
+    try {
+      await updateProject(editTarget.id, {
+        name: editForm.name.trim(),
+        status: editForm.status,
+        color: editForm.color,
+      });
+      setEditTarget(null);
+    } finally {
+      setEditSaving(false);
     }
   }
 
@@ -359,6 +386,7 @@ export default function ProjectsPage() {
                 >
                   <ProjectKPICard
                     metrics={m}
+                    onEdit={canEdit ? () => openEditDialog({ id: m.project.id, name: m.project.name, status: m.project.status as ProjectStatus, color: m.project.color }) : undefined}
                     onDelete={canEdit ? () => setDeleteTarget({ id: m.project.id, name: m.project.name }) : undefined}
                   />
                 </motion.div>
@@ -396,6 +424,7 @@ export default function ProjectsPage() {
                 >
                   <ProjectListRow
                     metrics={m}
+                    onEdit={canEdit ? () => openEditDialog({ id: m.project.id, name: m.project.name, status: m.project.status as ProjectStatus, color: m.project.color }) : undefined}
                     onDelete={canEdit ? () => setDeleteTarget({ id: m.project.id, name: m.project.name }) : undefined}
                   />
                 </motion.div>
@@ -460,6 +489,69 @@ export default function ProjectsPage() {
                 <button type="button" onClick={() => setShowCreate(false)} className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted transition-all hover:bg-bg hover:text-text active:scale-95">Cancel</button>
                 <button type="submit" disabled={createSaving} className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-accent-light active:scale-95 disabled:opacity-50">
                   {createSaving ? 'Creating...' : 'Create Project'}
+                </button>
+              </div>
+            </form>
+          </DialogPanel>
+        </div>
+      </Dialog>
+
+      {/* Edit Project Dialog */}
+      <Dialog open={!!editTarget} onClose={() => setEditTarget(null)} className="relative z-50">
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <DialogPanel className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-lg font-bold text-text">Edit Project</DialogTitle>
+              <button onClick={() => setEditTarget(null)} className="rounded-md p-1 text-muted hover:bg-bg hover:text-text">
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={handleEditProject} className="mt-5 space-y-4">
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Project Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Status</label>
+                <select
+                  value={editForm.status}
+                  onChange={(e) => setEditForm({ ...editForm, status: e.target.value as ProjectStatus })}
+                  className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
+                >
+                  <option value="active">Active</option>
+                  <option value="paused">Paused</option>
+                  <option value="completed">Completed</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Color</label>
+                <div className="flex flex-wrap gap-2">
+                  {PROJECT_COLORS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setEditForm({ ...editForm, color: c })}
+                      className={cn(
+                        'h-7 w-7 rounded-lg transition-all active:scale-90',
+                        editForm.color === c ? 'ring-2 ring-accent ring-offset-2 ring-offset-card scale-110' : 'hover:scale-105'
+                      )}
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setEditTarget(null)} className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted transition-all hover:bg-bg hover:text-text active:scale-95">Cancel</button>
+                <button type="submit" disabled={editSaving} className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-accent-light active:scale-95 disabled:opacity-50">
+                  {editSaving ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </form>

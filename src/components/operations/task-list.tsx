@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import type { Task, User, Project, TaskStatus } from '@/types/database';
 import { isOverdue, isDueToday } from '@/lib/dates';
 import { canViewAllTasks, canAssignTasks } from '@/lib/roles';
+import { isAssignedTo, getTaskAssignees } from '@/lib/task-helpers';
 import { FunnelIcon, MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +23,7 @@ interface TaskListProps {
   team: User[];
   projects: Project[];
   onUpdateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
+  onSetAssignees?: (taskId: string, userIds: string[]) => Promise<void>;
 }
 
 export function TaskList({
@@ -30,6 +32,7 @@ export function TaskList({
   team,
   projects,
   onUpdateTask,
+  onSetAssignees,
 }: TaskListProps) {
   const [tab, setTab] = useState<TabKey>('all');
   const [viewMode, setViewMode] = useState<'my' | 'all'>('my');
@@ -46,7 +49,7 @@ export function TaskList({
     let result = tasks;
 
     if (viewMode === 'my') {
-      result = result.filter((t) => t.assignee_id === currentUser.id);
+      result = result.filter((t) => isAssignedTo(t, currentUser.id));
     }
 
     switch (tab) {
@@ -70,14 +73,14 @@ export function TaskList({
         (t) =>
           t.title.toLowerCase().includes(q) ||
           t.project?.name.toLowerCase().includes(q) ||
-          t.assignee?.full_name.toLowerCase().includes(q)
+          getTaskAssignees(t).some((u) => u.full_name.toLowerCase().includes(q))
       );
     }
 
     if (filters.status) result = result.filter((t) => t.status === filters.status);
     if (filters.priority) result = result.filter((t) => t.priority === filters.priority);
     if (filters.projectId) result = result.filter((t) => t.project_id === filters.projectId);
-    if (filters.assigneeId && canAssign) result = result.filter((t) => t.assignee_id === filters.assigneeId);
+    if (filters.assigneeId && canAssign) result = result.filter((t) => isAssignedTo(t, filters.assigneeId!));
 
     return result;
   }, [tasks, viewMode, tab, search, filters, currentUser.id, canAssign]);
@@ -303,6 +306,7 @@ export function TaskList({
         currentUser={currentUser}
         team={team}
         onUpdateTask={onUpdateTask}
+        onSetAssignees={onSetAssignees}
       />
     </div>
   );

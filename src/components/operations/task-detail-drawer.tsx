@@ -13,6 +13,8 @@ import { formatDate, isOverdue } from '@/lib/dates';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
+import { AssigneePicker } from '@/components/ui/assignee-picker';
+import { getTaskAssigneeIds } from '@/lib/task-helpers';
 import type { Task, User, TaskComment, TaskActivity, TaskStatus, TaskPriority } from '@/types/database';
 import { TimeReviewDialog, type TimeEntry } from '@/components/tasks/time-review-dialog';
 
@@ -22,6 +24,7 @@ interface TaskDetailDrawerProps {
   currentUser: User;
   team: User[];
   onUpdateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
+  onSetAssignees?: (taskId: string, userIds: string[]) => Promise<void>;
   onDeleteTask?: (taskId: string) => Promise<void>;
   onCompleteTask?: (taskId: string, userId: string, timeEntries: TimeEntry[]) => Promise<void>;
 }
@@ -47,6 +50,7 @@ export function TaskDetailDrawer({
   currentUser,
   team,
   onUpdateTask,
+  onSetAssignees,
   onDeleteTask,
   onCompleteTask,
 }: TaskDetailDrawerProps) {
@@ -290,24 +294,25 @@ export function TaskDetailDrawer({
 
                 <div className="border-t border-border" />
 
-                {/* Assignee */}
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-muted">
-                    Assignee
+                {/* Assignees */}
+                <div>
+                  <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-muted">
+                    Assignees
                   </span>
-                  <select
-                    value={task.assignee_id ?? ''}
-                    onChange={(e) => handleFieldChange('assignee_id', e.target.value)}
+                  <AssigneePicker
+                    team={team}
+                    selected={getTaskAssigneeIds(task)}
+                    onChange={async (ids) => {
+                      if (!onSetAssignees) return;
+                      try {
+                        await onSetAssignees(task.id, ids);
+                        toast.success('Assignees updated');
+                      } catch (err) {
+                        toast.error(err instanceof Error ? err.message : 'Failed to update assignees');
+                      }
+                    }}
                     disabled={!canAssign}
-                    className="rounded-lg border border-border bg-bg px-3 py-1.5 text-[13px] font-medium text-text transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-muted disabled:opacity-50"
-                  >
-                    <option value="">Unassigned</option>
-                    {team.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.full_name}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </div>
 
                 {/* Description */}

@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import type { Task } from '@/types/database';
 import { isOverdue, isDueToday, isDueThisWeek, formatDate } from '@/lib/dates';
+import { getTaskAssignees } from '@/lib/task-helpers';
 
 interface WeekFocusProps {
   tasks: Task[];
@@ -67,7 +68,7 @@ export function WeekFocus({ tasks }: WeekFocusProps) {
               </p>
               <p className="text-xs text-muted">
                 {task.project?.name ?? 'No project'}
-                {task.assignee && ` · ${task.assignee.full_name}`}
+                {getTaskAssignees(task).length > 0 && ` · ${getTaskAssignees(task).map(u => u.full_name).join(', ')}`}
               </p>
             </div>
 

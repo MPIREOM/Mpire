@@ -65,6 +65,15 @@ create index idx_tasks_assignee on public.tasks(assignee_id);
 create index idx_tasks_status on public.tasks(status);
 create index idx_tasks_priority on public.tasks(priority);
 
+-- 5b. Task Assignees (many-to-many junction)
+create table if not exists public.task_assignees (
+  task_id uuid not null references public.tasks(id) on delete cascade,
+  user_id uuid not null references public.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (task_id, user_id)
+);
+create index idx_task_assignees_user on public.task_assignees(user_id);
+
 -- 6. Task Comments
 create table if not exists public.task_comments (
   id uuid primary key default gen_random_uuid(),
@@ -111,6 +120,7 @@ alter table public.business_units enable row level security;
 alter table public.users enable row level security;
 alter table public.projects enable row level security;
 alter table public.tasks enable row level security;
+alter table public.task_assignees enable row level security;
 alter table public.task_comments enable row level security;
 alter table public.task_activity enable row level security;
 
@@ -184,6 +194,10 @@ create policy "Staff read assigned tasks"
     and (
       public.get_my_role() in ('owner', 'manager')
       or assignee_id = auth.uid()
+      or exists (
+        select 1 from public.task_assignees ta
+        where ta.task_id = tasks.id and ta.user_id = auth.uid()
+      )
     )
   );
 
@@ -209,6 +223,10 @@ create policy "Staff can update own task status"
     and (
       public.get_my_role() in ('owner', 'manager')
       or assignee_id = auth.uid()
+      or exists (
+        select 1 from public.task_assignees ta
+        where ta.task_id = tasks.id and ta.user_id = auth.uid()
+      )
     )
   );
 
@@ -223,6 +241,20 @@ create policy "Managers can delete tasks"
     and public.get_my_role() in ('owner', 'manager')
   );
 
+-- TASK ASSIGNEES: managers can manage, anyone can read own
+alter table public.task_assignees enable row level security;
+create policy "Users can read task assignees"
+  on public.task_assignees for select
+  using (true);
+
+create policy "Managers can insert task assignees"
+  on public.task_assignees for insert
+  with check (public.get_my_role() in ('owner', 'manager'));
+
+create policy "Managers can delete task assignees"
+  on public.task_assignees for delete
+  using (public.get_my_role() in ('owner', 'manager'));
+
 -- TASK COMMENTS: company users can read comments on visible tasks
 create policy "Users can read task comments"
   on public.task_comments for select
@@ -232,7 +264,11 @@ create policy "Users can read task comments"
       join public.projects p on p.id = t.project_id
       where t.id = task_comments.task_id
         and p.company_id = public.get_my_company_id()
-        and (public.get_my_role() in ('owner', 'manager') or t.assignee_id = auth.uid())
+        and (
+          public.get_my_role() in ('owner', 'manager')
+          or t.assignee_id = auth.uid()
+          or exists (select 1 from public.task_assignees ta where ta.task_id = t.id and ta.user_id = auth.uid())
+        )
     )
   );
 
@@ -245,7 +281,11 @@ create policy "Users can insert comments on visible tasks"
       join public.projects p on p.id = t.project_id
       where t.id = task_comments.task_id
         and p.company_id = public.get_my_company_id()
-        and (public.get_my_role() in ('owner', 'manager') or t.assignee_id = auth.uid())
+        and (
+          public.get_my_role() in ('owner', 'manager')
+          or t.assignee_id = auth.uid()
+          or exists (select 1 from public.task_assignees ta where ta.task_id = t.id and ta.user_id = auth.uid())
+        )
     )
   );
 
@@ -258,7 +298,11 @@ create policy "Users can read task activity"
       join public.projects p on p.id = t.project_id
       where t.id = task_activity.task_id
         and p.company_id = public.get_my_company_id()
-        and (public.get_my_role() in ('owner', 'manager') or t.assignee_id = auth.uid())
+        and (
+          public.get_my_role() in ('owner', 'manager')
+          or t.assignee_id = auth.uid()
+          or exists (select 1 from public.task_assignees ta where ta.task_id = t.id and ta.user_id = auth.uid())
+        )
     )
   );
 
@@ -272,3 +316,4 @@ create policy "Users can log task activity"
 -- ENABLE REALTIME for tasks
 -- ============================================================
 alter publication supabase_realtime add table public.tasks;
+alter publication supabase_realtime add table public.task_assignees;

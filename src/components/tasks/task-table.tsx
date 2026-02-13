@@ -13,6 +13,8 @@ import { toast } from 'sonner';
 import type { Task, User, Project, TaskStatus, TaskPriority } from '@/types/database';
 import { isOverdue, isDueToday, isDueThisWeek, formatDate } from '@/lib/dates';
 import { canViewAllTasks, canAssignTasks, canCreateTasks } from '@/lib/roles';
+import { getTaskAssignees, isAssignedTo } from '@/lib/task-helpers';
+import { AssigneePicker, AvatarStack } from '@/components/ui/assignee-picker';
 import { TaskDetailDrawer } from '@/components/operations/task-detail-drawer';
 import { TimeReviewDialog, type TimeEntry } from '@/components/tasks/time-review-dialog';
 
@@ -26,7 +28,8 @@ interface TaskTableProps {
   team: User[];
   projects: Project[];
   onUpdateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
-  onCreateTask?: (task: Omit<Task, 'id' | 'created_at' | 'updated_at' | 'project' | 'assignee'>) => Promise<void>;
+  onCreateTaskWithAssignees?: (task: Omit<Task, 'id' | 'created_at' | 'updated_at' | 'project' | 'assignee' | 'task_assignees'>, assigneeIds: string[]) => Promise<void>;
+  onSetAssignees?: (taskId: string, userIds: string[]) => Promise<void>;
   onDeleteTask?: (taskId: string) => Promise<void>;
   onCompleteTask?: (taskId: string, userId: string, timeEntries: TimeEntry[]) => Promise<void>;
 }
@@ -57,7 +60,8 @@ export function TaskTable({
   team,
   projects,
   onUpdateTask,
-  onCreateTask,
+  onCreateTaskWithAssignees,
+  onSetAssignees,
   onDeleteTask,
   onCompleteTask,
 }: TaskTableProps) {
@@ -74,7 +78,7 @@ export function TaskTable({
     project_id: '',
     priority: 'medium' as TaskPriority,
     due_date: '',
-    assignee_id: '',
+    assignee_ids: [] as string[],
   });
   const [createSaving, setCreateSaving] = useState(false);
   const [timeReviewTaskId, setTimeReviewTaskId] = useState<string | null>(null);
@@ -115,7 +119,7 @@ export function TaskTable({
     let result = tasks.filter((t) => t.status !== 'done');
 
     if (viewMode === 'my') {
-      result = result.filter((t) => t.assignee_id === currentUser.id);
+      result = result.filter((t) => isAssignedTo(t, currentUser.id));
     }
 
     switch (tab) {
@@ -136,7 +140,7 @@ export function TaskTable({
         (t) =>
           t.title.toLowerCase().includes(q) ||
           t.project?.name.toLowerCase().includes(q) ||
-          t.assignee?.full_name.toLowerCase().includes(q)
+          getTaskAssignees(t).some((u) => u.full_name.toLowerCase().includes(q))
       );
     }
 
@@ -167,7 +171,7 @@ export function TaskTable({
 
   const tabs: { key: TabKey; label: string; count: number }[] = useMemo(() => {
     const base = tasks.filter(
-      (t) => t.status !== 'done' && (viewMode === 'all' || t.assignee_id === currentUser.id)
+      (t) => t.status !== 'done' && (viewMode === 'all' || isAssignedTo(t, currentUser.id))
     );
     return [
       { key: 'all', label: 'All', count: base.length },
@@ -203,26 +207,29 @@ export function TaskTable({
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    if (!onCreateTask) return;
+    if (!onCreateTaskWithAssignees) return;
     if (!createForm.title.trim()) { toast.error('Title is required'); return; }
     if (!createForm.project_id) { toast.error('Please select a project'); return; }
     setCreateSaving(true);
     try {
-      await onCreateTask({
-        title: createForm.title.trim(),
-        project_id: createForm.project_id,
-        priority: createForm.priority,
-        due_date: createForm.due_date || null,
-        assignee_id: createForm.assignee_id || null,
-        description: null,
-        status: 'todo',
-        created_by: currentUser.id,
-        recurring_rule: null,
-        tags: [],
-      });
+      await onCreateTaskWithAssignees(
+        {
+          title: createForm.title.trim(),
+          project_id: createForm.project_id,
+          priority: createForm.priority,
+          due_date: createForm.due_date || null,
+          assignee_id: createForm.assignee_ids[0] || null,
+          description: null,
+          status: 'todo',
+          created_by: currentUser.id,
+          recurring_rule: null,
+          tags: [],
+        },
+        createForm.assignee_ids
+      );
       toast.success('Task created');
       setShowCreate(false);
-      setCreateForm({ title: '', project_id: '', priority: 'medium', due_date: '', assignee_id: '' });
+      setCreateForm({ title: '', project_id: '', priority: 'medium', due_date: '', assignee_ids: [] });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to create task');
     } finally {
@@ -292,7 +299,7 @@ export function TaskTable({
         </select>
 
         {/* Create task button */}
-        {canCreate && onCreateTask && (
+        {canCreate && onCreateTaskWithAssignees && (
           <button
             onClick={() => setShowCreate(true)}
             className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-[13px] font-semibold text-white transition-all hover:bg-accent-light active:scale-95"
@@ -396,7 +403,7 @@ export function TaskTable({
                     {allSelected && <CheckIcon className="h-3 w-3" />}
                   </button>
                   <span className="flex-1 text-xs font-semibold uppercase tracking-wide text-muted">Task</span>
-                  <span className="hidden w-24 text-xs font-semibold uppercase tracking-wide text-muted sm:block">Assignee</span>
+                  <span className="hidden w-24 text-xs font-semibold uppercase tracking-wide text-muted sm:block">Assignees</span>
                   <span className="hidden w-16 text-right text-xs font-semibold uppercase tracking-wide text-muted sm:block">Due</span>
                 </div>
 
@@ -448,18 +455,10 @@ export function TaskTable({
                             {task.description}
                           </span>
                         )}
-                        {/* Mobile-only: show due date + assignee inline below title */}
+                        {/* Mobile-only: show due date + assignees inline below title */}
                         <div className="mt-1 flex items-center gap-2 sm:hidden">
-                          {task.assignee && (
-                            <span className="flex items-center gap-1 text-xs text-muted">
-                              <span
-                                className="flex h-4 w-4 shrink-0 items-center justify-center rounded text-[8px] font-bold text-white"
-                                style={{ backgroundColor: userColor(task.assignee.full_name) }}
-                              >
-                                {task.assignee.full_name.charAt(0)}
-                              </span>
-                              {task.assignee.full_name.split(' ')[0]}
-                            </span>
+                          {getTaskAssignees(task).length > 0 && (
+                            <AvatarStack users={getTaskAssignees(task)} max={3} size="xs" />
                           )}
                           {task.due_date && (
                             <span className={clsx('text-xs tabular-nums', overdue ? 'font-semibold text-red' : 'text-muted')}>
@@ -472,22 +471,9 @@ export function TaskTable({
                         className={clsx('h-2 w-2 shrink-0 rounded-full', task.priority === 'high' ? 'bg-red' : task.priority === 'medium' ? 'bg-yellow' : 'bg-blue')}
                         title={task.priority}
                       />
-                      {/* Assignee — desktop only */}
-                      <span className="hidden w-24 truncate text-[13px] text-muted sm:flex">
-                        {task.assignee ? (
-                          <span className="flex items-center gap-1.5">
-                            <span
-                              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[9px] font-bold text-white"
-                              style={{ backgroundColor: userColor(task.assignee.full_name) }}
-                              title={task.assignee.full_name}
-                            >
-                              {task.assignee.full_name.charAt(0)}
-                            </span>
-                            <span className="truncate">{task.assignee.full_name.split(' ')[0]}</span>
-                          </span>
-                        ) : (
-                          <span className="text-muted/50">—</span>
-                        )}
+                      {/* Assignees — desktop only */}
+                      <span className="hidden w-24 sm:flex">
+                        <AvatarStack users={getTaskAssignees(task)} max={3} size="xs" />
                       </span>
                       {/* Due date — desktop only */}
                       <span className={clsx('hidden w-16 shrink-0 text-right text-[13px] tabular-nums sm:block', overdue ? 'font-semibold text-red' : 'text-muted')}>
@@ -509,6 +495,7 @@ export function TaskTable({
         currentUser={currentUser}
         team={team}
         onUpdateTask={onUpdateTask}
+        onSetAssignees={onSetAssignees}
         onDeleteTask={onDeleteTask}
         onCompleteTask={onCompleteTask}
       />
@@ -522,7 +509,7 @@ export function TaskTable({
       />
 
       {/* Create Task Dialog */}
-      <Dialog open={showCreate} onClose={() => setShowCreate(false)} className="relative z-50">
+      <Dialog open={showCreate && !!onCreateTaskWithAssignees} onClose={() => setShowCreate(false)} className="relative z-50">
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
           <DialogPanel className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
@@ -560,11 +547,12 @@ export function TaskTable({
               </div>
               {canAssignTasks(currentUser.role) && (
                 <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Assignee</label>
-                  <select value={createForm.assignee_id} onChange={(e) => setCreateForm({ ...createForm, assignee_id: e.target.value })} className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted">
-                    <option value="">Unassigned</option>
-                    {team.map((u) => (<option key={u.id} value={u.id}>{u.full_name}</option>))}
-                  </select>
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Assignees</label>
+                  <AssigneePicker
+                    team={team}
+                    selected={createForm.assignee_ids}
+                    onChange={(ids) => setCreateForm({ ...createForm, assignee_ids: ids })}
+                  />
                 </div>
               )}
               <div className="flex justify-end gap-2 pt-2">

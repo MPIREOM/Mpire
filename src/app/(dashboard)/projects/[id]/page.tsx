@@ -20,7 +20,7 @@ type Tab = 'overview' | 'tasks' | 'finance';
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { projects } = useProjects();
-  const { tasks, updateTask, createTask, deleteTask, completeTask } = useTasks({ projectId: id });
+  const { tasks, updateTask, createTaskWithAssignees, setTaskAssignees, deleteTask, completeTask } = useTasks({ projectId: id });
   const { user } = useUser();
   const { team } = useTeam();
   const [tab, setTab] = useState<Tab>('overview');
@@ -147,7 +147,8 @@ export default function ProjectDetailPage() {
             team={team}
             projects={projects}
             onUpdateTask={updateTask}
-            onCreateTask={createTask}
+            onCreateTaskWithAssignees={createTaskWithAssignees}
+            onSetAssignees={setTaskAssignees}
             onDeleteTask={deleteTask}
             onCompleteTask={completeTask}
           />
