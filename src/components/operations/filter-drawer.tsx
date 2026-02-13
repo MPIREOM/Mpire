@@ -28,6 +28,7 @@ interface FilterDrawerProps {
 }
 
 const statusOptions: { value: TaskStatus; label: string }[] = [
+  { value: 'backlog', label: 'Backlog' },
   { value: 'todo', label: 'To Do' },
   { value: 'in_progress', label: 'In Progress' },
   { value: 'done', label: 'Done' },

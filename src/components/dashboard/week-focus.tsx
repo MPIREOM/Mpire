@@ -15,7 +15,7 @@ interface WeekFocusProps {
 export function WeekFocus({ tasks }: WeekFocusProps) {
   const focusItems = useMemo(() => {
     const candidates = tasks.filter(
-      (t) => t.status !== 'done' && t.status !== 'blocked'
+      (t) => t.status !== 'done' && t.status !== 'blocked' && t.status !== 'backlog'
     );
 
     const scored = candidates

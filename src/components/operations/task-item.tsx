@@ -14,6 +14,7 @@ import {
   ExclamationCircleIcon,
   NoSymbolIcon,
   EllipsisHorizontalCircleIcon,
+  InboxStackIcon,
 } from '@heroicons/react/24/outline';
 
 interface TaskItemProps {
@@ -30,6 +31,7 @@ const priorityConfig = {
 };
 
 const statusConfig: Record<TaskStatus, { icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; color: string; badge: 'default' | 'success' | 'info' | 'danger' }> = {
+  backlog: { icon: InboxStackIcon, color: 'text-muted', badge: 'default' },
   todo: { icon: EllipsisHorizontalCircleIcon, color: 'text-muted', badge: 'default' },
   in_progress: { icon: ClockIcon, color: 'text-blue', badge: 'info' },
   done: { icon: CheckCircleIcon, color: 'text-green', badge: 'success' },
@@ -37,6 +39,7 @@ const statusConfig: Record<TaskStatus, { icon: React.ComponentType<React.SVGProp
 };
 
 const statusOptions: { value: TaskStatus; label: string }[] = [
+  { value: 'backlog', label: 'Backlog' },
   { value: 'todo', label: 'To Do' },
   { value: 'in_progress', label: 'In Progress' },
   { value: 'done', label: 'Done' },

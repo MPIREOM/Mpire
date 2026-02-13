@@ -14,7 +14,7 @@ interface CriticalFocusProps {
 export function CriticalFocus({ tasks }: CriticalFocusProps) {
   const criticalTasks = tasks.filter(
     (t) =>
-      t.status !== 'done' &&
+      t.status !== 'done' && t.status !== 'backlog' &&
       (isOverdue(t.due_date, t.status) ||
         (t.priority === 'high' && t.due_date && new Date(t.due_date).toDateString() === new Date().toDateString()))
   );

@@ -15,7 +15,7 @@ import { TaskItem } from './task-item';
 import { FilterDrawer, type FilterState } from './filter-drawer';
 import { TaskDetailDrawer } from './task-detail-drawer';
 
-type TabKey = 'all' | 'today' | 'overdue' | 'completed';
+type TabKey = 'all' | 'today' | 'overdue' | 'completed' | 'backlog';
 
 interface TaskListProps {
   tasks: Task[];
@@ -54,7 +54,7 @@ export function TaskList({
 
     switch (tab) {
       case 'today':
-        result = result.filter((t) => isDueToday(t.due_date) && t.status !== 'done');
+        result = result.filter((t) => isDueToday(t.due_date) && t.status !== 'done' && t.status !== 'backlog');
         break;
       case 'overdue':
         result = result.filter((t) => isOverdue(t.due_date, t.status));
@@ -62,8 +62,11 @@ export function TaskList({
       case 'completed':
         result = result.filter((t) => t.status === 'done');
         break;
+      case 'backlog':
+        result = result.filter((t) => t.status === 'backlog');
+        break;
       case 'all':
-        result = result.filter((t) => t.status !== 'done');
+        result = result.filter((t) => t.status !== 'done' && t.status !== 'backlog');
         break;
     }
 
@@ -89,12 +92,12 @@ export function TaskList({
     {
       key: 'all',
       label: 'All',
-      count: tasks.filter((t) => t.status !== 'done' && (viewMode === 'all' || t.assignee_id === currentUser.id)).length,
+      count: tasks.filter((t) => t.status !== 'done' && t.status !== 'backlog' && (viewMode === 'all' || t.assignee_id === currentUser.id)).length,
     },
     {
       key: 'today',
       label: 'Due Today',
-      count: tasks.filter((t) => isDueToday(t.due_date) && t.status !== 'done' && (viewMode === 'all' || t.assignee_id === currentUser.id)).length,
+      count: tasks.filter((t) => isDueToday(t.due_date) && t.status !== 'done' && t.status !== 'backlog' && (viewMode === 'all' || t.assignee_id === currentUser.id)).length,
     },
     {
       key: 'overdue',
@@ -105,6 +108,11 @@ export function TaskList({
       key: 'completed',
       label: 'Completed',
       count: tasks.filter((t) => t.status === 'done' && (viewMode === 'all' || t.assignee_id === currentUser.id)).length,
+    },
+    {
+      key: 'backlog',
+      label: 'Backlog',
+      count: tasks.filter((t) => t.status === 'backlog' && (viewMode === 'all' || t.assignee_id === currentUser.id)).length,
     },
   ];
 

@@ -18,7 +18,7 @@ import { AssigneePicker, AvatarStack } from '@/components/ui/assignee-picker';
 import { TaskDetailDrawer } from '@/components/operations/task-detail-drawer';
 import { TimeReviewDialog, type TimeEntry } from '@/components/tasks/time-review-dialog';
 
-type TabKey = 'today' | 'week' | 'overdue' | 'all';
+type TabKey = 'today' | 'week' | 'overdue' | 'all' | 'backlog';
 type GroupBy = 'none' | 'project' | 'status' | 'priority';
 type SortBy = 'due_date' | 'priority' | 'updated_at';
 
@@ -35,6 +35,7 @@ interface TaskTableProps {
 }
 
 const statusOptions: { value: TaskStatus; label: string }[] = [
+  { value: 'backlog', label: 'Backlog' },
   { value: 'todo', label: 'To Do' },
   { value: 'in_progress', label: 'In Progress' },
   { value: 'done', label: 'Done' },
@@ -116,7 +117,9 @@ export function TaskTable({
 
   // Filter pipeline
   const filtered = useMemo(() => {
-    let result = tasks.filter((t) => t.status !== 'done');
+    let result = tab === 'backlog'
+      ? tasks.filter((t) => t.status === 'backlog')
+      : tasks.filter((t) => t.status !== 'done' && t.status !== 'backlog');
 
     if (viewMode === 'my') {
       result = result.filter((t) => isAssignedTo(t, currentUser.id));
@@ -171,13 +174,17 @@ export function TaskTable({
 
   const tabs: { key: TabKey; label: string; count: number }[] = useMemo(() => {
     const base = tasks.filter(
-      (t) => t.status !== 'done' && (viewMode === 'all' || isAssignedTo(t, currentUser.id))
+      (t) => t.status !== 'done' && t.status !== 'backlog' && (viewMode === 'all' || isAssignedTo(t, currentUser.id))
     );
+    const backlogCount = tasks.filter(
+      (t) => t.status === 'backlog' && (viewMode === 'all' || isAssignedTo(t, currentUser.id))
+    ).length;
     return [
       { key: 'all', label: 'All', count: base.length },
       { key: 'today', label: 'Today', count: base.filter((t) => isDueToday(t.due_date)).length },
       { key: 'week', label: 'This Week', count: base.filter((t) => isDueThisWeek(t.due_date)).length },
       { key: 'overdue', label: 'Overdue', count: base.filter((t) => isOverdue(t.due_date, t.status)).length },
+      { key: 'backlog', label: 'Backlog', count: backlogCount },
     ];
   }, [tasks, viewMode, currentUser.id]);
 
