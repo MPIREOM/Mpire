@@ -34,6 +34,15 @@ export function useProjects() {
     [mutate]
   );
 
+  const updateProject = useCallback(
+    async (projectId: string, updates: { name?: string; status?: string; color?: string }) => {
+      const { error } = await supabase.from('projects').update(updates).eq('id', projectId);
+      if (error) throw error;
+      mutate();
+    },
+    [mutate]
+  );
+
   const deleteProject = useCallback(
     async (projectId: string) => {
       // Relies on ON DELETE CASCADE for tasks → task_comments/task_activity.
@@ -51,6 +60,7 @@ export function useProjects() {
     error,
     mutate,
     createProject,
+    updateProject,
     deleteProject,
   };
 }

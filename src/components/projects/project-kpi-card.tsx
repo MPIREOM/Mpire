@@ -23,11 +23,13 @@ import {
   CalendarIcon,
   ArrowRightIcon,
   ClockIcon,
+  PencilSquareIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
 
 interface ProjectKPICardProps {
   metrics: ProjectMetrics;
+  onEdit?: () => void;
   onDelete?: () => void;
 }
 
@@ -137,7 +139,7 @@ function TeamAvatars({ metrics }: { metrics: ProjectMetrics }) {
 }
 
 /* ── Main KPI Card ── */
-export function ProjectKPICard({ metrics, onDelete }: ProjectKPICardProps) {
+export function ProjectKPICard({ metrics, onEdit, onDelete }: ProjectKPICardProps) {
   const m = metrics;
   const priorityColor = getPriorityColor(m.dominantPriority);
   const progressColor = getProgressColor(m.progressPercent, m.overdueTasks);
@@ -290,6 +292,15 @@ export function ProjectKPICard({ metrics, onDelete }: ProjectKPICardProps) {
             {/* Mobile: minimal footer */}
             <span className="sm:hidden text-[11px] font-medium text-muted">{m.totalTasks} tasks</span>
             <div className="flex items-center gap-1">
+              {onEdit && (
+                <button
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(); }}
+                  className="rounded-lg p-1.5 text-muted transition-all hover:bg-accent-muted hover:text-accent active:scale-90"
+                  title="Edit project"
+                >
+                  <PencilSquareIcon className="h-3.5 w-3.5" />
+                </button>
+              )}
               {onDelete && (
                 <button
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(); }}
@@ -312,7 +323,7 @@ export function ProjectKPICard({ metrics, onDelete }: ProjectKPICardProps) {
 }
 
 /* ── Compact list row variant ── */
-export function ProjectListRow({ metrics, onDelete }: ProjectKPICardProps) {
+export function ProjectListRow({ metrics, onEdit, onDelete }: ProjectKPICardProps) {
   const m = metrics;
   const priorityColor = getPriorityColor(m.dominantPriority);
   const progressColor = getProgressColor(m.progressPercent, m.overdueTasks);
@@ -367,6 +378,15 @@ export function ProjectListRow({ metrics, onDelete }: ProjectKPICardProps) {
           <TeamAvatars metrics={m} />
         </div>
 
+        {onEdit && (
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(); }}
+            className="rounded-lg p-1.5 text-muted transition-all hover:bg-accent-muted hover:text-accent active:scale-90"
+            title="Edit project"
+          >
+            <PencilSquareIcon className="h-4 w-4" />
+          </button>
+        )}
         {onDelete && (
           <button
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(); }}

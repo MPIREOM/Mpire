@@ -82,7 +82,17 @@ export function useTasks(options?: UseTasksOptions) {
 
   const createTask = useCallback(
     async (task: Omit<Task, 'id' | 'created_at' | 'updated_at' | 'project' | 'assignee' | 'task_assignees'>) => {
-      const { error } = await supabase.from('tasks').insert(task);
+      const { error } = await supabase.from('tasks').insert({
+        title: task.title,
+        project_id: task.project_id,
+        description: task.description,
+        status: task.status,
+        priority: task.priority,
+        due_date: task.due_date,
+        assignee_id: task.assignee_id,
+        created_by: task.created_by,
+        recurring_rule: task.recurring_rule,
+      });
       if (error) throw error;
       mutate();
     },
@@ -95,20 +105,37 @@ export function useTasks(options?: UseTasksOptions) {
       task: Omit<Task, 'id' | 'created_at' | 'updated_at' | 'project' | 'assignee' | 'task_assignees'>,
       assigneeIds: string[]
     ) => {
-      // Insert task (assignee_id = first assignee for backward compat)
-      const { data: created, error } = await supabase
-        .from('tasks')
-        .insert({ ...task, assignee_id: assigneeIds[0] ?? null })
-        .select('id')
-        .single();
-      if (error) throw error;
+      // Pick only real DB columns (tags is on the TS type but not in the table)
+      const row = {
+        title: task.title,
+        project_id: task.project_id,
+        description: task.description,
+        status: task.status,
+        priority: task.priority,
+        due_date: task.due_date,
+        assignee_id: assigneeIds[0] ?? null,
+        created_by: task.created_by,
+        recurring_rule: task.recurring_rule,
+      };
 
-      // Insert junction table entries
-      if (assigneeIds.length > 0 && created) {
-        const { error: junctionError } = await supabase
-          .from('task_assignees')
-          .insert(assigneeIds.map((uid) => ({ task_id: created.id, user_id: uid })));
-        if (junctionError) throw junctionError;
+      if (assigneeIds.length > 0) {
+        // Need the ID back for junction table
+        const { data: created, error } = await supabase
+          .from('tasks')
+          .insert(row)
+          .select('id')
+          .single();
+        if (error) throw error;
+
+        // Insert junction table entries (non-fatal if table doesn't exist yet)
+        if (created) {
+          await supabase
+            .from('task_assignees')
+            .insert(assigneeIds.map((uid) => ({ task_id: created.id, user_id: uid })));
+        }
+      } else {
+        const { error } = await supabase.from('tasks').insert(row);
+        if (error) throw error;
       }
 
       mutate();
@@ -119,15 +146,12 @@ export function useTasks(options?: UseTasksOptions) {
   /** Set all assignees for a task (replaces existing) */
   const setTaskAssignees = useCallback(
     async (taskId: string, userIds: string[]) => {
-      // Delete existing junction entries
+      // Try junction table operations (non-fatal if table doesn't exist yet)
       await supabase.from('task_assignees').delete().eq('task_id', taskId);
-
-      // Insert new entries
       if (userIds.length > 0) {
-        const { error: insertError } = await supabase
+        await supabase
           .from('task_assignees')
           .insert(userIds.map((uid) => ({ task_id: taskId, user_id: uid })));
-        if (insertError) throw insertError;
       }
 
       // Keep legacy assignee_id in sync (first assignee or null)
