@@ -15,6 +15,8 @@ import {
 } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { PresenceDots } from '@/components/live/presence-bar';
+import { useLive } from '@/components/live/live-provider';
 
 interface SidebarProps {
   open: boolean;
@@ -52,6 +54,7 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse, pinned, on
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useUser();
+  const { onlineUsers, currentUserId } = useLive();
   const role = user?.role ?? 'staff';
 
   async function handleLogout() {
@@ -272,6 +275,13 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse, pinned, on
             </AnimatePresence>
           </div>
         </div>
+
+        {/* ── Online users ── */}
+        {!collapsed && (
+          <div className="border-t border-white/[0.06]">
+            <PresenceDots onlineUsers={onlineUsers} currentUserId={currentUserId} />
+          </div>
+        )}
 
         {/* ── User footer ── */}
         <div className="border-t border-white/[0.06] p-2">

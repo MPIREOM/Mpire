@@ -20,6 +20,8 @@ import { useUser } from '@/hooks/use-user';
 import { isOverdue } from '@/lib/dates';
 import { isAssignedTo } from '@/lib/task-helpers';
 import { formatDistanceToNow } from 'date-fns';
+import { PresenceBar } from '@/components/live/presence-bar';
+import { useLive } from '@/components/live/live-provider';
 
 interface TopNavProps {
   title: string;
@@ -43,6 +45,7 @@ export function TopNav({ title, subtitle, onMenuClick, onCommandPalette }: TopNa
   const notifRef = useRef<HTMLDivElement>(null);
   const { tasks } = useTasks();
   const { user } = useUser();
+  const { onlineUsers, visitStats, currentUserId } = useLive();
 
   // Sync initial state from DOM (set by inline script in layout)
   useEffect(() => {
@@ -148,6 +151,15 @@ export function TopNav({ title, subtitle, onMenuClick, onCommandPalette }: TopNa
       </div>
 
       <div className="flex items-center gap-2">
+        {/* Live presence */}
+        <div className="hidden md:block">
+          <PresenceBar
+            onlineUsers={onlineUsers}
+            visitStats={visitStats}
+            currentUserId={currentUserId}
+          />
+        </div>
+
         {/* Command palette trigger */}
         {onCommandPalette && (
           <motion.button
