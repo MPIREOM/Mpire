@@ -27,6 +27,8 @@ export function usePresence(currentUser: User | null) {
   const sessionIdRef = useRef<string | null>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const pathnameRef = useRef(pathname);
+  pathnameRef.current = pathname; // keep ref fresh for heartbeat closure
 
   // Always include current user as online — merge with channel presence
   const onlineUsers = useMemo(() => {
@@ -76,7 +78,7 @@ export function usePresence(currentUser: User | null) {
       if (sessionIdRef.current) {
         await supabase
           .from('user_sessions')
-          .update({ last_seen_at: new Date().toISOString(), page: pathname })
+          .update({ last_seen_at: new Date().toISOString(), page: pathnameRef.current })
           .eq('id', sessionIdRef.current);
       }
       await supabase

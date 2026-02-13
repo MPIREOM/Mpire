@@ -21,7 +21,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { AvatarStack } from '@/components/ui/assignee-picker';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useTeam } from '@/hooks/use-team';
-import type { TimeEntry } from '@/components/tasks/time-review-dialog';
+import { TimeReviewDialog, type TimeEntry } from '@/components/tasks/time-review-dialog';
 
 type TabKey = 'today' | 'week' | 'overdue' | 'all';
 
@@ -55,8 +55,31 @@ export function StaffDashboard({
   const [tab, setTab] = useState<TabKey>('today');
   // Store ID instead of full task object to avoid stale references
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [timeReviewTaskId, setTimeReviewTaskId] = useState<string | null>(null);
   const { team } = useTeam();
   const { events } = useLive();
+
+  // Resolve time review task from live tasks array
+  const timeReviewTask = useMemo(
+    () => tasks.find((t) => t.id === timeReviewTaskId) ?? null,
+    [tasks, timeReviewTaskId]
+  );
+
+  // Intercept status changes — show time review dialog when marking as "done"
+  function handleStatusChange(taskId: string, newStatus: TaskStatus) {
+    if (newStatus === 'done' && onCompleteTask) {
+      setTimeReviewTaskId(taskId);
+    } else {
+      onUpdateTask(taskId, { status: newStatus });
+    }
+  }
+
+  async function handleTimeReviewConfirm(taskId: string, entries: TimeEntry[]) {
+    if (onCompleteTask) {
+      await onCompleteTask(taskId, currentUser.id, entries);
+    }
+    setTimeReviewTaskId(null);
+  }
 
   // Derive selected task from latest tasks array
   const selectedTask = useMemo(
@@ -74,7 +97,7 @@ export function StaffDashboard({
     const overdue = myTasks.filter((t) => isOverdue(t.due_date, t.status)).length;
     const inProgress = myTasks.filter((t) => t.status === 'in_progress').length;
     const cutoff = subDays(new Date(), 7);
-    const myAllTasks = tasks.filter((t) => t.assignee_id === currentUser.id);
+    const myAllTasks = tasks.filter((t) => isAssignedTo(t, currentUser.id));
     const windowTasks = myAllTasks.filter(
       (t) => t.due_date && isAfter(parseISO(t.due_date), cutoff)
     );
@@ -211,7 +234,7 @@ export function StaffDashboard({
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => {
                       e.stopPropagation();
-                      onUpdateTask(task.id, { status: e.target.value as TaskStatus });
+                      handleStatusChange(task.id, e.target.value as TaskStatus);
                     }}
                     className={cn(
                       'h-6 shrink-0 cursor-pointer rounded-md border-0 px-1 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-accent-muted',
@@ -299,6 +322,14 @@ export function StaffDashboard({
         onDeleteTask={onDeleteTask}
         onCompleteTask={onCompleteTask}
         onSetAssignees={onSetAssignees}
+      />
+
+      {/* Time Review Dialog — shown when marking a task as done from inline select */}
+      <TimeReviewDialog
+        task={timeReviewTask}
+        open={!!timeReviewTaskId}
+        onConfirm={handleTimeReviewConfirm}
+        onCancel={() => setTimeReviewTaskId(null)}
       />
     </div>
   );
