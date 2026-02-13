@@ -1,5 +1,6 @@
 import type { Task, Project, User } from '@/types/database';
 import { isOverdue, isDueToday, isDueThisWeek } from '@/lib/dates';
+import { getTaskAssignees } from '@/lib/task-helpers';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 
 /* ── Derived project metrics from tasks ── */
@@ -53,10 +54,13 @@ export function computeProjectMetrics(
   else if (medCount > 0) dominantPriority = 'medium';
 
   // Unique assignees
-  const assigneeIds = [...new Set(pTasks.map((t) => t.assignee_id).filter(Boolean))];
-  const assignees = assigneeIds
-    .map((id) => allUsers.find((u) => u.id === id))
-    .filter((u): u is User => u !== undefined);
+  const assigneeMap = new Map<string, User>();
+  for (const t of pTasks) {
+    for (const u of getTaskAssignees(t)) {
+      assigneeMap.set(u.id, u);
+    }
+  }
+  const assignees = Array.from(assigneeMap.values());
 
   // Last activity
   const lastActivityAt =

@@ -3,10 +3,11 @@
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { Avatar } from '@/components/ui/avatar';
+import { AvatarStack } from '@/components/ui/assignee-picker';
 import type { Task, User, TaskStatus } from '@/types/database';
 import { isOverdue, formatDate } from '@/lib/dates';
 import { canManage } from '@/lib/roles';
+import { getTaskAssignees, isAssignedTo } from '@/lib/task-helpers';
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import {
   ClockIcon,
@@ -50,7 +51,7 @@ export function TaskItem({
 }: TaskItemProps) {
   const overdue = isOverdue(task.due_date, task.status);
   const canChangeStatus =
-    canManage(currentUser.role) || task.assignee_id === currentUser.id;
+    canManage(currentUser.role) || isAssignedTo(task, currentUser.id);
   const priority = priorityConfig[task.priority];
   const status = statusConfig[task.status];
   const StatusIcon = status.icon;
@@ -131,13 +132,9 @@ export function TaskItem({
       {/* Right side: priority badge + assignee */}
       <div className="flex shrink-0 items-center gap-3">
         <Badge variant={priority.badge}>{priority.label}</Badge>
-        {task.assignee && (
+        {getTaskAssignees(task).length > 0 && (
           <div className="hidden sm:block">
-            <Avatar
-              name={task.assignee.full_name}
-              src={task.assignee.avatar_url}
-              size="sm"
-            />
+            <AvatarStack users={getTaskAssignees(task)} max={2} size="sm" />
           </div>
         )}
       </div>

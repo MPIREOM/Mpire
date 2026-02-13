@@ -37,6 +37,12 @@ export interface Project {
   created_at: string;
 }
 
+export interface TaskAssignee {
+  task_id: string;
+  user_id: string;
+  user?: User;
+}
+
 export interface Task {
   id: string;
   project_id: string;
@@ -54,6 +60,7 @@ export interface Task {
   // Joined fields
   project?: Project;
   assignee?: User;
+  task_assignees?: TaskAssignee[];
 }
 
 export interface TaskComment {

@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { clsx } from 'clsx';
 import type { Task, User, Project } from '@/types/database';
 import { isOverdue, isDueToday, isDueThisWeek } from '@/lib/dates';
+import { isAssignedTo } from '@/lib/task-helpers';
 
 interface TeamWorkloadProps {
   tasks: Task[];
@@ -23,7 +24,7 @@ export function TeamWorkload({ tasks, team, projects }: TeamWorkloadProps) {
     return team
       .filter((u) => u.role === 'staff' || u.role === 'manager')
       .map((member) => {
-        const memberTasks = filtered.filter((t) => t.assignee_id === member.id);
+        const memberTasks = filtered.filter((t) => isAssignedTo(t, member.id));
         const wip = memberTasks.filter((t) => t.status === 'in_progress').length;
         const overdue = memberTasks.filter((t) => isOverdue(t.due_date, t.status)).length;
         const dueSoon = memberTasks.filter(

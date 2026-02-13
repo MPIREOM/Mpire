@@ -20,7 +20,7 @@ export function useTasks(options?: UseTasksOptions) {
     async () => {
       let query = supabase
         .from('tasks')
-        .select('*, project:projects(*), assignee:users!tasks_assignee_id_fkey(*)')
+        .select('*, project:projects(*), assignee:users!tasks_assignee_id_fkey(*), task_assignees(task_id, user_id, user:users(*))')
         .order('due_date', { ascending: true, nullsFirst: false })
         .order('priority', { ascending: true });
 
@@ -53,6 +53,13 @@ export function useTasks(options?: UseTasksOptions) {
           mutate();
         }
       )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'task_assignees' },
+        () => {
+          mutate();
+        }
+      )
       .subscribe();
 
     return () => {
@@ -74,7 +81,7 @@ export function useTasks(options?: UseTasksOptions) {
   );
 
   const createTask = useCallback(
-    async (task: Omit<Task, 'id' | 'created_at' | 'updated_at' | 'project' | 'assignee'>) => {
+    async (task: Omit<Task, 'id' | 'created_at' | 'updated_at' | 'project' | 'assignee' | 'task_assignees'>) => {
       const { error } = await supabase.from('tasks').insert(task);
       if (error) throw error;
       mutate();
@@ -82,10 +89,62 @@ export function useTasks(options?: UseTasksOptions) {
     [mutate]
   );
 
+  /** Create a task and assign multiple users to it */
+  const createTaskWithAssignees = useCallback(
+    async (
+      task: Omit<Task, 'id' | 'created_at' | 'updated_at' | 'project' | 'assignee' | 'task_assignees'>,
+      assigneeIds: string[]
+    ) => {
+      // Insert task (assignee_id = first assignee for backward compat)
+      const { data: created, error } = await supabase
+        .from('tasks')
+        .insert({ ...task, assignee_id: assigneeIds[0] ?? null })
+        .select('id')
+        .single();
+      if (error) throw error;
+
+      // Insert junction table entries
+      if (assigneeIds.length > 0 && created) {
+        const { error: junctionError } = await supabase
+          .from('task_assignees')
+          .insert(assigneeIds.map((uid) => ({ task_id: created.id, user_id: uid })));
+        if (junctionError) throw junctionError;
+      }
+
+      mutate();
+    },
+    [mutate]
+  );
+
+  /** Set all assignees for a task (replaces existing) */
+  const setTaskAssignees = useCallback(
+    async (taskId: string, userIds: string[]) => {
+      // Delete existing junction entries
+      await supabase.from('task_assignees').delete().eq('task_id', taskId);
+
+      // Insert new entries
+      if (userIds.length > 0) {
+        const { error: insertError } = await supabase
+          .from('task_assignees')
+          .insert(userIds.map((uid) => ({ task_id: taskId, user_id: uid })));
+        if (insertError) throw insertError;
+      }
+
+      // Keep legacy assignee_id in sync (first assignee or null)
+      const { error: updateError } = await supabase
+        .from('tasks')
+        .update({ assignee_id: userIds[0] ?? null })
+        .eq('id', taskId);
+      if (updateError) throw updateError;
+
+      mutate();
+    },
+    [mutate]
+  );
+
   const deleteTask = useCallback(
     async (taskId: string) => {
-      // Relies on ON DELETE CASCADE for task_comments and task_activity.
-      // See supabase/migration-cascade.sql
+      // Relies on ON DELETE CASCADE for task_comments, task_activity, and task_assignees.
       const { error } = await supabase.from('tasks').delete().eq('id', taskId);
       if (error) throw error;
       mutate();
@@ -133,6 +192,8 @@ export function useTasks(options?: UseTasksOptions) {
     mutate,
     updateTask,
     createTask,
+    createTaskWithAssignees,
+    setTaskAssignees,
     deleteTask,
     completeTask,
   };

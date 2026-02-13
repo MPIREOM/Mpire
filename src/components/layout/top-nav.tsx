@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { useTasks } from '@/hooks/use-tasks';
 import { useUser } from '@/hooks/use-user';
 import { isOverdue } from '@/lib/dates';
+import { isAssignedTo } from '@/lib/task-helpers';
 import { formatDistanceToNow } from 'date-fns';
 
 interface TopNavProps {
@@ -83,7 +84,7 @@ export function TopNav({ title, subtitle, onMenuClick, onCommandPalette }: TopNa
 
     // Overdue tasks assigned to me
     const myOverdue = tasks.filter(
-      (t) => t.assignee_id === user.id && isOverdue(t.due_date, t.status)
+      (t) => isAssignedTo(t, user.id) && isOverdue(t.due_date, t.status)
     );
     for (const t of myOverdue.slice(0, 5)) {
       items.push({
@@ -99,7 +100,7 @@ export function TopNav({ title, subtitle, onMenuClick, onCommandPalette }: TopNa
     const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
     const recentAssigned = tasks.filter(
       (t) =>
-        t.assignee_id === user.id &&
+        isAssignedTo(t, user.id) &&
         t.status !== 'done' &&
         !isOverdue(t.due_date, t.status) &&
         new Date(t.updated_at).getTime() > weekAgo

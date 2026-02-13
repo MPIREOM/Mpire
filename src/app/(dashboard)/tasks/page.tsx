@@ -13,7 +13,7 @@ import { canManage } from '@/lib/roles';
 
 export default function TasksPage() {
   const { user } = useUser();
-  const { tasks, updateTask, createTask, deleteTask, completeTask } = useTasks();
+  const { tasks, updateTask, createTaskWithAssignees, setTaskAssignees, deleteTask, completeTask } = useTasks();
   const { projects } = useProjects();
   const { team } = useTeam();
   const [view, setView] = useState<'tasks' | 'team'>('tasks');
@@ -65,7 +65,8 @@ export default function TasksPage() {
             team={team}
             projects={projects}
             onUpdateTask={updateTask}
-            onCreateTask={createTask}
+            onCreateTaskWithAssignees={createTaskWithAssignees}
+            onSetAssignees={setTaskAssignees}
             onDeleteTask={deleteTask}
             onCompleteTask={completeTask}
           />
