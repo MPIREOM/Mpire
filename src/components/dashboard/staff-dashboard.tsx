@@ -36,6 +36,7 @@ interface StaffDashboardProps {
 }
 
 const statusOptions: { value: TaskStatus; label: string }[] = [
+  { value: 'backlog', label: 'Backlog' },
   { value: 'todo', label: 'To Do' },
   { value: 'in_progress', label: 'In Progress' },
   { value: 'done', label: 'Done' },
@@ -64,7 +65,7 @@ export function StaffDashboard({
   );
 
   const myTasks = useMemo(
-    () => tasks.filter((t) => isAssignedTo(t, currentUser.id) && t.status !== 'done'),
+    () => tasks.filter((t) => isAssignedTo(t, currentUser.id) && t.status !== 'done' && t.status !== 'backlog'),
     [tasks, currentUser.id]
   );
 

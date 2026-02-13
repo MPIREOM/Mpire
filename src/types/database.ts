@@ -1,5 +1,5 @@
 export type Role = 'owner' | 'manager' | 'staff' | 'investor';
-export type TaskStatus = 'todo' | 'in_progress' | 'done' | 'blocked';
+export type TaskStatus = 'backlog' | 'todo' | 'in_progress' | 'done' | 'blocked';
 export type TaskPriority = 'high' | 'medium' | 'low';
 export type ProjectStatus = 'active' | 'paused' | 'completed' | 'archived';
 

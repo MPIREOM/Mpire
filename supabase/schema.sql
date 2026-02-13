@@ -50,7 +50,7 @@ create table if not exists public.tasks (
   project_id uuid not null references public.projects(id) on delete cascade,
   title text not null,
   description text,
-  status text not null default 'todo' check (status in ('todo', 'in_progress', 'done', 'blocked')),
+  status text not null default 'todo' check (status in ('backlog', 'todo', 'in_progress', 'done', 'blocked')),
   priority text not null default 'medium' check (priority in ('high', 'medium', 'low')),
   due_date date,
   assignee_id uuid references public.users(id) on delete set null,
