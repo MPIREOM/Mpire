@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { RiskAlerts } from './risk-alerts';
 import { WeekFocus } from './week-focus';
+import { ActivityFeed } from '@/components/live/activity-feed';
+import { useLive } from '@/components/live/live-provider';
 import type { Task, User, Project, ProjectHealth } from '@/types/database';
 import { isOverdue, isDueToday } from '@/lib/dates';
 import {
@@ -87,6 +89,7 @@ function MiniRing({ percent, color, delay = 0 }: { percent: number; color: strin
 
 export function CEODashboard({ tasks, projects, team, projectHealth }: CEODashboardProps) {
   const [completionDays, setCompletionDays] = useState(7);
+  const { events, onlineUsers, visitStats } = useLive();
 
   const kpis = useMemo(() => {
     const overdue = tasks.filter((t) => isOverdue(t.due_date, t.status));
@@ -227,6 +230,80 @@ export function CEODashboard({ tasks, projects, team, projectHealth }: CEODashbo
         </motion.div>
       )}
       <WeekFocus tasks={tasks} />
+
+      {/* Live Activity + Team Online */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.4 }}
+        className="grid gap-6 lg:grid-cols-2"
+      >
+        {/* Live activity feed */}
+        <ActivityFeed events={events} />
+
+        {/* Team online & visit stats */}
+        <div className="rounded-xl border border-border bg-card">
+          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+              </span>
+              <h3 className="text-[13px] font-bold text-text">Team Online</h3>
+            </div>
+            <span className="text-[11px] text-muted">
+              {onlineUsers.length} / {team.length} members
+            </span>
+          </div>
+          <div className="max-h-80 overflow-y-auto">
+            {team.map((member) => {
+              const isOnline = onlineUsers.some((u) => u.user_id === member.id);
+              const presence = onlineUsers.find((u) => u.user_id === member.id);
+              const stats = visitStats.find((v) => v.user_id === member.id);
+              return (
+                <div
+                  key={member.id}
+                  className="flex items-center gap-3 border-b border-border px-4 py-2.5 last:border-0"
+                >
+                  <div className="relative">
+                    <div
+                      className={cn(
+                        'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold text-white',
+                        isOnline ? 'bg-accent' : 'bg-gray-500/50'
+                      )}
+                    >
+                      {member.full_name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)}
+                    </div>
+                    {isOnline && (
+                      <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-[1.5px] border-card bg-emerald-400" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className={cn('text-[12px] font-semibold', isOnline ? 'text-text' : 'text-muted')}>
+                      {member.full_name}
+                    </p>
+                    <p className="text-[10px] text-muted/70">
+                      {isOnline && presence
+                        ? `Viewing ${presence.page === '/operations' ? 'Dashboard' : presence.page.startsWith('/projects/') ? 'Project Detail' : presence.page.replace('/', '').charAt(0).toUpperCase() + presence.page.replace('/', '').slice(1) || 'Dashboard'}`
+                        : 'Offline'}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    {stats ? (
+                      <>
+                        <p className="text-[11px] font-semibold text-text">{stats.sessions_this_week}</p>
+                        <p className="text-[9px] text-muted/60">this week</p>
+                      </>
+                    ) : (
+                      <p className="text-[10px] text-muted/50">-</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </motion.div>
     </div>
   );
 }

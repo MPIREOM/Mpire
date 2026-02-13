@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Sidebar } from './sidebar';
 import { TopNav } from './top-nav';
 import { CommandPalette } from '@/components/command-palette';
+import { LiveProvider } from '@/components/live/live-provider';
 
 interface ShellProps {
   title: string;
@@ -77,44 +78,46 @@ export function Shell({ title, subtitle, children }: ShellProps) {
   }, [toggleCollapse]);
 
   return (
-    <div className="min-h-screen bg-bg">
-      <Sidebar
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        collapsed={collapsed}
-        onToggleCollapse={toggleCollapse}
-        pinned={pinned}
-        onTogglePin={togglePin}
-      />
-
-      <div
-        className={cn(
-          'transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
-          collapsed ? 'lg:pl-[72px]' : 'lg:pl-60'
-        )}
-      >
-        <TopNav
-          title={title}
-          subtitle={subtitle}
-          onMenuClick={() => setSidebarOpen(true)}
-          onCommandPalette={() => setCommandOpen(true)}
+    <LiveProvider>
+      <div className="min-h-screen bg-bg">
+        <Sidebar
+          open={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          collapsed={collapsed}
+          onToggleCollapse={toggleCollapse}
+          pinned={pinned}
+          onTogglePin={togglePin}
         />
-        <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.625, ease: [0.4, 0, 0.2, 1] }}
-          >
-            {children}
-          </motion.div>
-        </main>
-      </div>
 
-      <CommandPalette
-        open={commandOpen}
-        onClose={() => setCommandOpen(false)}
-        onToggleSidebar={toggleCollapse}
-      />
-    </div>
+        <div
+          className={cn(
+            'transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+            collapsed ? 'lg:pl-[72px]' : 'lg:pl-60'
+          )}
+        >
+          <TopNav
+            title={title}
+            subtitle={subtitle}
+            onMenuClick={() => setSidebarOpen(true)}
+            onCommandPalette={() => setCommandOpen(true)}
+          />
+          <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.625, ease: [0.4, 0, 0.2, 1] }}
+            >
+              {children}
+            </motion.div>
+          </main>
+        </div>
+
+        <CommandPalette
+          open={commandOpen}
+          onClose={() => setCommandOpen(false)}
+          onToggleSidebar={toggleCollapse}
+        />
+      </div>
+    </LiveProvider>
   );
 }

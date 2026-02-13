@@ -24,7 +24,17 @@ export interface User {
   company_id: string;
   avatar_url: string | null;
   allowed_project_ids: string[] | null; // null = all projects visible
+  last_seen_at: string | null;
   created_at: string;
+}
+
+export interface UserSession {
+  id: string;
+  user_id: string;
+  started_at: string;
+  last_seen_at: string;
+  page: string | null;
+  user?: User;
 }
 
 export interface Project {

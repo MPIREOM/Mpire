@@ -317,3 +317,5 @@ create policy "Users can log task activity"
 -- ============================================================
 alter publication supabase_realtime add table public.tasks;
 alter publication supabase_realtime add table public.task_assignees;
+alter publication supabase_realtime add table public.projects;
+alter publication supabase_realtime add table public.user_sessions;

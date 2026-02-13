@@ -1,7 +1,7 @@
 'use client';
 
 import useSWR from 'swr';
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { Project } from '@/types/database';
 
@@ -24,6 +24,20 @@ export function useProjects() {
       dedupingInterval: 30000,
     }
   );
+
+  // Realtime subscription for live project updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('projects-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'projects' },
+        () => { mutate(); }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [mutate]);
 
   const createProject = useCallback(
     async (project: { name: string; status: string; color: string; company_id: string }) => {

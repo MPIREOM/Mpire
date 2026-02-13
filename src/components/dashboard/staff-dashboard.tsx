@@ -14,6 +14,8 @@ import { isOverdue, isDueToday, isDueThisWeek, formatDate } from '@/lib/dates';
 import { isAssignedTo, getTaskAssignees } from '@/lib/task-helpers';
 import { subDays, isAfter, parseISO } from 'date-fns';
 import { TaskDetailDrawer } from '@/components/operations/task-detail-drawer';
+import { ActivityFeed } from '@/components/live/activity-feed';
+import { useLive } from '@/components/live/live-provider';
 import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
 import { AvatarStack } from '@/components/ui/assignee-picker';
@@ -53,6 +55,7 @@ export function StaffDashboard({
   // Store ID instead of full task object to avoid stale references
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const { team } = useTeam();
+  const { events } = useLive();
 
   // Derive selected task from latest tasks array
   const selectedTask = useMemo(
@@ -274,6 +277,15 @@ export function StaffDashboard({
             })}
           </div>
         )}
+      </motion.div>
+
+      {/* Live Activity */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4, duration: 0.4 }}
+      >
+        <ActivityFeed events={events} maxItems={10} />
       </motion.div>
 
       {/* Task Detail Drawer */}
