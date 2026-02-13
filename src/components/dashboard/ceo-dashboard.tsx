@@ -205,7 +205,7 @@ export function CEODashboard({ tasks, projects, team, projectHealth }: CEODashbo
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {projectHealth.slice(0, 6).map((ph, i) => (
               <motion.div key={ph.project.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 + i * 0.05 }}>
-                <Link href={`/projects/${ph.project.id}`} className="group block rounded-xl border border-border bg-card p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+                <Link href={`/projects/${ph.project.id}`} className="group block rounded-xl border border-border bg-card p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98]">
                   <div className="mb-3 flex items-center gap-2">
                     <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: ph.project.color }} />
                     <h4 className="flex-1 truncate text-[13px] font-semibold text-text">{ph.project.name}</h4>
