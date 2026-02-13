@@ -16,7 +16,7 @@ const pageLabels: Record<string, string> = {
   '/settings': 'Settings',
 };
 
-function getPageLabel(page: string): string {
+export function getPageLabel(page: string): string {
   if (pageLabels[page]) return pageLabels[page];
   if (page.startsWith('/projects/')) return 'Project Detail';
   return page;

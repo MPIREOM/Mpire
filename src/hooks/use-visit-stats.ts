@@ -32,7 +32,10 @@ export function useVisitStats() {
 
       const now = new Date();
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-      const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay() + 1).toISOString();
+      // getDay() returns 0 for Sunday; offset to previous Monday correctly
+      const day = now.getDay();
+      const mondayOffset = day === 0 ? -6 : 1 - day;
+      const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + mondayOffset).toISOString();
 
       const byUser = new Map<string, { total: number; today: number; week: number; lastSeen: string | null }>();
 

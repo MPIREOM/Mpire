@@ -8,6 +8,7 @@ import { RiskAlerts } from './risk-alerts';
 import { WeekFocus } from './week-focus';
 import { ActivityFeed } from '@/components/live/activity-feed';
 import { useLive } from '@/components/live/live-provider';
+import { getPageLabel } from '@/components/live/presence-bar';
 import type { Task, User, Project, ProjectHealth } from '@/types/database';
 import { isOverdue, isDueToday } from '@/lib/dates';
 import {
@@ -284,7 +285,7 @@ export function CEODashboard({ tasks, projects, team, projectHealth }: CEODashbo
                     </p>
                     <p className="text-[10px] text-muted/70">
                       {isOnline && presence
-                        ? `Viewing ${presence.page === '/operations' ? 'Dashboard' : presence.page.startsWith('/projects/') ? 'Project Detail' : presence.page.replace('/', '').charAt(0).toUpperCase() + presence.page.replace('/', '').slice(1) || 'Dashboard'}`
+                        ? `Viewing ${getPageLabel(presence.page)}`
                         : 'Offline'}
                     </p>
                   </div>

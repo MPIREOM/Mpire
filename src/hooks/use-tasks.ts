@@ -206,11 +206,18 @@ export function useTasks(options?: UseTasksOptions) {
         await supabase.from('task_activity').insert(rows);
       }
 
+      // Fetch current status before updating so activity log is accurate
+      const { data: current } = await supabase
+        .from('tasks')
+        .select('status')
+        .eq('id', taskId)
+        .single();
+
       await supabase.from('task_activity').insert({
         task_id: taskId,
         user_id: userId,
         action: 'status_changed',
-        meta: { from: 'in_progress', to: 'done' },
+        meta: { from: current?.status ?? 'unknown', to: 'done' },
       });
 
       const { error } = await supabase
