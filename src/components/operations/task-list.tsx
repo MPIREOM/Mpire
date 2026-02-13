@@ -38,11 +38,18 @@ export function TaskList({
   const [viewMode, setViewMode] = useState<'my' | 'all'>('my');
   const [search, setSearch] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  // Store ID instead of full task object to avoid stale references
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [filters, setFilters] = useState<FilterState>({});
 
   const canSeeAll = canViewAllTasks(currentUser.role);
   const canAssign = canAssignTasks(currentUser.role);
+
+  // Derive selected task from latest tasks array (avoids stale data)
+  const selectedTask = useMemo(
+    () => tasks.find((t) => t.id === selectedTaskId) ?? null,
+    [tasks, selectedTaskId]
+  );
 
   // Filtering pipeline
   const filtered = useMemo(() => {
@@ -92,27 +99,27 @@ export function TaskList({
     {
       key: 'all',
       label: 'All',
-      count: tasks.filter((t) => t.status !== 'done' && t.status !== 'backlog' && (viewMode === 'all' || t.assignee_id === currentUser.id)).length,
+      count: tasks.filter((t) => t.status !== 'done' && t.status !== 'backlog' && (viewMode === 'all' || isAssignedTo(t, currentUser.id))).length,
     },
     {
       key: 'today',
       label: 'Due Today',
-      count: tasks.filter((t) => isDueToday(t.due_date) && t.status !== 'done' && t.status !== 'backlog' && (viewMode === 'all' || t.assignee_id === currentUser.id)).length,
+      count: tasks.filter((t) => isDueToday(t.due_date) && t.status !== 'done' && t.status !== 'backlog' && (viewMode === 'all' || isAssignedTo(t, currentUser.id))).length,
     },
     {
       key: 'overdue',
       label: 'Overdue',
-      count: tasks.filter((t) => isOverdue(t.due_date, t.status) && (viewMode === 'all' || t.assignee_id === currentUser.id)).length,
+      count: tasks.filter((t) => isOverdue(t.due_date, t.status) && (viewMode === 'all' || isAssignedTo(t, currentUser.id))).length,
     },
     {
       key: 'completed',
       label: 'Completed',
-      count: tasks.filter((t) => t.status === 'done' && (viewMode === 'all' || t.assignee_id === currentUser.id)).length,
+      count: tasks.filter((t) => t.status === 'done' && (viewMode === 'all' || isAssignedTo(t, currentUser.id))).length,
     },
     {
       key: 'backlog',
       label: 'Backlog',
-      count: tasks.filter((t) => t.status === 'backlog' && (viewMode === 'all' || t.assignee_id === currentUser.id)).length,
+      count: tasks.filter((t) => t.status === 'backlog' && (viewMode === 'all' || isAssignedTo(t, currentUser.id))).length,
     },
   ];
 
@@ -280,7 +287,7 @@ export function TaskList({
                 key={task.id}
                 task={task}
                 currentUser={currentUser}
-                onClick={() => setSelectedTask(task)}
+                onClick={() => setSelectedTaskId(task.id)}
                 onStatusChange={(status) =>
                   onUpdateTask(task.id, { status: status as TaskStatus })
                 }
@@ -310,7 +317,7 @@ export function TaskList({
       {/* Task Detail Drawer */}
       <TaskDetailDrawer
         task={selectedTask}
-        onClose={() => setSelectedTask(null)}
+        onClose={() => setSelectedTaskId(null)}
         currentUser={currentUser}
         team={team}
         onUpdateTask={onUpdateTask}
