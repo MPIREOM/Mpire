@@ -18,22 +18,30 @@ export function useTasks(options?: UseTasksOptions) {
   const { data, error, isLoading, mutate } = useSWR<Task[]>(
     key,
     async () => {
-      let query = supabase
-        .from('tasks')
-        .select('*, project:projects(*), assignee:users!tasks_assignee_id_fkey(*), task_assignees(task_id, user_id, user:users(*))')
-        .order('due_date', { ascending: true, nullsFirst: false })
-        .order('priority', { ascending: true });
+      const buildQuery = (includeAssignees: boolean) => {
+        const selectStr = includeAssignees
+          ? '*, project:projects(*), assignee:users!tasks_assignee_id_fkey(*), task_assignees(task_id, user_id, user:users(*))'
+          : '*, project:projects(*), assignee:users!tasks_assignee_id_fkey(*)';
 
-      if (options?.projectId) {
-        query = query.eq('project_id', options.projectId);
-      }
-      if (options?.assigneeId) {
-        query = query.eq('assignee_id', options.assigneeId);
-      }
+        let q = supabase
+          .from('tasks')
+          .select(selectStr)
+          .order('due_date', { ascending: true, nullsFirst: false })
+          .order('priority', { ascending: true });
 
-      const { data, error } = await query;
-      if (error) throw error;
-      return data as Task[];
+        if (options?.projectId) q = q.eq('project_id', options.projectId);
+        if (options?.assigneeId) q = q.eq('assignee_id', options.assigneeId);
+        return q;
+      };
+
+      // Try with task_assignees join first
+      const { data, error } = await buildQuery(true);
+      if (!error) return data as Task[];
+
+      // Fallback: query without task_assignees (table may not exist yet)
+      const fallback = await buildQuery(false);
+      if (fallback.error) throw fallback.error;
+      return fallback.data as Task[];
     },
     {
       revalidateOnFocus: false,
@@ -53,6 +61,11 @@ export function useTasks(options?: UseTasksOptions) {
           mutate();
         }
       )
+      .subscribe();
+
+    // Separate channel for task_assignees (non-fatal if table doesn't exist)
+    const assigneesChannel = supabase
+      .channel(`${channelName}-assignees`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'task_assignees' },
@@ -64,6 +77,7 @@ export function useTasks(options?: UseTasksOptions) {
 
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(assigneesChannel);
     };
   }, [key, mutate]);
 
