@@ -29,7 +29,6 @@ interface PresenceBarProps {
 }
 
 export function PresenceBar({ onlineUsers, visitStats = [], currentUserId }: PresenceBarProps) {
-  const others = onlineUsers.filter((u) => u.user_id !== currentUserId);
   const visitMap = new Map(visitStats.map((v) => [v.user_id, v]));
 
   return (
@@ -45,10 +44,11 @@ export function PresenceBar({ onlineUsers, visitStats = [], currentUserId }: Pre
         </span>
       </div>
 
-      {/* User avatars */}
+      {/* User avatars — show all online users including self */}
       <div className="flex -space-x-1.5">
         <AnimatePresence mode="popLayout">
-          {others.slice(0, 8).map((user) => {
+          {onlineUsers.slice(0, 8).map((user) => {
+            const isSelf = user.user_id === currentUserId;
             const stats = visitMap.get(user.user_id);
             return (
               <motion.div
@@ -64,14 +64,14 @@ export function PresenceBar({ onlineUsers, visitStats = [], currentUserId }: Pre
                     name={user.full_name}
                     src={user.avatar_url}
                     size="sm"
-                    className="ring-2 ring-card"
+                    className={cn('ring-2', isSelf ? 'ring-accent' : 'ring-card')}
                   />
                   <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-[1.5px] border-card bg-emerald-400" />
                 </div>
                 {/* Tooltip */}
                 <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 hidden -translate-x-1/2 rounded-lg border border-border bg-card px-3 py-2 shadow-xl group-hover:block">
                   <p className="whitespace-nowrap text-[12px] font-semibold text-text">
-                    {user.full_name}
+                    {user.full_name}{isSelf ? ' (you)' : ''}
                   </p>
                   <p className="whitespace-nowrap text-[11px] text-muted">
                     {getPageLabel(user.page)}
@@ -89,9 +89,9 @@ export function PresenceBar({ onlineUsers, visitStats = [], currentUserId }: Pre
             );
           })}
         </AnimatePresence>
-        {others.length > 8 && (
+        {onlineUsers.length > 8 && (
           <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-bg text-[10px] font-bold text-muted ring-2 ring-card">
-            +{others.length - 8}
+            +{onlineUsers.length - 8}
           </div>
         )}
       </div>
@@ -103,9 +103,7 @@ export function PresenceBar({ onlineUsers, visitStats = [], currentUserId }: Pre
  * Compact version for sidebar footer — just shows avatars with green dots.
  */
 export function PresenceDots({ onlineUsers, currentUserId }: { onlineUsers: PresenceUser[]; currentUserId?: string }) {
-  const others = onlineUsers.filter((u) => u.user_id !== currentUserId);
-
-  if (others.length === 0) return null;
+  if (onlineUsers.length === 0) return null;
 
   return (
     <div className="flex items-center gap-1.5 px-2 py-1">
@@ -114,10 +112,10 @@ export function PresenceDots({ onlineUsers, currentUserId }: { onlineUsers: Pres
         <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
       </span>
       <span className="text-[10px] font-medium text-gray-500">
-        {others.length} online
+        {onlineUsers.length} online
       </span>
       <div className="flex -space-x-1">
-        {others.slice(0, 4).map((u) => (
+        {onlineUsers.filter((u) => u.user_id !== currentUserId).slice(0, 4).map((u) => (
           <Avatar
             key={u.user_id}
             name={u.full_name}

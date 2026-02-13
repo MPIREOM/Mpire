@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@/types/database';
@@ -22,11 +22,33 @@ export interface PresenceUser {
  * Also records sessions to user_sessions for visit frequency tracking.
  */
 export function usePresence(currentUser: User | null) {
-  const [onlineUsers, setOnlineUsers] = useState<PresenceUser[]>([]);
+  const [channelUsers, setChannelUsers] = useState<PresenceUser[]>([]);
   const pathname = usePathname();
   const sessionIdRef = useRef<string | null>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+
+  // Always include current user as online — merge with channel presence
+  const onlineUsers = useMemo(() => {
+    if (!currentUser) return channelUsers;
+
+    const selfEntry: PresenceUser = {
+      user_id: currentUser.id,
+      full_name: currentUser.full_name,
+      avatar_url: currentUser.avatar_url,
+      role: currentUser.role,
+      page: pathname,
+      online_at: new Date().toISOString(),
+    };
+
+    // If channel already has us, use the channel list as-is
+    if (channelUsers.some((u) => u.user_id === currentUser.id)) {
+      return channelUsers;
+    }
+
+    // Otherwise prepend ourselves so we always show as online
+    return [selfEntry, ...channelUsers];
+  }, [currentUser, channelUsers, pathname]);
 
   // Record session start + heartbeat to user_sessions table
   useEffect(() => {
@@ -104,7 +126,7 @@ export function usePresence(currentUser: User | null) {
           const first = (entries as PresenceUser[])[0];
           if (first) users.push(first);
         }
-        setOnlineUsers(users);
+        setChannelUsers(users);
       })
       .subscribe(async (status: string) => {
         if (status === 'SUBSCRIBED') {
