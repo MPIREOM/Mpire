@@ -396,8 +396,8 @@ export function TaskTable({
                     {allSelected && <CheckIcon className="h-3 w-3" />}
                   </button>
                   <span className="flex-1 text-xs font-semibold uppercase tracking-wide text-muted">Task</span>
-                  <span className="w-24 text-xs font-semibold uppercase tracking-wide text-muted">Assignee</span>
-                  <span className="w-16 text-right text-xs font-semibold uppercase tracking-wide text-muted">Due</span>
+                  <span className="hidden w-24 text-xs font-semibold uppercase tracking-wide text-muted sm:block">Assignee</span>
+                  <span className="hidden w-16 text-right text-xs font-semibold uppercase tracking-wide text-muted sm:block">Due</span>
                 </div>
 
                 {group.tasks.map((task, idx) => {
@@ -408,7 +408,7 @@ export function TaskTable({
                       key={task.id}
                       onClick={() => setSelectedTaskId(task.id)}
                       className={clsx(
-                        'flex cursor-pointer items-center gap-3 px-4 py-2.5 transition-colors hover:bg-bg',
+                        'flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 transition-colors hover:bg-bg sm:flex-nowrap',
                         idx !== group.tasks.length - 1 && 'border-b border-border',
                         selected && 'bg-accent-muted'
                       )}
@@ -438,21 +438,42 @@ export function TaskTable({
                           <option key={s.value} value={s.value}>{s.label}</option>
                         ))}
                       </select>
-                      <div className="min-w-0 flex-1">
-                        <span className="block truncate text-left text-sm font-medium text-text">
+                      {/* Title + description: full width on mobile, flex-1 on desktop */}
+                      <div className="order-last w-full min-w-0 pl-[calc(1rem+4px+4px)] sm:order-none sm:w-auto sm:flex-1 sm:pl-0">
+                        <span className="block text-left text-sm font-medium text-text sm:truncate">
                           {task.title}
                         </span>
                         {task.description && (
-                          <span className="block truncate text-left text-xs text-muted">
+                          <span className="block text-left text-xs leading-relaxed text-muted line-clamp-2 sm:truncate sm:leading-normal">
                             {task.description}
                           </span>
                         )}
+                        {/* Mobile-only: show due date + assignee inline below title */}
+                        <div className="mt-1 flex items-center gap-2 sm:hidden">
+                          {task.assignee && (
+                            <span className="flex items-center gap-1 text-xs text-muted">
+                              <span
+                                className="flex h-4 w-4 shrink-0 items-center justify-center rounded text-[8px] font-bold text-white"
+                                style={{ backgroundColor: userColor(task.assignee.full_name) }}
+                              >
+                                {task.assignee.full_name.charAt(0)}
+                              </span>
+                              {task.assignee.full_name.split(' ')[0]}
+                            </span>
+                          )}
+                          {task.due_date && (
+                            <span className={clsx('text-xs tabular-nums', overdue ? 'font-semibold text-red' : 'text-muted')}>
+                              {formatDate(task.due_date)}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <span
                         className={clsx('h-2 w-2 shrink-0 rounded-full', task.priority === 'high' ? 'bg-red' : task.priority === 'medium' ? 'bg-yellow' : 'bg-blue')}
                         title={task.priority}
                       />
-                      <span className="w-24 truncate text-[13px] text-muted">
+                      {/* Assignee — desktop only */}
+                      <span className="hidden w-24 truncate text-[13px] text-muted sm:flex">
                         {task.assignee ? (
                           <span className="flex items-center gap-1.5">
                             <span
@@ -462,13 +483,14 @@ export function TaskTable({
                             >
                               {task.assignee.full_name.charAt(0)}
                             </span>
-                            <span className="hidden truncate sm:inline">{task.assignee.full_name.split(' ')[0]}</span>
+                            <span className="truncate">{task.assignee.full_name.split(' ')[0]}</span>
                           </span>
                         ) : (
                           <span className="text-muted/50">—</span>
                         )}
                       </span>
-                      <span className={clsx('w-16 shrink-0 text-right text-[13px] tabular-nums', overdue ? 'font-semibold text-red' : 'text-muted')}>
+                      {/* Due date — desktop only */}
+                      <span className={clsx('hidden w-16 shrink-0 text-right text-[13px] tabular-nums sm:block', overdue ? 'font-semibold text-red' : 'text-muted')}>
                         {task.due_date ? formatDate(task.due_date) : '—'}
                       </span>
                     </div>

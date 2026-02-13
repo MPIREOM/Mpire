@@ -187,7 +187,7 @@ export function StaffDashboard({
                   transition={{ delay: idx * 0.03, duration: 0.3 }}
                   onClick={() => setSelectedTaskId(task.id)}
                   className={cn(
-                    'flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors hover:bg-bg',
+                    'flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 transition-colors hover:bg-bg sm:flex-nowrap',
                     idx !== filtered.length - 1 && 'border-b border-border'
                   )}
                 >
@@ -216,36 +216,49 @@ export function StaffDashboard({
                     ))}
                   </select>
 
-                  {/* Title + description */}
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-text">
-                      {task.title}
-                    </p>
-                    {task.description && (
-                      <p className="truncate text-xs text-muted">
-                        {task.description}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Assignee avatar */}
-                  {task.assignee && (
-                    <Avatar name={task.assignee.full_name} src={task.assignee.avatar_url} size="sm" />
-                  )}
-
-                  {/* Priority dot */}
+                  {/* Priority dot — inline on mobile before title wraps */}
                   <span
                     className={cn(
-                      'h-2 w-2 shrink-0 rounded-full',
+                      'h-2 w-2 shrink-0 rounded-full sm:order-none',
                       task.priority === 'high' ? 'bg-red' : task.priority === 'medium' ? 'bg-yellow' : 'bg-blue'
                     )}
                   />
 
-                  {/* Due date */}
+                  {/* Title + description: full width on mobile */}
+                  <div className="order-last w-full min-w-0 pl-[calc(4px+0.75rem)] sm:order-none sm:w-auto sm:flex-1 sm:pl-0">
+                    <p className="text-sm font-medium text-text sm:truncate">
+                      {task.title}
+                    </p>
+                    {task.description && (
+                      <p className="text-xs leading-relaxed text-muted line-clamp-2 sm:truncate sm:leading-normal">
+                        {task.description}
+                      </p>
+                    )}
+                    {/* Mobile-only: due date below title */}
+                    {task.due_date && (
+                      <span
+                        className={cn(
+                          'mt-0.5 block text-xs tabular-nums sm:hidden',
+                          overdue ? 'font-semibold text-red' : 'text-muted'
+                        )}
+                      >
+                        {formatDate(task.due_date)}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Assignee avatar — desktop only */}
+                  {task.assignee && (
+                    <div className="hidden sm:block">
+                      <Avatar name={task.assignee.full_name} src={task.assignee.avatar_url} size="sm" />
+                    </div>
+                  )}
+
+                  {/* Due date — desktop only */}
                   {task.due_date && (
                     <span
                       className={cn(
-                        'shrink-0 text-[13px] tabular-nums',
+                        'hidden shrink-0 text-[13px] tabular-nums sm:block',
                         overdue ? 'font-semibold text-red' : 'text-muted'
                       )}
                     >

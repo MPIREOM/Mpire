@@ -64,12 +64,12 @@ export function TaskItem({
       transition={{ duration: 0.2 }}
       onClick={onClick}
       className={cn(
-        'group relative flex cursor-pointer items-center gap-4 rounded-xl border border-l-[3px] bg-card px-4 py-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md',
+        'group relative flex cursor-pointer items-start gap-3 rounded-xl border border-l-[3px] bg-card px-4 py-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:items-center sm:gap-4',
         overdue ? 'border-border border-l-red' : `border-border ${priority.color}`
       )}
     >
       {/* Status icon button */}
-      <div className="relative">
+      <div className="relative mt-0.5 sm:mt-0">
         <select
           value={task.status}
           onChange={(e) => {
@@ -96,18 +96,18 @@ export function TaskItem({
       <div className="min-w-0 flex-1">
         <p
           className={cn(
-            'truncate text-sm font-medium leading-tight',
+            'text-sm font-medium leading-tight sm:truncate',
             task.status === 'done' ? 'text-muted line-through' : 'text-text'
           )}
         >
           {task.title}
         </p>
         {task.description && (
-          <p className="mt-0.5 truncate text-xs text-muted">
+          <p className="mt-0.5 text-xs text-muted line-clamp-2 sm:truncate">
             {task.description}
           </p>
         )}
-        <div className="mt-1 flex items-center gap-2 text-[13px] text-muted">
+        <div className="mt-1 flex flex-wrap items-center gap-2 text-[13px] text-muted">
           {task.project && (
             <span
               className="rounded-md px-1.5 py-0.5 font-semibold"
@@ -129,14 +129,16 @@ export function TaskItem({
       </div>
 
       {/* Right side: priority badge + assignee */}
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-3">
         <Badge variant={priority.badge}>{priority.label}</Badge>
         {task.assignee && (
-          <Avatar
-            name={task.assignee.full_name}
-            src={task.assignee.avatar_url}
-            size="sm"
-          />
+          <div className="hidden sm:block">
+            <Avatar
+              name={task.assignee.full_name}
+              src={task.assignee.avatar_url}
+              size="sm"
+            />
+          </div>
         )}
       </div>
     </motion.div>
