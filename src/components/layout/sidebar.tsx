@@ -11,7 +11,10 @@ import {
   ChevronLeftIcon,
   XMarkIcon,
   MapPinIcon,
+  ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 
 interface SidebarProps {
   open: boolean;
@@ -47,8 +50,15 @@ const bottomNavigation: NavItem[] = [
 
 export function Sidebar({ open, onClose, collapsed, onToggleCollapse, pinned, onTogglePin }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user } = useUser();
   const role = user?.role ?? 'staff';
+
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/login');
+  }
 
   function canAccess(item: NavItem) {
     if (item.requiresManage && !canManage(role)) return false;
@@ -156,6 +166,39 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse, pinned, on
               />
             );
           })}
+
+          {/* Logout */}
+          <button
+            type="button"
+            onClick={handleLogout}
+            className={cn(
+              'group relative flex items-center rounded-xl pl-2 py-2.5 text-[13px] font-medium text-gray-400 transition-all duration-200 hover:bg-white/[0.06] hover:text-red-400 active:scale-[0.97]',
+              !collapsed && 'gap-2'
+            )}
+          >
+            <span className="flex w-10 shrink-0 items-center justify-center">
+              <ArrowRightOnRectangleIcon className="h-5 w-5" />
+            </span>
+            <AnimatePresence mode="wait">
+              {!collapsed && (
+                <motion.span
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: 'auto' }}
+                  exit={{ opacity: 0, width: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="whitespace-nowrap"
+                >
+                  Sign out
+                </motion.span>
+              )}
+            </AnimatePresence>
+            {collapsed && (
+              <div className="pointer-events-none absolute left-full z-[60] ml-3 hidden rounded-lg bg-gray-800 px-2.5 py-1.5 text-[11px] font-semibold text-white shadow-lg group-hover:block">
+                Sign out
+                <div className="absolute -left-1 top-1/2 -translate-y-1/2 border-[5px] border-transparent border-r-gray-800" />
+              </div>
+            )}
+          </button>
 
           {/* Pin + Collapse — desktop only */}
           <div className="hidden lg:flex items-center gap-1">

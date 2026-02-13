@@ -15,7 +15,7 @@ import type { ProjectHealth } from '@/types/database';
 
 export default function OperationsPage() {
   const { user } = useUser();
-  const { tasks, updateTask } = useTasks();
+  const { tasks, updateTask, deleteTask, completeTask } = useTasks();
   const { projects } = useProjects();
   const { team } = useTeam();
 
@@ -83,6 +83,8 @@ export default function OperationsPage() {
           currentUser={user}
           projects={projects}
           onUpdateTask={updateTask}
+          onDeleteTask={deleteTask}
+          onCompleteTask={completeTask}
         />
       )}
     </Shell>

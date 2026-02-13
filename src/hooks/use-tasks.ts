@@ -5,13 +5,14 @@ import { useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { Task } from '@/types/database';
 
+const supabase = createClient();
+
 interface UseTasksOptions {
   projectId?: string;
   assigneeId?: string;
 }
 
 export function useTasks(options?: UseTasksOptions) {
-  const supabase = createClient();
   const key = `tasks-${options?.projectId ?? 'all'}-${options?.assigneeId ?? 'all'}`;
 
   const { data, error, isLoading, mutate } = useSWR<Task[]>(
@@ -40,10 +41,11 @@ export function useTasks(options?: UseTasksOptions) {
     }
   );
 
-  // Realtime subscription
+  // Realtime subscription — dynamic channel name avoids collision across hook instances
   useEffect(() => {
+    const channelName = `tasks-realtime-${key}`;
     const channel = supabase
-      .channel('tasks-realtime')
+      .channel(channelName)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'tasks' },
@@ -56,7 +58,7 @@ export function useTasks(options?: UseTasksOptions) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabase, mutate]);
+  }, [key, mutate]);
 
   const updateTask = useCallback(
     async (taskId: string, updates: Partial<Task>) => {
@@ -68,7 +70,7 @@ export function useTasks(options?: UseTasksOptions) {
       if (error) throw error;
       mutate();
     },
-    [supabase, mutate]
+    [mutate]
   );
 
   const createTask = useCallback(
@@ -77,19 +79,18 @@ export function useTasks(options?: UseTasksOptions) {
       if (error) throw error;
       mutate();
     },
-    [supabase, mutate]
+    [mutate]
   );
 
   const deleteTask = useCallback(
     async (taskId: string) => {
-      // Delete comments and activity first (FK constraints)
-      await supabase.from('task_comments').delete().eq('task_id', taskId);
-      await supabase.from('task_activity').delete().eq('task_id', taskId);
+      // Relies on ON DELETE CASCADE for task_comments and task_activity.
+      // See supabase/migration-cascade.sql
       const { error } = await supabase.from('tasks').delete().eq('id', taskId);
       if (error) throw error;
       mutate();
     },
-    [supabase, mutate]
+    [mutate]
   );
 
   const completeTask = useCallback(
@@ -98,7 +99,6 @@ export function useTasks(options?: UseTasksOptions) {
       userId: string,
       timeEntries: { date: string; hours: number }[]
     ) => {
-      // Log a time_logged activity entry for each day
       if (timeEntries.length > 0) {
         const rows = timeEntries.map((entry) => ({
           task_id: taskId,
@@ -109,7 +109,6 @@ export function useTasks(options?: UseTasksOptions) {
         await supabase.from('task_activity').insert(rows);
       }
 
-      // Log the status change activity
       await supabase.from('task_activity').insert({
         task_id: taskId,
         user_id: userId,
@@ -117,7 +116,6 @@ export function useTasks(options?: UseTasksOptions) {
         meta: { from: 'in_progress', to: 'done' },
       });
 
-      // Update task status to done
       const { error } = await supabase
         .from('tasks')
         .update({ status: 'done' })
@@ -125,7 +123,7 @@ export function useTasks(options?: UseTasksOptions) {
       if (error) throw error;
       mutate();
     },
-    [supabase, mutate]
+    [mutate]
   );
 
   return {

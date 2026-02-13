@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import {
@@ -23,7 +24,8 @@ interface AlertGroup {
   color: string;
   bgColor: string;
   badgeVariant: 'danger' | 'warning' | 'info';
-  items: { id: string; text: string; meta: string }[];
+  type: 'task' | 'project';
+  items: { id: string; projectId?: string; text: string; meta: string }[];
 }
 
 export function RiskAlerts({ tasks, projectHealth }: RiskAlertsProps) {
@@ -41,8 +43,10 @@ export function RiskAlerts({ tasks, projectHealth }: RiskAlertsProps) {
         color: 'text-red',
         bgColor: 'bg-red-bg',
         badgeVariant: 'danger' as const,
+        type: 'task' as const,
         items: overdueHigh.map((t) => ({
           id: t.id,
+          projectId: t.project_id,
           text: t.title,
           meta: `${t.project?.name ?? 'No project'} · ${formatDate(t.due_date)}`,
         })),
@@ -53,8 +57,10 @@ export function RiskAlerts({ tasks, projectHealth }: RiskAlertsProps) {
         color: 'text-yellow',
         bgColor: 'bg-yellow-bg',
         badgeVariant: 'warning' as const,
+        type: 'task' as const,
         items: blocked.map((t) => ({
           id: t.id,
+          projectId: t.project_id,
           text: t.title,
           meta: t.project?.name ?? 'No project',
         })),
@@ -65,6 +71,7 @@ export function RiskAlerts({ tasks, projectHealth }: RiskAlertsProps) {
         color: 'text-red',
         bgColor: 'bg-red-bg',
         badgeVariant: 'danger' as const,
+        type: 'project' as const,
         items: riskyProjects.map((p) => ({
           id: p.project.id,
           text: p.project.name,
@@ -106,21 +113,31 @@ export function RiskAlerts({ tasks, projectHealth }: RiskAlertsProps) {
               <Badge variant={group.badgeVariant}>{group.items.length}</Badge>
             </div>
             <div className="space-y-1.5">
-              {group.items.slice(0, 4).map((item, idx) => (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 + idx * 0.03 }}
-                  className="flex items-start gap-2"
-                >
-                  <span className={cn('mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full', group.color.replace('text-', 'bg-'))} />
-                  <div className="min-w-0">
-                    <p className="truncate text-[12px] font-medium text-text">{item.text}</p>
-                    <p className="text-[10px] text-muted">{item.meta}</p>
-                  </div>
-                </motion.div>
-              ))}
+              {group.items.slice(0, 4).map((item, idx) => {
+                const href = group.type === 'project'
+                  ? `/projects/${item.id}`
+                  : `/projects/${item.projectId}`;
+
+                return (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 + idx * 0.03 }}
+                  >
+                    <Link
+                      href={href}
+                      className="flex items-start gap-2 rounded-lg px-1 py-0.5 transition-colors hover:bg-bg"
+                    >
+                      <span className={cn('mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full', group.color.replace('text-', 'bg-'))} />
+                      <div className="min-w-0">
+                        <p className="truncate text-[12px] font-medium text-text">{item.text}</p>
+                        <p className="text-[10px] text-muted">{item.meta}</p>
+                      </div>
+                    </Link>
+                  </motion.div>
+                );
+              })}
               {group.items.length > 4 && (
                 <p className="text-[10px] text-muted">+{group.items.length - 4} more</p>
               )}

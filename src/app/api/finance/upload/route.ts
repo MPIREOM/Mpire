@@ -31,7 +31,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Get current version number
   const { data: lastUpload } = await supabase
     .from('finance_uploads')
     .select('version')
@@ -42,7 +41,7 @@ export async function POST(request: NextRequest) {
 
   const nextVersion = (lastUpload?.version ?? 0) + 1;
 
-  // Create upload record
+  // 1. Create upload record
   const { data: upload, error: uploadError } = await supabase
     .from('finance_uploads')
     .insert({
@@ -60,13 +59,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: uploadError.message }, { status: 400 });
   }
 
-  // Delete existing records for this project (replace dataset)
-  await supabase
-    .from('finance_records')
-    .delete()
-    .eq('project_id', project_id);
-
-  // Insert new records
+  // 2. Insert new records FIRST (atomic: never delete old data before confirming new insert)
   const financeRecords = records.map((r: { month: string; category: string; amount: number }) => ({
     project_id,
     upload_id: upload.id,
@@ -80,8 +73,17 @@ export async function POST(request: NextRequest) {
     .insert(financeRecords);
 
   if (recordsError) {
+    // Clean up the upload record since records failed
+    await supabase.from('finance_uploads').delete().eq('id', upload.id);
     return NextResponse.json({ error: recordsError.message }, { status: 400 });
   }
+
+  // 3. Only NOW delete old records (those not belonging to the new upload)
+  await supabase
+    .from('finance_records')
+    .delete()
+    .eq('project_id', project_id)
+    .neq('upload_id', upload.id);
 
   return NextResponse.json({ upload, recordCount: records.length });
 }

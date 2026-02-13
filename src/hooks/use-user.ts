@@ -4,9 +4,9 @@ import useSWR from 'swr';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@/types/database';
 
-export function useUser() {
-  const supabase = createClient();
+const supabase = createClient();
 
+export function useUser() {
   const { data, error, isLoading, mutate } = useSWR<User | null>(
     'current-user',
     async () => {

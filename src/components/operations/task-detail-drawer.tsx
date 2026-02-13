@@ -6,6 +6,7 @@ import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { XMarkIcon, PaperAirplaneIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import { canAssignTasks, canDeleteTasks } from '@/lib/roles';
 import { formatDate, isOverdue } from '@/lib/dates';
@@ -38,6 +39,8 @@ const priorityOptions: { value: TaskPriority; label: string; variant: 'danger' |
   { value: 'low', label: 'Low', variant: 'info' },
 ];
 
+const supabase = createClient();
+
 export function TaskDetailDrawer({
   task,
   onClose,
@@ -56,7 +59,6 @@ export function TaskDetailDrawer({
   const [deleting, setDeleting] = useState(false);
   const [showTimeReview, setShowTimeReview] = useState(false);
 
-  const supabase = createClient();
   const canAssign = canAssignTasks(currentUser.role);
   const canDelete = canDeleteTasks(currentUser.role);
 
@@ -79,7 +81,7 @@ export function TaskDetailDrawer({
 
     setComments((commentsRes.data as TaskComment[]) ?? []);
     setActivity((activityRes.data as TaskActivity[]) ?? []);
-  }, [task, supabase]);
+  }, [task]);
 
   useEffect(() => {
     if (task) {
@@ -114,25 +116,40 @@ export function TaskDetailDrawer({
   async function handleFieldChange(field: string, value: string) {
     if (!task) return;
 
-    // Intercept status→done: show time review dialog instead
+    // Intercept status->done: show time review dialog instead
     if (field === 'status' && value === 'done' && onCompleteTask) {
       setShowTimeReview(true);
       return;
     }
 
-    await onUpdateTask(task.id, { [field]: value || null });
+    // Normalize assignee_id: empty string / "unassigned" -> null, else UUID
+    const normalizedValue = field === 'assignee_id'
+      ? (!value || value === 'unassigned' ? null : value)
+      : (value || null);
 
-    await supabase.from('task_activity').insert({
-      task_id: task.id,
-      user_id: currentUser.id,
-      action: `${field}_changed`,
-      meta: { from: (task as unknown as Record<string, unknown>)[field], to: value },
-    });
+    try {
+      await onUpdateTask(task.id, { [field]: normalizedValue });
+      toast.success('Task updated');
+
+      await supabase.from('task_activity').insert({
+        task_id: task.id,
+        user_id: currentUser.id,
+        action: `${field}_changed`,
+        meta: { from: (task as unknown as Record<string, unknown>)[field], to: value },
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update task');
+    }
   }
 
   async function handleTimeReviewConfirm(taskId: string, entries: TimeEntry[]) {
     if (onCompleteTask) {
-      await onCompleteTask(taskId, currentUser.id, entries);
+      try {
+        await onCompleteTask(taskId, currentUser.id, entries);
+        toast.success('Task completed');
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Failed to complete task');
+      }
     }
     setShowTimeReview(false);
   }
@@ -142,8 +159,11 @@ export function TaskDetailDrawer({
     setDeleting(true);
     try {
       await onDeleteTask(task.id);
+      toast.success('Task deleted');
       setConfirmDelete(false);
       onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete task');
     } finally {
       setDeleting(false);
     }
@@ -191,6 +211,7 @@ export function TaskDetailDrawer({
               <div className="ml-3 flex shrink-0 items-center gap-1">
                 {canDelete && onDeleteTask && (
                   <button
+                    type="button"
                     onClick={() => setConfirmDelete(true)}
                     className="rounded-lg p-1.5 text-muted transition-colors hover:bg-red-bg hover:text-red"
                     title="Delete task"
@@ -199,6 +220,7 @@ export function TaskDetailDrawer({
                   </button>
                 )}
                 <button
+                  type="button"
                   onClick={onClose}
                   className="rounded-lg p-1.5 text-muted transition-colors hover:bg-bg hover:text-text"
                 >
@@ -303,6 +325,7 @@ export function TaskDetailDrawer({
               {(['comments', 'activity'] as const).map((t) => (
                 <button
                   key={t}
+                  type="button"
                   onClick={() => setActiveTab(t)}
                   className={cn(
                     'relative px-4 py-2.5 text-[12px] font-semibold capitalize transition-colors',
@@ -436,12 +459,14 @@ export function TaskDetailDrawer({
           </p>
           <div className="mt-5 flex justify-end gap-2">
             <button
+              type="button"
               onClick={() => setConfirmDelete(false)}
               className="rounded-xl border border-border px-4 py-2 text-[13px] font-semibold text-muted transition-colors hover:bg-bg hover:text-text"
             >
               Cancel
             </button>
             <button
+              type="button"
               onClick={handleDelete}
               disabled={deleting}
               className="rounded-xl bg-red px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-red/90 disabled:opacity-50"
