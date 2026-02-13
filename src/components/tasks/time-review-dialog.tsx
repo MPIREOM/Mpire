@@ -5,12 +5,10 @@ import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import {
   eachDayOfInterval,
   format,
-  isWeekend,
   differenceInCalendarDays,
   startOfDay,
   subDays,
 } from 'date-fns';
-import { createClient } from '@/lib/supabase/client';
 import type { Task } from '@/types/database';
 import { Button } from '@/components/ui/button';
 import { ClockIcon, CalendarDaysIcon, CheckIcon } from '@heroicons/react/24/outline';
@@ -36,65 +34,39 @@ interface DayRow {
 }
 
 export function TimeReviewDialog({ task, open, onConfirm, onCancel }: TimeReviewDialogProps) {
-  const supabase = createClient();
   const [days, setDays] = useState<DayRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [defaultHours, setDefaultHours] = useState(8);
   const [startDate, setStartDate] = useState<Date | null>(null);
 
-  // Find when task was set to in_progress and build day list
+  // Build day list from task creation date to today
   useEffect(() => {
     if (!open || !task) return;
     setLoading(true);
     setSaving(false);
 
-    (async () => {
-      // Query task_activity for most recent transition to in_progress
-      const { data } = await supabase
-        .from('task_activity')
-        .select('created_at, meta')
-        .eq('task_id', task.id)
-        .eq('action', 'status_changed')
-        .order('created_at', { ascending: false });
+    const start = startOfDay(new Date(task.created_at));
+    setStartDate(start);
 
-      let start: Date | null = null;
-      if (data) {
-        for (const entry of data) {
-          const meta = entry.meta as Record<string, unknown> | null;
-          if (meta?.to === 'in_progress') {
-            start = startOfDay(new Date(entry.created_at));
-            break;
-          }
-        }
-      }
+    const end = startOfDay(new Date());
+    const totalDays = differenceInCalendarDays(end, start);
 
-      // Fallback: use task created_at
-      if (!start) {
-        start = startOfDay(new Date(task.created_at));
-      }
+    // Cap at 30 days to keep dialog manageable
+    const effectiveStart = totalDays > 30 ? subDays(end, 30) : start;
 
-      setStartDate(start);
+    const interval = eachDayOfInterval({ start: effectiveStart, end });
+    const rows: DayRow[] = interval.map((date) => ({
+      date,
+      dateStr: format(date, 'yyyy-MM-dd'),
+      dayLabel: format(date, 'EEE, MMM d'),
+      enabled: true,
+      hours: defaultHours,
+    }));
 
-      const end = startOfDay(new Date());
-      const totalDays = differenceInCalendarDays(end, start);
-
-      // Cap at 30 days to keep dialog manageable
-      const effectiveStart = totalDays > 30 ? subDays(end, 30) : start;
-
-      const interval = eachDayOfInterval({ start: effectiveStart, end });
-      const rows: DayRow[] = interval.map((date) => ({
-        date,
-        dateStr: format(date, 'yyyy-MM-dd'),
-        dayLabel: format(date, 'EEE, MMM d'),
-        enabled: !isWeekend(date),
-        hours: isWeekend(date) ? 0 : 8,
-      }));
-
-      setDays(rows);
-      setLoading(false);
-    })();
-  }, [open, task, supabase]);
+    setDays(rows);
+    setLoading(false);
+  }, [open, task]);
 
   const totalHours = useMemo(
     () => days.filter((d) => d.enabled).reduce((sum, d) => sum + d.hours, 0),
@@ -151,7 +123,7 @@ export function TimeReviewDialog({ task, open, onConfirm, onCancel }: TimeReview
             {startDate && !loading && (
               <div className="mt-3 flex items-center gap-2 rounded-lg bg-bg px-3 py-2 text-[11px] text-muted">
                 <CalendarDaysIcon className="h-3.5 w-3.5 shrink-0" />
-                Started {format(startDate, 'MMM d, yyyy')} &rarr; Today ({days.length} days)
+                Created {format(startDate, 'MMM d, yyyy')} &rarr; Today ({days.length} days)
               </div>
             )}
           </div>
@@ -184,12 +156,11 @@ export function TimeReviewDialog({ task, open, onConfirm, onCancel }: TimeReview
                 </div>
                 <button
                   onClick={() => {
-                    // Toggle all weekdays on
                     setDays((prev) =>
                       prev.map((d) => ({
                         ...d,
-                        enabled: !isWeekend(d.date),
-                        hours: !isWeekend(d.date) ? defaultHours : 0,
+                        enabled: true,
+                        hours: defaultHours,
                       }))
                     );
                   }}
@@ -218,15 +189,8 @@ export function TimeReviewDialog({ task, open, onConfirm, onCancel }: TimeReview
                     >
                       {day.enabled && <CheckIcon className="h-3 w-3" strokeWidth={3} />}
                     </button>
-                    <span
-                      className={`flex-1 text-[12px] font-medium ${
-                        isWeekend(day.date) ? 'text-muted' : 'text-text'
-                      }`}
-                    >
+                    <span className="flex-1 text-[12px] font-medium text-text">
                       {day.dayLabel}
-                      {isWeekend(day.date) && (
-                        <span className="ml-1.5 text-[10px] text-muted/60">weekend</span>
-                      )}
                     </span>
                     <input
                       type="number"
@@ -247,7 +211,7 @@ export function TimeReviewDialog({ task, open, onConfirm, onCancel }: TimeReview
               <div className="flex items-center justify-between border-t border-border p-6">
                 <div className="space-y-0.5">
                   <p className="text-[14px] font-bold text-text">{totalHours}h total</p>
-                  <p className="text-[11px] text-muted">{workingDays} working days</p>
+                  <p className="text-[11px] text-muted">{workingDays} days</p>
                 </div>
                 <div className="flex gap-2">
                   <button
