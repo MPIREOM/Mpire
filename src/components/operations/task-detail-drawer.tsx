@@ -316,7 +316,7 @@ export function TaskDetailDrawer({
                     <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-muted">
                       Description
                     </span>
-                    <p className="rounded-lg bg-bg p-3 text-sm leading-relaxed text-text/80">
+                    <p className="rounded-lg bg-bg p-3 text-sm leading-relaxed text-text">
                       {task.description}
                     </p>
                   </div>
@@ -378,7 +378,7 @@ export function TaskDetailDrawer({
                             {format(new Date(c.created_at), 'MMM d, HH:mm')}
                           </span>
                         </div>
-                        <p className="mt-1 text-[13px] leading-relaxed text-text/80">
+                        <p className="mt-1 text-[13px] leading-relaxed text-text">
                           {c.body}
                         </p>
                       </div>

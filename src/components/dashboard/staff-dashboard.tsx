@@ -216,10 +216,17 @@ export function StaffDashboard({
                     ))}
                   </select>
 
-                  {/* Title */}
-                  <p className="min-w-0 flex-1 truncate text-sm font-medium text-text">
-                    {task.title}
-                  </p>
+                  {/* Title + description */}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-text">
+                      {task.title}
+                    </p>
+                    {task.description && (
+                      <p className="truncate text-xs text-muted">
+                        {task.description}
+                      </p>
+                    )}
+                  </div>
 
                   {/* Assignee avatar */}
                   {task.assignee && (

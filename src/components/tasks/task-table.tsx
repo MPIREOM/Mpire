@@ -406,14 +406,15 @@ export function TaskTable({
                   return (
                     <div
                       key={task.id}
+                      onClick={() => setSelectedTaskId(task.id)}
                       className={clsx(
-                        'flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-bg',
+                        'flex cursor-pointer items-center gap-3 px-4 py-2.5 transition-colors hover:bg-bg',
                         idx !== group.tasks.length - 1 && 'border-b border-border',
                         selected && 'bg-accent-muted'
                       )}
                     >
                       <button
-                        onClick={() => toggleSelect(task.id)}
+                        onClick={(e) => { e.stopPropagation(); toggleSelect(task.id); }}
                         className={clsx(
                           'flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all active:scale-90',
                           selected ? 'border-accent bg-accent text-white' : 'border-border hover:border-accent'
@@ -437,9 +438,16 @@ export function TaskTable({
                           <option key={s.value} value={s.value}>{s.label}</option>
                         ))}
                       </select>
-                      <button onClick={() => setSelectedTaskId(task.id)} className="min-w-0 flex-1 truncate text-left text-sm font-medium text-text transition-all hover:text-accent active:scale-[0.98]">
-                        {task.title}
-                      </button>
+                      <div className="min-w-0 flex-1">
+                        <span className="block truncate text-left text-sm font-medium text-text">
+                          {task.title}
+                        </span>
+                        {task.description && (
+                          <span className="block truncate text-left text-xs text-muted">
+                            {task.description}
+                          </span>
+                        )}
+                      </div>
                       <span
                         className={clsx('h-2 w-2 shrink-0 rounded-full', task.priority === 'high' ? 'bg-red' : task.priority === 'medium' ? 'bg-yellow' : 'bg-blue')}
                         title={task.priority}

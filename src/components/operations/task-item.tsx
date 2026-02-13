@@ -102,6 +102,11 @@ export function TaskItem({
         >
           {task.title}
         </p>
+        {task.description && (
+          <p className="mt-0.5 truncate text-xs text-muted">
+            {task.description}
+          </p>
+        )}
         <div className="mt-1 flex items-center gap-2 text-[13px] text-muted">
           {task.project && (
             <span
