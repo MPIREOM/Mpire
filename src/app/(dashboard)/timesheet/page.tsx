@@ -189,7 +189,7 @@ export default function TimesheetPage() {
             >
               <ChevronRightIcon className="h-4 w-4" />
             </button>
-            <h2 className="text-[14px] font-bold text-text">
+            <h2 className="text-base font-bold text-text">
               {format(weekStart, 'MMM d')} &ndash; {format(weekEnd, 'MMM d, yyyy')}
             </h2>
           </div>
@@ -197,14 +197,14 @@ export default function TimesheetPage() {
             onClick={() =>
               setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))
             }
-            className="rounded-lg border border-border px-3 py-1.5 text-[12px] font-semibold text-muted transition-colors hover:bg-bg hover:text-text"
+            className="rounded-lg border border-border px-3 py-1.5 text-[13px] font-semibold text-muted transition-colors hover:bg-bg hover:text-text"
           >
             This Week
           </button>
         </div>
 
         {/* Info banner */}
-        <div className="flex items-center gap-2 rounded-xl border border-accent/20 bg-accent-muted px-4 py-3 text-[12px] text-accent">
+        <div className="flex items-center gap-2 rounded-xl border border-accent/20 bg-accent-muted px-4 py-3 text-[13px] text-accent">
           <ClockIcon className="h-4 w-4 shrink-0" />
           <p>
             Time is automatically tracked when you mark tasks as <strong>Done</strong>.
@@ -222,21 +222,21 @@ export default function TimesheetPage() {
           <table className="w-full min-w-[640px]">
             <thead>
               <tr className="border-b border-border">
-                <th className="w-44 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-muted">
+                <th className="w-44 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted">
                   Project
                 </th>
                 {weekDays.map((day) => (
                   <th
                     key={day.toISOString()}
                     className={clsx(
-                      'px-2 py-3 text-center text-[11px] font-semibold uppercase tracking-wide',
+                      'px-2 py-3 text-center text-xs font-semibold uppercase tracking-wide',
                       isToday(day) ? 'text-accent' : 'text-muted'
                     )}
                   >
                     <div>{format(day, 'EEE')}</div>
                     <div
                       className={clsx(
-                        'mx-auto mt-0.5 flex h-6 w-6 items-center justify-center rounded-full text-[12px]',
+                        'mx-auto mt-0.5 flex h-6 w-6 items-center justify-center rounded-full text-[13px]',
                         isToday(day) ? 'bg-accent text-white' : ''
                       )}
                     >
@@ -244,7 +244,7 @@ export default function TimesheetPage() {
                     </div>
                   </th>
                 ))}
-                <th className="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-muted">
+                <th className="px-3 py-3 text-center text-xs font-semibold uppercase tracking-wide text-muted">
                   Total
                 </th>
               </tr>
@@ -254,7 +254,7 @@ export default function TimesheetPage() {
                 <tr>
                   <td
                     colSpan={9}
-                    className="px-4 py-12 text-center text-[13px] text-muted"
+                    className="px-4 py-12 text-center text-sm text-muted"
                   >
                     No tracked time this week. Complete tasks to see your hours here.
                   </td>
@@ -276,7 +276,7 @@ export default function TimesheetPage() {
                           className="h-2.5 w-2.5 shrink-0 rounded-full"
                           style={{ backgroundColor: projectColor }}
                         />
-                        <span className="truncate text-[12px] font-medium text-text">
+                        <span className="truncate text-[13px] font-medium text-text">
                           {projectName}
                         </span>
                       </div>
@@ -289,7 +289,7 @@ export default function TimesheetPage() {
                           className="px-2 py-2.5 text-center"
                         >
                           {hours > 0 ? (
-                            <span className="inline-flex h-7 min-w-[28px] items-center justify-center rounded-lg bg-accent-muted text-[12px] font-semibold text-accent">
+                            <span className="inline-flex h-7 min-w-[28px] items-center justify-center rounded-lg bg-accent-muted text-[13px] font-semibold text-accent">
                               {hours}h
                             </span>
                           ) : (
@@ -298,7 +298,7 @@ export default function TimesheetPage() {
                         </td>
                       );
                     })}
-                    <td className="px-3 py-2.5 text-center text-[12px] font-bold text-text">
+                    <td className="px-3 py-2.5 text-center text-[13px] font-bold text-text">
                       {rowTotal}h
                     </td>
                   </tr>
@@ -307,19 +307,19 @@ export default function TimesheetPage() {
             </tbody>
             <tfoot>
               <tr className="border-t border-border bg-bg/50">
-                <td className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
+                <td className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted">
                   Daily Total
                 </td>
                 {dailyTotals.map((total, i) => (
                   <td
                     key={i}
-                    className="px-2 py-2.5 text-center text-[12px] font-bold text-text"
+                    className="px-2 py-2.5 text-center text-[13px] font-bold text-text"
                   >
                     {total > 0 ? `${total}h` : '\u2014'}
                   </td>
                 ))}
                 <td className="px-3 py-2.5 text-center">
-                  <span className="inline-flex items-center rounded-lg bg-accent px-2.5 py-0.5 text-[12px] font-bold text-white">
+                  <span className="inline-flex items-center rounded-lg bg-accent px-2.5 py-0.5 text-[13px] font-bold text-white">
                     {weekTotal}h
                   </span>
                 </td>
@@ -336,8 +336,8 @@ export default function TimesheetPage() {
             transition={{ duration: 0.4, delay: 0.1 }}
             className="rounded-2xl border border-border bg-card p-6"
           >
-            <h3 className="text-[14px] font-bold text-text">Task Breakdown</h3>
-            <p className="mt-1 text-[12px] text-muted">
+            <h3 className="text-base font-bold text-text">Task Breakdown</h3>
+            <p className="mt-1 text-[13px] text-muted">
               Hours logged per completed task this week
             </p>
             <div className="mt-4 divide-y divide-border">
@@ -350,10 +350,10 @@ export default function TimesheetPage() {
                       style={{ backgroundColor: row.projectColor }}
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[12px] font-medium text-text">
+                      <p className="truncate text-[13px] font-medium text-text">
                         {row.taskTitle}
                       </p>
-                      <p className="text-[11px] text-muted">{row.projectName}</p>
+                      <p className="text-xs text-muted">{row.projectName}</p>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="hidden w-24 sm:block">
@@ -364,7 +364,7 @@ export default function TimesheetPage() {
                           />
                         </div>
                       </div>
-                      <span className="w-12 text-right text-[12px] font-bold text-text">
+                      <span className="w-12 text-right text-[13px] font-bold text-text">
                         {row.totalHours}h
                       </span>
                     </div>
@@ -383,13 +383,13 @@ export default function TimesheetPage() {
           className="grid grid-cols-2 gap-4 sm:grid-cols-4"
         >
           <div className="rounded-2xl border border-border bg-card p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">
               Total Hours
             </p>
             <p className="mt-1 text-2xl font-bold text-text">{weekTotal}h</p>
           </div>
           <div className="rounded-2xl border border-border bg-card p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">
               Projects
             </p>
             <p className="mt-1 text-2xl font-bold text-text">
@@ -397,7 +397,7 @@ export default function TimesheetPage() {
             </p>
           </div>
           <div className="rounded-2xl border border-border bg-card p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">
               Avg / Day
             </p>
             <p className="mt-1 text-2xl font-bold text-text">
@@ -405,7 +405,7 @@ export default function TimesheetPage() {
             </p>
           </div>
           <div className="rounded-2xl border border-border bg-card p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">
               Tasks Logged
             </p>
             <p className="mt-1 text-2xl font-bold text-text">

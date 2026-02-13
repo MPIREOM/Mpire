@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #f9fafb;
+  --color-bg: #f8f9fb;
   --color-card: #ffffff;
   --color-text: #111827;
   --color-muted: #6b7280;
@@ -50,6 +50,8 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

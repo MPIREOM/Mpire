@@ -240,7 +240,7 @@ export function TaskTable({
           <button
             onClick={() => setViewMode('my')}
             className={clsx(
-              'rounded-md px-3 py-1 text-[12px] font-semibold transition-all active:scale-95',
+              'rounded-md px-3 py-1 text-[13px] font-semibold transition-all active:scale-95',
               viewMode === 'my' ? 'bg-accent text-white' : 'text-muted hover:text-text'
             )}
           >
@@ -250,7 +250,7 @@ export function TaskTable({
             <button
               onClick={() => setViewMode('all')}
               className={clsx(
-                'rounded-md px-3 py-1 text-[12px] font-semibold transition-all active:scale-95',
+                'rounded-md px-3 py-1 text-[13px] font-semibold transition-all active:scale-95',
                 viewMode === 'all' ? 'bg-accent text-white' : 'text-muted hover:text-text'
               )}
             >
@@ -266,14 +266,14 @@ export function TaskTable({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search..."
-            className="w-full rounded-lg border border-border bg-card py-1.5 pl-8 pr-3 text-[12px] text-text placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
+            className="w-full rounded-lg border border-border bg-card py-1.5 pl-8 pr-3 text-[13px] text-text placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
           />
         </div>
 
         <select
           value={groupBy}
           onChange={(e) => setGroupBy(e.target.value as GroupBy)}
-          className="rounded-lg border border-border bg-card px-2 py-1.5 text-[12px] font-medium text-muted focus:outline-none focus:ring-1 focus:ring-accent-muted"
+          className="rounded-lg border border-border bg-card px-2 py-1.5 text-[13px] font-medium text-muted focus:outline-none focus:ring-1 focus:ring-accent-muted"
         >
           <option value="none">No grouping</option>
           <option value="project">By Project</option>
@@ -284,7 +284,7 @@ export function TaskTable({
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as SortBy)}
-          className="rounded-lg border border-border bg-card px-2 py-1.5 text-[12px] font-medium text-muted focus:outline-none focus:ring-1 focus:ring-accent-muted"
+          className="rounded-lg border border-border bg-card px-2 py-1.5 text-[13px] font-medium text-muted focus:outline-none focus:ring-1 focus:ring-accent-muted"
         >
           <option value="due_date">Sort: Due date</option>
           <option value="priority">Sort: Priority</option>
@@ -295,7 +295,7 @@ export function TaskTable({
         {canCreate && onCreateTask && (
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-[12px] font-semibold text-white transition-all hover:bg-accent-light active:scale-95"
+            className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-[13px] font-semibold text-white transition-all hover:bg-accent-light active:scale-95"
           >
             <PlusIcon className="h-3.5 w-3.5" />
             Add Task
@@ -310,14 +310,14 @@ export function TaskTable({
             key={t.key}
             onClick={() => { setTab(t.key); setSelectedIds(new Set()); }}
             className={clsx(
-              'relative px-3 py-2 text-[12px] font-semibold transition-all active:scale-95',
+              'relative px-3 py-2 text-[13px] font-semibold transition-all active:scale-95',
               tab === t.key ? 'text-accent' : 'text-muted hover:text-text'
             )}
           >
             {t.label}
             {t.count > 0 && (
               <span className={clsx(
-                'ml-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-bold',
+                'ml-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[11px] font-bold',
                 tab === t.key ? 'bg-accent-muted text-accent' : 'bg-bg text-muted'
               )}>
                 {t.count}
@@ -333,10 +333,10 @@ export function TaskTable({
       {/* Bulk actions bar */}
       {selectedIds.size > 0 && (
         <div className="mb-3 flex items-center gap-2 rounded-lg border border-accent bg-accent-muted px-3 py-2">
-          <span className="text-[12px] font-semibold text-accent">{selectedIds.size} selected</span>
+          <span className="text-[13px] font-semibold text-accent">{selectedIds.size} selected</span>
           <select
             onChange={(e) => { if (e.target.value) bulkUpdateStatus(e.target.value as TaskStatus); e.target.value = ''; }}
-            className="rounded-md border border-border bg-card px-2 py-1 text-[11px] font-medium text-text focus:outline-none"
+            className="rounded-md border border-border bg-card px-2 py-1 text-xs font-medium text-text focus:outline-none"
             defaultValue=""
           >
             <option value="" disabled>Set status...</option>
@@ -352,7 +352,7 @@ export function TaskTable({
                 else if (v) bulkUpdateAssignee(v);
                 e.target.value = '';
               }}
-              className="rounded-md border border-border bg-card px-2 py-1 text-[11px] font-medium text-text focus:outline-none"
+              className="rounded-md border border-border bg-card px-2 py-1 text-xs font-medium text-text focus:outline-none"
               defaultValue=""
             >
               <option value="" disabled>Assign to...</option>
@@ -362,7 +362,7 @@ export function TaskTable({
               ))}
             </select>
           )}
-          <button onClick={() => setSelectedIds(new Set())} className="ml-auto text-[11px] font-semibold text-muted hover:text-text">Clear</button>
+          <button onClick={() => setSelectedIds(new Set())} className="ml-auto text-xs font-semibold text-muted hover:text-text">Clear</button>
         </div>
       )}
 
@@ -380,8 +380,8 @@ export function TaskTable({
                   {groupBy === 'project' && group.tasks[0]?.project?.color && (
                     <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: group.tasks[0].project.color }} />
                   )}
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">{group.label}</p>
-                  <span className="rounded-full bg-bg px-1.5 py-0.5 text-[9px] font-bold text-muted">{group.tasks.length}</span>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">{group.label}</p>
+                  <span className="rounded-full bg-bg px-1.5 py-0.5 text-[11px] font-bold text-muted">{group.tasks.length}</span>
                 </div>
               )}
               <div className="rounded-xl border border-border bg-card">
@@ -395,9 +395,9 @@ export function TaskTable({
                   >
                     {allSelected && <CheckIcon className="h-3 w-3" />}
                   </button>
-                  <span className="flex-1 text-[10px] font-semibold uppercase tracking-wide text-muted">Task</span>
-                  <span className="w-24 text-[10px] font-semibold uppercase tracking-wide text-muted">Assignee</span>
-                  <span className="w-16 text-right text-[10px] font-semibold uppercase tracking-wide text-muted">Due</span>
+                  <span className="flex-1 text-xs font-semibold uppercase tracking-wide text-muted">Task</span>
+                  <span className="w-24 text-xs font-semibold uppercase tracking-wide text-muted">Assignee</span>
+                  <span className="w-16 text-right text-xs font-semibold uppercase tracking-wide text-muted">Due</span>
                 </div>
 
                 {group.tasks.map((task, idx) => {
@@ -407,7 +407,7 @@ export function TaskTable({
                     <div
                       key={task.id}
                       className={clsx(
-                        'flex items-center gap-3 px-4 py-2 transition-colors hover:bg-bg',
+                        'flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-bg',
                         idx !== group.tasks.length - 1 && 'border-b border-border',
                         selected && 'bg-accent-muted'
                       )}
@@ -427,7 +427,7 @@ export function TaskTable({
                         onClick={(e) => e.stopPropagation()}
                         onChange={(e) => handleStatusChange(task.id, e.target.value as TaskStatus)}
                         className={clsx(
-                          'h-6 shrink-0 cursor-pointer rounded-md border-0 px-1 text-[10px] font-semibold focus:outline-none focus:ring-1 focus:ring-accent-muted',
+                          'h-6 shrink-0 cursor-pointer rounded-md border-0 px-1 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-accent-muted',
                           task.status === 'in_progress' ? 'bg-blue-bg text-blue' :
                           task.status === 'blocked' ? 'bg-red-bg text-red' :
                           task.status === 'done' ? 'bg-green-bg text-green' : 'bg-bg text-muted'
@@ -437,14 +437,14 @@ export function TaskTable({
                           <option key={s.value} value={s.value}>{s.label}</option>
                         ))}
                       </select>
-                      <button onClick={() => setSelectedTaskId(task.id)} className="min-w-0 flex-1 truncate text-left text-[12px] font-medium text-text transition-all hover:text-accent active:scale-[0.98]">
+                      <button onClick={() => setSelectedTaskId(task.id)} className="min-w-0 flex-1 truncate text-left text-sm font-medium text-text transition-all hover:text-accent active:scale-[0.98]">
                         {task.title}
                       </button>
                       <span
                         className={clsx('h-2 w-2 shrink-0 rounded-full', task.priority === 'high' ? 'bg-red' : task.priority === 'medium' ? 'bg-yellow' : 'bg-blue')}
                         title={task.priority}
                       />
-                      <span className="w-24 truncate text-[11px] text-muted">
+                      <span className="w-24 truncate text-[13px] text-muted">
                         {task.assignee ? (
                           <span className="flex items-center gap-1.5">
                             <span
@@ -460,7 +460,7 @@ export function TaskTable({
                           <span className="text-muted/50">—</span>
                         )}
                       </span>
-                      <span className={clsx('w-16 shrink-0 text-right text-[11px] tabular-nums', overdue ? 'font-semibold text-red' : 'text-muted')}>
+                      <span className={clsx('w-16 shrink-0 text-right text-[13px] tabular-nums', overdue ? 'font-semibold text-red' : 'text-muted')}>
                         {task.due_date ? formatDate(task.due_date) : '—'}
                       </span>
                     </div>
@@ -504,42 +504,42 @@ export function TaskTable({
             </div>
             <form onSubmit={handleCreate} className="mt-5 space-y-4">
               <div>
-                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">Title</label>
-                <input type="text" required value={createForm.title} onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })} placeholder="What needs to be done?" className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-[13px] text-text placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted" />
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Title</label>
+                <input type="text" required autoFocus value={createForm.title} onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })} placeholder="What needs to be done?" className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted" />
               </div>
               <div>
-                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">Project</label>
-                <select required value={createForm.project_id} onChange={(e) => setCreateForm({ ...createForm, project_id: e.target.value })} className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-[13px] text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted">
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Project</label>
+                <select required value={createForm.project_id} onChange={(e) => setCreateForm({ ...createForm, project_id: e.target.value })} className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted">
                   <option value="">Select project...</option>
                   {projects.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">Priority</label>
-                  <select value={createForm.priority} onChange={(e) => setCreateForm({ ...createForm, priority: e.target.value as TaskPriority })} className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-[13px] text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted">
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Priority</label>
+                  <select value={createForm.priority} onChange={(e) => setCreateForm({ ...createForm, priority: e.target.value as TaskPriority })} className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted">
                     <option value="high">High</option>
                     <option value="medium">Medium</option>
                     <option value="low">Low</option>
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">Due Date</label>
-                  <input type="date" value={createForm.due_date} onChange={(e) => setCreateForm({ ...createForm, due_date: e.target.value })} className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-[13px] text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted" />
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Due Date</label>
+                  <input type="date" value={createForm.due_date} onChange={(e) => setCreateForm({ ...createForm, due_date: e.target.value })} className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted" />
                 </div>
               </div>
               {canAssignTasks(currentUser.role) && (
                 <div>
-                  <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">Assignee</label>
-                  <select value={createForm.assignee_id} onChange={(e) => setCreateForm({ ...createForm, assignee_id: e.target.value })} className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-[13px] text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted">
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Assignee</label>
+                  <select value={createForm.assignee_id} onChange={(e) => setCreateForm({ ...createForm, assignee_id: e.target.value })} className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted">
                     <option value="">Unassigned</option>
                     {team.map((u) => (<option key={u.id} value={u.id}>{u.full_name}</option>))}
                   </select>
                 </div>
               )}
               <div className="flex justify-end gap-2 pt-2">
-                <button type="button" onClick={() => setShowCreate(false)} className="rounded-xl border border-border px-4 py-2 text-[13px] font-semibold text-muted transition-all hover:bg-bg hover:text-text active:scale-95">Cancel</button>
-                <button type="submit" disabled={createSaving} className="rounded-xl bg-accent px-4 py-2 text-[13px] font-semibold text-white transition-all hover:bg-accent-light active:scale-95 disabled:opacity-50">
+                <button type="button" onClick={() => setShowCreate(false)} className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted transition-all hover:bg-bg hover:text-text active:scale-95">Cancel</button>
+                <button type="submit" disabled={createSaving} className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-accent-light active:scale-95 disabled:opacity-50">
                   {createSaving ? 'Creating...' : 'Create Task'}
                 </button>
               </div>

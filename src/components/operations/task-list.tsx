@@ -117,7 +117,7 @@ export function TaskList({
             <button
               onClick={() => setViewMode('my')}
               className={cn(
-                'rounded-md px-3 py-1.5 text-[12px] font-semibold transition-all duration-200',
+                'rounded-md px-3 py-1.5 text-[13px] font-semibold transition-all duration-200',
                 viewMode === 'my'
                   ? 'bg-accent text-white shadow-sm'
                   : 'text-muted hover:text-text'
@@ -129,7 +129,7 @@ export function TaskList({
               <button
                 onClick={() => setViewMode('all')}
                 className={cn(
-                  'rounded-md px-3 py-1.5 text-[12px] font-semibold transition-all duration-200',
+                  'rounded-md px-3 py-1.5 text-[13px] font-semibold transition-all duration-200',
                   viewMode === 'all'
                     ? 'bg-accent text-white shadow-sm'
                     : 'text-muted hover:text-text'
@@ -148,7 +148,7 @@ export function TaskList({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search tasks..."
-              className="w-full rounded-lg border border-border bg-bg py-2 pl-9 pr-3 text-[13px] text-text placeholder:text-muted/50 transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-muted"
+              className="w-full rounded-lg border border-border bg-bg py-2 pl-9 pr-3 text-sm text-text placeholder:text-muted/50 transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-muted"
             />
             {search && (
               <button
@@ -213,7 +213,7 @@ export function TaskList({
               )}
               <button
                 onClick={() => setFilters({})}
-                className="text-[11px] font-medium text-muted hover:text-text"
+                className="text-xs font-medium text-muted hover:text-text"
               >
                 Clear all
               </button>
@@ -229,7 +229,7 @@ export function TaskList({
             key={t.key}
             onClick={() => setTab(t.key)}
             className={cn(
-              'relative px-4 py-2.5 text-[13px] font-semibold transition-colors',
+              'relative px-4 py-2.5 text-sm font-semibold transition-colors',
               tab === t.key ? 'text-accent' : 'text-muted hover:text-text'
             )}
           >
@@ -237,7 +237,7 @@ export function TaskList({
             {t.count > 0 && (
               <span
                 className={cn(
-                  'ml-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-bold',
+                  'ml-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[11px] font-bold',
                   tab === t.key ? 'bg-accent-muted text-accent' : 'bg-bg text-muted'
                 )}
               >

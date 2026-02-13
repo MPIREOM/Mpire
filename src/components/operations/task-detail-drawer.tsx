@@ -193,7 +193,7 @@ export function TaskDetailDrawer({
             {/* Header */}
             <div className="flex items-start justify-between border-b border-border px-6 py-5">
               <div className="min-w-0 flex-1">
-                <DialogTitle className="text-[16px] font-bold leading-tight text-text">
+                <DialogTitle className="text-lg font-bold leading-tight text-text">
                   {task?.title}
                 </DialogTitle>
                 {task?.project && (
@@ -202,7 +202,7 @@ export function TaskDetailDrawer({
                       className="h-2.5 w-2.5 rounded-full"
                       style={{ backgroundColor: task.project.color }}
                     />
-                    <p className="text-[12px] font-medium text-muted">
+                    <p className="text-[13px] font-medium text-muted">
                       {task.project.name}
                     </p>
                   </div>
@@ -215,6 +215,7 @@ export function TaskDetailDrawer({
                     onClick={() => setConfirmDelete(true)}
                     className="rounded-lg p-1.5 text-muted transition-colors hover:bg-red-bg hover:text-red"
                     title="Delete task"
+                    aria-label="Delete task"
                   >
                     <TrashIcon className="h-5 w-5" />
                   </button>
@@ -222,6 +223,7 @@ export function TaskDetailDrawer({
                 <button
                   type="button"
                   onClick={onClose}
+                  aria-label="Close task detail"
                   className="rounded-lg p-1.5 text-muted transition-colors hover:bg-bg hover:text-text"
                 >
                   <XMarkIcon className="h-5 w-5" />
@@ -231,16 +233,16 @@ export function TaskDetailDrawer({
 
             {/* Fields */}
             {task && (
-              <div className="space-y-4 border-b border-border p-6">
+              <div className="space-y-5 border-b border-border px-6 py-5">
                 {/* Status */}
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-muted">
                     Status
                   </span>
                   <select
                     value={task.status}
                     onChange={(e) => handleFieldChange('status', e.target.value)}
-                    className="rounded-lg border border-border bg-bg px-3 py-1.5 text-[12px] font-medium text-text transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-muted"
+                    className="rounded-lg border border-border bg-bg px-3 py-1.5 text-[13px] font-medium text-text transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-muted"
                   >
                     {statusOptions.map((s) => (
                       <option key={s.value} value={s.value}>
@@ -252,13 +254,13 @@ export function TaskDetailDrawer({
 
                 {/* Priority */}
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-muted">
                     Priority
                   </span>
                   <select
                     value={task.priority}
                     onChange={(e) => handleFieldChange('priority', e.target.value)}
-                    className="rounded-lg border border-border bg-bg px-3 py-1.5 text-[12px] font-medium text-text transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-muted"
+                    className="rounded-lg border border-border bg-bg px-3 py-1.5 text-[13px] font-medium text-text transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-muted"
                   >
                     {priorityOptions.map((p) => (
                       <option key={p.value} value={p.value}>
@@ -270,7 +272,7 @@ export function TaskDetailDrawer({
 
                 {/* Due Date */}
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-muted">
                     Due Date
                   </span>
                   <div className="flex items-center gap-2">
@@ -278,7 +280,7 @@ export function TaskDetailDrawer({
                       type="date"
                       value={task.due_date ?? ''}
                       onChange={(e) => handleFieldChange('due_date', e.target.value)}
-                      className="rounded-lg border border-border bg-bg px-3 py-1.5 text-[12px] font-medium text-text transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-muted"
+                      className="rounded-lg border border-border bg-bg px-3 py-1.5 text-[13px] font-medium text-text transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-muted"
                     />
                     {overdue && (
                       <Badge variant="danger">OVERDUE</Badge>
@@ -286,16 +288,18 @@ export function TaskDetailDrawer({
                   </div>
                 </div>
 
+                <div className="border-t border-border" />
+
                 {/* Assignee */}
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-muted">
                     Assignee
                   </span>
                   <select
                     value={task.assignee_id ?? ''}
                     onChange={(e) => handleFieldChange('assignee_id', e.target.value)}
                     disabled={!canAssign}
-                    className="rounded-lg border border-border bg-bg px-3 py-1.5 text-[12px] font-medium text-text transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-muted disabled:opacity-50"
+                    className="rounded-lg border border-border bg-bg px-3 py-1.5 text-[13px] font-medium text-text transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-muted disabled:opacity-50"
                   >
                     <option value="">Unassigned</option>
                     {team.map((u) => (
@@ -309,10 +313,10 @@ export function TaskDetailDrawer({
                 {/* Description */}
                 {task.description && (
                   <div>
-                    <span className="mb-2 block text-[11px] font-semibold uppercase tracking-wide text-muted">
+                    <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-muted">
                       Description
                     </span>
-                    <p className="rounded-lg bg-bg p-3 text-[13px] leading-relaxed text-text/80">
+                    <p className="rounded-lg bg-bg p-3 text-sm leading-relaxed text-text/80">
                       {task.description}
                     </p>
                   </div>
@@ -328,7 +332,7 @@ export function TaskDetailDrawer({
                   type="button"
                   onClick={() => setActiveTab(t)}
                   className={cn(
-                    'relative px-4 py-2.5 text-[12px] font-semibold capitalize transition-colors',
+                    'relative px-4 py-2.5 text-[13px] font-semibold capitalize transition-colors',
                     activeTab === t ? 'text-accent' : 'text-muted hover:text-text'
                   )}
                 >
@@ -349,7 +353,7 @@ export function TaskDetailDrawer({
               {activeTab === 'comments' ? (
                 <div className="space-y-4">
                   {comments.length === 0 && (
-                    <p className="py-8 text-center text-[12px] text-muted">
+                    <p className="py-8 text-center text-[13px] text-muted">
                       No comments yet. Start the conversation.
                     </p>
                   )}
@@ -367,10 +371,10 @@ export function TaskDetailDrawer({
                       />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-baseline gap-2">
-                          <span className="text-[12px] font-semibold text-text">
+                          <span className="text-[13px] font-semibold text-text">
                             {c.user?.full_name ?? 'Unknown'}
                           </span>
-                          <span className="text-[10px] text-muted">
+                          <span className="text-xs text-muted">
                             {format(new Date(c.created_at), 'MMM d, HH:mm')}
                           </span>
                         </div>
@@ -384,7 +388,7 @@ export function TaskDetailDrawer({
               ) : (
                 <div className="space-y-3">
                   {activity.length === 0 && (
-                    <p className="py-8 text-center text-[12px] text-muted">
+                    <p className="py-8 text-center text-[13px] text-muted">
                       No activity yet
                     </p>
                   )}
@@ -394,7 +398,7 @@ export function TaskDetailDrawer({
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.03 }}
-                      className="flex items-start gap-3 text-[12px]"
+                      className="flex items-start gap-3 text-[13px]"
                     >
                       <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
                       <div>
@@ -404,7 +408,7 @@ export function TaskDetailDrawer({
                         <span className="text-muted">
                           {a.action.replace(/_/g, ' ')}
                         </span>
-                        <p className="mt-0.5 text-[10px] text-muted">
+                        <p className="mt-0.5 text-xs text-muted">
                           {format(new Date(a.created_at), 'MMM d, HH:mm')}
                         </p>
                       </div>
@@ -416,14 +420,14 @@ export function TaskDetailDrawer({
 
             {/* Comment input */}
             {activeTab === 'comments' && (
-              <div className="flex gap-2 border-t border-border p-4">
+              <div className="flex gap-2 border-t border-border px-5 py-4">
                 <input
                   type="text"
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
                   placeholder="Add a comment..."
-                  className="flex-1 rounded-xl border border-border bg-bg px-4 py-2.5 text-[13px] text-text placeholder:text-muted/50 transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-muted"
+                  className="flex-1 rounded-xl border border-border bg-bg px-4 py-2.5 text-sm text-text placeholder:text-muted/50 transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-muted"
                 />
                 <Button
                   onClick={handleAddComment}
@@ -453,15 +457,15 @@ export function TaskDetailDrawer({
       <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <DialogPanel className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl">
-          <DialogTitle className="text-[15px] font-bold text-text">Delete Task</DialogTitle>
-          <p className="mt-2 text-[13px] text-muted">
+          <DialogTitle className="text-base font-bold text-text">Delete Task</DialogTitle>
+          <p className="mt-2 text-sm text-muted">
             Are you sure you want to delete &ldquo;{task?.title}&rdquo;? This will also remove all comments and activity. This action cannot be undone.
           </p>
           <div className="mt-5 flex justify-end gap-2">
             <button
               type="button"
               onClick={() => setConfirmDelete(false)}
-              className="rounded-xl border border-border px-4 py-2 text-[13px] font-semibold text-muted transition-colors hover:bg-bg hover:text-text"
+              className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted transition-colors hover:bg-bg hover:text-text"
             >
               Cancel
             </button>
@@ -469,7 +473,7 @@ export function TaskDetailDrawer({
               type="button"
               onClick={handleDelete}
               disabled={deleting}
-              className="rounded-xl bg-red px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-red/90 disabled:opacity-50"
+              className="rounded-xl bg-red px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red/90 disabled:opacity-50"
             >
               {deleting ? 'Deleting...' : 'Delete'}
             </button>

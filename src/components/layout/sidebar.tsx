@@ -124,6 +124,7 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse, pinned, on
           </Link>
           <button
             onClick={onClose}
+            aria-label="Close sidebar"
             className="rounded-lg p-1 text-gray-500 transition-all hover:bg-white/5 hover:text-gray-300 active:scale-90 lg:hidden"
           >
             <XMarkIcon className="h-5 w-5" />
@@ -131,8 +132,8 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse, pinned, on
         </div>
 
         {/* ── Main navigation ── */}
-        <nav className="sidebar-scroll flex-1 overflow-y-auto overflow-x-hidden px-2 py-4">
-          <div className="space-y-1">
+        <nav className="sidebar-scroll flex-1 overflow-y-auto overflow-x-hidden px-2 py-4" aria-label="Main navigation">
+          <div className="space-y-0.5">
             {filteredNav.map((item) => {
               const isActive =
                 pathname === item.href ||
@@ -298,7 +299,7 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse, pinned, on
                     <p className="truncate text-[13px] font-semibold text-white">
                       {user.full_name}
                     </p>
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
                       {user.role}
                     </p>
                   </motion.div>
@@ -336,7 +337,7 @@ function NavLink({
       href={item.href}
       onClick={onClick}
       className={cn(
-        'group relative flex items-center rounded-xl pl-2 py-2.5 text-[13px] font-medium transition-all duration-200 active:scale-[0.97]',
+        'group relative flex items-center rounded-xl pl-2 py-2.5 text-sm font-medium transition-all duration-200 active:scale-[0.97]',
         !collapsed && 'gap-2',
         isActive
           ? 'bg-gradient-to-r from-blue-600/90 to-purple-600/90 text-white shadow-lg shadow-blue-500/20'

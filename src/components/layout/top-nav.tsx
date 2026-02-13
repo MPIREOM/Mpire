@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bars3Icon,
-  ArrowRightOnRectangleIcon,
   MagnifyingGlassIcon,
   BellIcon,
   SunIcon,
@@ -14,8 +13,6 @@ import {
   UserPlusIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useTasks } from '@/hooks/use-tasks';
@@ -39,7 +36,6 @@ interface NotificationItem {
 }
 
 export function TopNav({ title, subtitle, onMenuClick, onCommandPalette }: TopNavProps) {
-  const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
   const [dark, setDark] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -123,22 +119,17 @@ export function TopNav({ title, subtitle, onMenuClick, onCommandPalette }: TopNa
 
   const notifCount = notifications.length;
 
-  async function handleLogout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push('/login');
-  }
-
   return (
     <header
       className={cn(
-        'sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-card/95 px-4 backdrop-blur-xl transition-all duration-300 lg:px-6',
+        'sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-card/95 px-4 backdrop-blur-xl transition-all duration-300 lg:px-8',
         scrolled ? 'border-border shadow-sm' : 'border-transparent'
       )}
     >
       <div className="flex items-center gap-3">
         <button
           onClick={onMenuClick}
+          aria-label="Open menu"
           className="rounded-lg p-1.5 text-muted transition-all hover:bg-bg hover:text-text active:scale-90 lg:hidden"
         >
           <Bars3Icon className="h-5 w-5" />
@@ -148,25 +139,25 @@ export function TopNav({ title, subtitle, onMenuClick, onCommandPalette }: TopNa
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <h1 className="text-[15px] font-bold text-text">{title}</h1>
+          <h1 className="text-lg font-bold text-text">{title}</h1>
           {subtitle && (
-            <p className="text-[11px] text-muted">{subtitle}</p>
+            <p className="text-[13px] text-muted">{subtitle}</p>
           )}
         </motion.div>
       </div>
 
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-2">
         {/* Command palette trigger */}
         {onCommandPalette && (
           <motion.button
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
             onClick={onCommandPalette}
-            className="hidden items-center gap-2 rounded-lg border border-border bg-bg px-3 py-1.5 text-[12px] text-muted transition-all hover:border-border-hover hover:text-text sm:flex"
+            className="hidden items-center gap-2 rounded-lg border border-border bg-bg px-3 py-1.5 text-[13px] text-muted transition-all hover:border-border-hover hover:text-text sm:flex"
           >
-            <MagnifyingGlassIcon className="h-3.5 w-3.5" />
+            <MagnifyingGlassIcon className="h-4 w-4" />
             <span>Search...</span>
-            <kbd className="rounded border border-border bg-card px-1.5 py-0.5 text-[10px] font-medium">
+            <kbd className="rounded border border-border bg-card px-1.5 py-0.5 text-[11px] font-medium">
               &#x2318;K
             </kbd>
           </motion.button>
@@ -178,7 +169,7 @@ export function TopNav({ title, subtitle, onMenuClick, onCommandPalette }: TopNa
           size="icon"
           onClick={toggleTheme}
           className="text-muted hover:text-text"
-          title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+          aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
         >
           <motion.div
             key={dark ? 'moon' : 'sun'}
@@ -197,10 +188,11 @@ export function TopNav({ title, subtitle, onMenuClick, onCommandPalette }: TopNa
             size="icon"
             className="relative text-muted hover:text-text"
             onClick={() => setNotifOpen((v) => !v)}
+            aria-label={`Notifications${notifCount > 0 ? ` (${notifCount})` : ''}`}
           >
             <BellIcon className="h-4 w-4" />
             {notifCount > 0 && (
-              <span className="absolute right-1 top-1 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-red px-0.5 text-[8px] font-bold text-white">
+              <span className="absolute right-1 top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red px-0.5 text-[9px] font-bold text-white">
                 {notifCount}
               </span>
             )}
@@ -216,9 +208,10 @@ export function TopNav({ title, subtitle, onMenuClick, onCommandPalette }: TopNa
                 className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-xl border border-border bg-card shadow-xl"
               >
                 <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                  <h3 className="text-[13px] font-bold text-text">Notifications</h3>
+                  <h3 className="text-sm font-bold text-text">Notifications</h3>
                   <button
                     onClick={() => setNotifOpen(false)}
+                    aria-label="Close notifications"
                     className="rounded-md p-0.5 text-muted hover:text-text"
                   >
                     <XMarkIcon className="h-4 w-4" />
@@ -228,7 +221,7 @@ export function TopNav({ title, subtitle, onMenuClick, onCommandPalette }: TopNa
                   {notifications.length === 0 ? (
                     <div className="py-8 text-center">
                       <BellIcon className="mx-auto mb-2 h-6 w-6 text-muted/40" />
-                      <p className="text-[12px] text-muted">All caught up!</p>
+                      <p className="text-[13px] text-muted">All caught up!</p>
                     </div>
                   ) : (
                     notifications.map((n) => (
@@ -241,17 +234,17 @@ export function TopNav({ title, subtitle, onMenuClick, onCommandPalette }: TopNa
                           n.type === 'overdue' ? 'bg-red-bg' : n.type === 'assigned' ? 'bg-blue-bg' : 'bg-accent-muted'
                         )}>
                           {n.type === 'overdue' ? (
-                            <ExclamationTriangleIcon className="h-3.5 w-3.5 text-red" />
+                            <ExclamationTriangleIcon className="h-4 w-4 text-red" />
                           ) : n.type === 'assigned' ? (
-                            <UserPlusIcon className="h-3.5 w-3.5 text-blue" />
+                            <UserPlusIcon className="h-4 w-4 text-blue" />
                           ) : (
-                            <ChatBubbleLeftIcon className="h-3.5 w-3.5 text-accent" />
+                            <ChatBubbleLeftIcon className="h-4 w-4 text-accent" />
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[12px] font-semibold text-text">{n.title}</p>
-                          <p className="text-[11px] text-muted">{n.detail}</p>
-                          <p className="mt-0.5 text-[10px] text-muted/70">{n.time}</p>
+                          <p className="truncate text-[13px] font-semibold text-text">{n.title}</p>
+                          <p className="text-[13px] text-muted">{n.detail}</p>
+                          <p className="mt-0.5 text-xs text-muted/70">{n.time}</p>
                         </div>
                       </div>
                     ))
@@ -261,19 +254,6 @@ export function TopNav({ title, subtitle, onMenuClick, onCommandPalette }: TopNa
             )}
           </AnimatePresence>
         </div>
-
-        {/* Divider */}
-        <div className="mx-1 hidden h-5 w-px bg-border sm:block" />
-
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleLogout}
-          className="gap-1.5 text-muted hover:text-red"
-        >
-          <ArrowRightOnRectangleIcon className="h-4 w-4" />
-          <span className="hidden sm:inline">Sign out</span>
-        </Button>
       </div>
     </header>
   );

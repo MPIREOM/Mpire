@@ -121,7 +121,7 @@ export function StaffDashboard({
                 <c.icon className={cn('h-4 w-4', c.iconColor)} />
               </div>
             </div>
-            <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted">{c.label}</p>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">{c.label}</p>
             <p className={cn('text-2xl font-bold tabular-nums tracking-tight', c.color)}>{c.value}</p>
           </motion.div>
         ))}
@@ -133,7 +133,7 @@ export function StaffDashboard({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.4 }}
       >
-        <h3 className="mb-4 text-[14px] font-bold text-text">My Work</h3>
+        <h3 className="mb-4 text-base font-bold text-text">My Work</h3>
 
         {/* Tabs */}
         <div className="mb-4 flex gap-1 border-b border-border">
@@ -143,7 +143,7 @@ export function StaffDashboard({
               type="button"
               onClick={() => setTab(t.key)}
               className={cn(
-                'relative px-3 py-2 text-[12px] font-semibold transition-colors',
+                'relative px-3 py-2 text-[13px] font-semibold transition-colors',
                 tab === t.key ? 'text-accent' : 'text-muted hover:text-text'
               )}
             >
@@ -151,7 +151,7 @@ export function StaffDashboard({
               {t.count > 0 && (
                 <span
                   className={cn(
-                    'ml-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-bold',
+                    'ml-1.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[11px] font-bold',
                     tab === t.key ? 'bg-accent-muted text-accent' : 'bg-bg text-muted'
                   )}
                 >
@@ -187,7 +187,7 @@ export function StaffDashboard({
                   transition={{ delay: idx * 0.03, duration: 0.3 }}
                   onClick={() => setSelectedTaskId(task.id)}
                   className={cn(
-                    'flex cursor-pointer items-center gap-3 px-4 py-2.5 transition-colors hover:bg-bg',
+                    'flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors hover:bg-bg',
                     idx !== filtered.length - 1 && 'border-b border-border'
                   )}
                 >
@@ -206,7 +206,7 @@ export function StaffDashboard({
                       onUpdateTask(task.id, { status: e.target.value as TaskStatus });
                     }}
                     className={cn(
-                      'h-6 shrink-0 cursor-pointer rounded-md border-0 px-1 text-[10px] font-semibold focus:outline-none focus:ring-1 focus:ring-accent-muted',
+                      'h-6 shrink-0 cursor-pointer rounded-md border-0 px-1 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-accent-muted',
                       task.status === 'in_progress' ? 'bg-blue-bg text-blue' :
                       task.status === 'blocked' ? 'bg-red-bg text-red' : 'bg-bg text-muted'
                     )}
@@ -217,7 +217,7 @@ export function StaffDashboard({
                   </select>
 
                   {/* Title */}
-                  <p className="min-w-0 flex-1 truncate text-[12px] font-medium text-text">
+                  <p className="min-w-0 flex-1 truncate text-sm font-medium text-text">
                     {task.title}
                   </p>
 
@@ -238,7 +238,7 @@ export function StaffDashboard({
                   {task.due_date && (
                     <span
                       className={cn(
-                        'shrink-0 text-[11px] tabular-nums',
+                        'shrink-0 text-[13px] tabular-nums',
                         overdue ? 'font-semibold text-red' : 'text-muted'
                       )}
                     >

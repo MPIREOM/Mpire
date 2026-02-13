@@ -132,7 +132,7 @@ export default function PeoplePage() {
         <div className="mb-4 flex justify-end">
           <button
             onClick={() => setShowAdd(true)}
-            className="flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-[13px] font-semibold text-white transition-all hover:bg-accent-light active:scale-95"
+            className="flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-accent-light active:scale-95"
           >
             <PlusIcon className="h-4 w-4" />
             Add Member
@@ -156,10 +156,10 @@ export default function PeoplePage() {
                   {u.full_name.charAt(0)}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-[14px] font-semibold text-text">
+                  <h3 className="text-base font-semibold text-text">
                     {u.full_name}
                   </h3>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                     {u.role}
                     {u.allowed_project_ids && u.allowed_project_ids.length > 0 && (
                       <span className="ml-1 normal-case text-accent">
@@ -189,7 +189,7 @@ export default function PeoplePage() {
         <div className="fixed inset-0 flex items-center justify-center p-4">
           <DialogPanel className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
             <div className="flex items-center justify-between">
-              <DialogTitle className="text-[15px] font-bold text-text">
+              <DialogTitle className="text-lg font-bold text-text">
                 Edit {editUser?.full_name}
               </DialogTitle>
               <button onClick={() => setEditUser(null)} className="rounded-md p-1 text-muted hover:bg-bg hover:text-text">
@@ -199,13 +199,13 @@ export default function PeoplePage() {
 
             <form onSubmit={handleEditSubmit} className="mt-5 space-y-4">
               <div>
-                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">
                   Role
                 </label>
                 <select
                   value={editForm.role}
                   onChange={(e) => setEditForm({ ...editForm, role: e.target.value as Role })}
-                  className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-[13px] text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
+                  className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
                 >
                   {roleOptions.map((r) => (
                     <option key={r.value} value={r.value}>{r.label}</option>
@@ -214,10 +214,10 @@ export default function PeoplePage() {
               </div>
 
               <div>
-                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">
                   Project Access
                 </label>
-                <p className="mb-2 text-[11px] text-muted">
+                <p className="mb-2 text-xs text-muted">
                   Select which projects this user can see. Leave all unchecked for full access.
                 </p>
                 <div className="max-h-48 space-y-1.5 overflow-y-auto rounded-xl border border-border bg-bg p-3">
@@ -238,19 +238,19 @@ export default function PeoplePage() {
                           className="h-2 w-2 shrink-0 rounded-full"
                           style={{ backgroundColor: p.color }}
                         />
-                        <span className="text-[12px] font-medium text-text">{p.name}</span>
+                        <span className="text-[13px] font-medium text-text">{p.name}</span>
                       </label>
                     );
                   })}
                   {projects.length === 0 && (
-                    <p className="py-2 text-center text-[11px] text-muted">No projects yet</p>
+                    <p className="py-2 text-center text-xs text-muted">No projects yet</p>
                   )}
                 </div>
                 {editForm.allowed_project_ids.length > 0 && (
                   <button
                     type="button"
                     onClick={() => setEditForm({ ...editForm, allowed_project_ids: [] })}
-                    className="mt-2 text-[11px] font-semibold text-accent hover:text-accent-light"
+                    className="mt-2 text-xs font-semibold text-accent hover:text-accent-light"
                   >
                     Clear selection (allow all projects)
                   </button>
@@ -258,21 +258,21 @@ export default function PeoplePage() {
               </div>
 
               {editError && (
-                <p className="text-[12px] font-medium text-red">{editError}</p>
+                <p className="text-[13px] font-medium text-red">{editError}</p>
               )}
 
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setEditUser(null)}
-                  className="rounded-xl border border-border px-4 py-2 text-[13px] font-semibold text-muted transition-all hover:bg-bg hover:text-text active:scale-95"
+                  className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted transition-all hover:bg-bg hover:text-text active:scale-95"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={editSaving}
-                  className="rounded-xl bg-accent px-4 py-2 text-[13px] font-semibold text-white transition-all hover:bg-accent-light active:scale-95 disabled:opacity-50"
+                  className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-accent-light active:scale-95 disabled:opacity-50"
                 >
                   {editSaving ? 'Saving...' : 'Save Changes'}
                 </button>
@@ -289,7 +289,7 @@ export default function PeoplePage() {
         <div className="fixed inset-0 flex items-center justify-center p-4">
           <DialogPanel className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
             <div className="flex items-center justify-between">
-              <DialogTitle className="text-[15px] font-bold text-text">
+              <DialogTitle className="text-lg font-bold text-text">
                 Add Team Member
               </DialogTitle>
               <button
@@ -302,7 +302,7 @@ export default function PeoplePage() {
 
             <form onSubmit={handleSubmit} className="mt-5 space-y-4">
               <div>
-                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">
                   Full Name
                 </label>
                 <input
@@ -311,12 +311,12 @@ export default function PeoplePage() {
                   value={form.full_name}
                   onChange={(e) => setForm({ ...form, full_name: e.target.value })}
                   placeholder="John Doe"
-                  className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-[13px] text-text placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
+                  className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">
                   Email
                 </label>
                 <input
@@ -325,12 +325,12 @@ export default function PeoplePage() {
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   placeholder="name@company.com"
-                  className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-[13px] text-text placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
+                  className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">
                   Password
                 </label>
                 <input
@@ -340,18 +340,18 @@ export default function PeoplePage() {
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   placeholder="Min 6 characters"
-                  className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-[13px] text-text placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
+                  className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">
                   Role
                 </label>
                 <select
                   value={form.role}
                   onChange={(e) => setForm({ ...form, role: e.target.value as Role })}
-                  className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-[13px] text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
+                  className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
                 >
                   {roleOptions.map((r) => (
                     <option key={r.value} value={r.value}>
@@ -362,21 +362,21 @@ export default function PeoplePage() {
               </div>
 
               {error && (
-                <p className="text-[12px] font-medium text-red">{error}</p>
+                <p className="text-[13px] font-medium text-red">{error}</p>
               )}
 
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowAdd(false)}
-                  className="rounded-xl border border-border px-4 py-2 text-[13px] font-semibold text-muted transition-all hover:bg-bg hover:text-text active:scale-95"
+                  className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted transition-all hover:bg-bg hover:text-text active:scale-95"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-xl bg-accent px-4 py-2 text-[13px] font-semibold text-white transition-all hover:bg-accent-light active:scale-95 disabled:opacity-50"
+                  className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-accent-light active:scale-95 disabled:opacity-50"
                 >
                   {saving ? 'Adding...' : 'Add Member'}
                 </button>

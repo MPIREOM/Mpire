@@ -43,11 +43,11 @@ export function TeamWorkload({ tasks, team, projects }: TeamWorkloadProps) {
   return (
     <div>
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-[13px] font-bold text-text">Team Workload</h3>
+        <h3 className="text-base font-bold text-text">Team Workload</h3>
         <select
           value={filterProject}
           onChange={(e) => setFilterProject(e.target.value)}
-          className="rounded-lg border border-border bg-card px-2 py-1 text-[12px] font-medium text-muted focus:outline-none focus:ring-1 focus:ring-accent-muted"
+          className="rounded-lg border border-border bg-card px-2 py-1 text-[13px] font-medium text-muted focus:outline-none focus:ring-1 focus:ring-accent-muted"
         >
           <option value="">All Projects</option>
           {projects.map((p) => (
@@ -58,7 +58,7 @@ export function TeamWorkload({ tasks, team, projects }: TeamWorkloadProps) {
 
       <div className="rounded-xl border border-border bg-card">
         {/* Header */}
-        <div className="flex items-center gap-3 border-b border-border px-4 py-2 text-[10px] font-semibold uppercase tracking-wide text-muted">
+        <div className="flex items-center gap-3 border-b border-border px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted">
           <span className="flex-1">Member</span>
           <span className="w-12 text-center">WIP</span>
           <span className="w-14 text-center">Overdue</span>
@@ -71,40 +71,40 @@ export function TeamWorkload({ tasks, team, projects }: TeamWorkloadProps) {
           <div
             key={w.member.id}
             className={clsx(
-              'flex items-center gap-3 px-4 py-2.5',
+              'flex items-center gap-3 px-4 py-3',
               idx !== workload.length - 1 && 'border-b border-border'
             )}
           >
             {/* Avatar + name */}
             <div className="flex flex-1 items-center gap-2 min-w-0">
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-accent text-[10px] font-bold text-white">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent text-xs font-bold text-white">
                 {w.member.full_name.charAt(0)}
               </div>
-              <span className="truncate text-[12px] font-medium text-text">
+              <span className="truncate text-sm font-medium text-text">
                 {w.member.full_name}
               </span>
             </div>
 
-            <span className="w-12 text-center text-[12px] font-semibold tabular-nums text-blue">
+            <span className="w-12 text-center text-[13px] font-semibold tabular-nums text-blue">
               {w.wip}
             </span>
             <span className={clsx(
-              'w-14 text-center text-[12px] font-semibold tabular-nums',
+              'w-14 text-center text-[13px] font-semibold tabular-nums',
               w.overdue > 0 ? 'text-red' : 'text-muted'
             )}>
               {w.overdue}
             </span>
             <span className={clsx(
-              'w-14 text-center text-[12px] font-semibold tabular-nums',
+              'w-14 text-center text-[13px] font-semibold tabular-nums',
               w.dueSoon > 0 ? 'text-yellow' : 'text-muted'
             )}>
               {w.dueSoon}
             </span>
-            <span className="w-12 text-center text-[12px] font-semibold tabular-nums text-text">
+            <span className="w-12 text-center text-[13px] font-semibold tabular-nums text-text">
               {w.total}
             </span>
             <span className={clsx(
-              'w-14 text-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold',
+              'w-14 text-center rounded-md px-1.5 py-0.5 text-xs font-semibold',
               w.load === 'high' ? 'bg-red-bg text-red' :
               w.load === 'low' ? 'bg-green-bg text-green' : 'bg-blue-bg text-blue'
             )}>
@@ -114,7 +114,7 @@ export function TeamWorkload({ tasks, team, projects }: TeamWorkloadProps) {
         ))}
 
         {workload.length === 0 && (
-          <div className="py-8 text-center text-[13px] text-muted">No team members found</div>
+          <div className="py-8 text-center text-sm text-muted">No team members found</div>
         )}
       </div>
     </div>

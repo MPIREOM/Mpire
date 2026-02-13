@@ -177,7 +177,7 @@ export default function ProjectsPage() {
                 transition={{ delay: i * 0.06, duration: 0.44 }}
                 className="rounded-xl border border-border bg-card px-4 py-3"
               >
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">{kpi.label}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted">{kpi.label}</p>
                 <p className={cn('text-xl font-bold tabular-nums', kpi.color)}>{kpi.value}</p>
               </motion.div>
             ))}
@@ -199,7 +199,7 @@ export default function ProjectsPage() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search projects..."
-                  className="h-9 w-full rounded-lg border border-border bg-card pl-9 pr-8 text-[13px] text-text placeholder:text-muted/50 transition-colors focus:border-accent focus:outline-none"
+                  className="h-9 w-full rounded-lg border border-border bg-card pl-9 pr-8 text-sm text-text placeholder:text-muted/50 transition-colors focus:border-accent focus:outline-none"
                 />
                 {search && (
                   <button
@@ -241,7 +241,7 @@ export default function ProjectsPage() {
                               setSortOpen(false);
                             }}
                             className={cn(
-                              'flex w-full items-center px-3 py-2 text-[12px] font-medium transition-all active:scale-[0.98]',
+                              'flex w-full items-center px-3 py-2 text-[13px] font-medium transition-all active:scale-[0.98]',
                               sortBy === opt.value
                                 ? 'bg-accent-muted text-accent'
                                 : 'text-text hover:bg-bg'
@@ -260,7 +260,7 @@ export default function ProjectsPage() {
               {canEdit && (
                 <button
                   onClick={() => setShowCreate(true)}
-                  className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-[12px] font-semibold text-white transition-all hover:bg-accent-light active:scale-95"
+                  className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-[13px] font-semibold text-white transition-all hover:bg-accent-light active:scale-95"
                 >
                   <PlusIcon className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">Add Project</span>
@@ -300,7 +300,7 @@ export default function ProjectsPage() {
                     whileTap={{ scale: 0.96 }}
                     onClick={() => setFilter(pill.key)}
                     className={cn(
-                      'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all',
+                      'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
                       filter === pill.key
                         ? 'bg-accent-muted text-accent shadow-sm'
                         : 'bg-card text-muted hover:bg-bg hover:text-text border border-border'
@@ -309,7 +309,7 @@ export default function ProjectsPage() {
                     <pill.icon className="h-3.5 w-3.5" />
                     {pill.label}
                     <span className={cn(
-                      'rounded-full px-1.5 py-0.5 text-[9px] font-bold',
+                      'rounded-full px-1.5 py-0.5 text-[11px] font-bold',
                       filter === pill.key ? 'bg-accent/10 text-accent' : 'bg-bg text-muted'
                     )}>
                       {pill.count}
@@ -378,7 +378,7 @@ export default function ProjectsPage() {
               className="space-y-2"
             >
               {/* List header */}
-              <div className="hidden items-center gap-4 px-5 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted sm:flex">
+              <div className="hidden items-center gap-4 px-5 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted sm:flex">
                 <span className="flex-1">Project</span>
                 <span className="w-28 text-center">Progress</span>
                 <span className="w-12 text-center">Overdue</span>
@@ -410,29 +410,29 @@ export default function ProjectsPage() {
         <div className="fixed inset-0 flex items-center justify-center p-4">
           <DialogPanel className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
             <div className="flex items-center justify-between">
-              <DialogTitle className="text-[15px] font-bold text-text">New Project</DialogTitle>
+              <DialogTitle className="text-lg font-bold text-text">New Project</DialogTitle>
               <button onClick={() => setShowCreate(false)} className="rounded-md p-1 text-muted hover:bg-bg hover:text-text">
                 <XMarkIcon className="h-5 w-5" />
               </button>
             </div>
             <form onSubmit={handleCreateProject} className="mt-5 space-y-4">
               <div>
-                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">Project Name</label>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Project Name</label>
                 <input
                   type="text"
                   required
                   value={createForm.name}
                   onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
                   placeholder="e.g. Website Redesign"
-                  className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-[13px] text-text placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
+                  className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">Status</label>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Status</label>
                 <select
                   value={createForm.status}
                   onChange={(e) => setCreateForm({ ...createForm, status: e.target.value as ProjectStatus })}
-                  className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-[13px] text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
+                  className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
                 >
                   <option value="active">Active</option>
                   <option value="paused">Paused</option>
@@ -440,7 +440,7 @@ export default function ProjectsPage() {
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">Color</label>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Color</label>
                 <div className="flex flex-wrap gap-2">
                   {PROJECT_COLORS.map((c) => (
                     <button
@@ -457,8 +457,8 @@ export default function ProjectsPage() {
                 </div>
               </div>
               <div className="flex justify-end gap-2 pt-2">
-                <button type="button" onClick={() => setShowCreate(false)} className="rounded-xl border border-border px-4 py-2 text-[13px] font-semibold text-muted transition-all hover:bg-bg hover:text-text active:scale-95">Cancel</button>
-                <button type="submit" disabled={createSaving} className="rounded-xl bg-accent px-4 py-2 text-[13px] font-semibold text-white transition-all hover:bg-accent-light active:scale-95 disabled:opacity-50">
+                <button type="button" onClick={() => setShowCreate(false)} className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted transition-all hover:bg-bg hover:text-text active:scale-95">Cancel</button>
+                <button type="submit" disabled={createSaving} className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-accent-light active:scale-95 disabled:opacity-50">
                   {createSaving ? 'Creating...' : 'Create Project'}
                 </button>
               </div>
@@ -472,21 +472,21 @@ export default function ProjectsPage() {
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
           <DialogPanel className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl">
-            <DialogTitle className="text-[15px] font-bold text-text">Delete Project</DialogTitle>
-            <p className="mt-2 text-[13px] text-muted">
+            <DialogTitle className="text-lg font-bold text-text">Delete Project</DialogTitle>
+            <p className="mt-2 text-sm text-muted">
               Are you sure you want to delete <strong className="text-text">&ldquo;{deleteTarget?.name}&rdquo;</strong>? This will permanently remove the project and all its tasks, comments, and activity. This action cannot be undone.
             </p>
             <div className="mt-5 flex justify-end gap-2">
               <button
                 onClick={() => setDeleteTarget(null)}
-                className="rounded-xl border border-border px-4 py-2 text-[13px] font-semibold text-muted transition-all hover:bg-bg hover:text-text active:scale-95"
+                className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted transition-all hover:bg-bg hover:text-text active:scale-95"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteProject}
                 disabled={deleteSaving}
-                className="rounded-xl bg-red px-4 py-2 text-[13px] font-semibold text-white transition-all hover:bg-red/90 active:scale-95 disabled:opacity-50"
+                className="rounded-xl bg-red px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-red/90 active:scale-95 disabled:opacity-50"
               >
                 {deleteSaving ? 'Deleting...' : 'Delete Project'}
               </button>

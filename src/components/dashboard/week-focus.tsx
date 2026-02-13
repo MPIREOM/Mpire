@@ -42,7 +42,7 @@ export function WeekFocus({ tasks }: WeekFocusProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4, duration: 0.4 }}
     >
-      <h3 className="mb-4 text-[14px] font-bold text-text">This Week Focus</h3>
+      <h3 className="mb-4 text-base font-bold text-text">This Week Focus</h3>
       <div className="rounded-xl border border-border bg-card transition-shadow hover:shadow-md">
         {focusItems.map(({ task, isBlocking }, idx) => (
           <motion.div
@@ -51,7 +51,7 @@ export function WeekFocus({ tasks }: WeekFocusProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.45 + idx * 0.04, duration: 0.3 }}
             className={cn(
-              'flex items-center gap-3 px-4 py-2.5',
+              'flex items-center gap-3 px-4 py-3',
               idx !== focusItems.length - 1 && 'border-b border-border'
             )}
           >
@@ -62,10 +62,10 @@ export function WeekFocus({ tasks }: WeekFocusProps) {
             />
 
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[12px] font-medium text-text">
+              <p className="truncate text-sm font-medium text-text">
                 {task.title}
               </p>
-              <p className="text-[10px] text-muted">
+              <p className="text-xs text-muted">
                 {task.project?.name ?? 'No project'}
                 {task.assignee && ` · ${task.assignee.full_name}`}
               </p>
@@ -91,7 +91,7 @@ export function WeekFocus({ tasks }: WeekFocusProps) {
             />
 
             {/* Due date */}
-            <span className="shrink-0 text-[11px] tabular-nums text-muted">
+            <span className="shrink-0 text-[13px] tabular-nums text-muted">
               {formatDate(task.due_date)}
             </span>
           </motion.div>

@@ -64,7 +64,7 @@ export function TaskItem({
       transition={{ duration: 0.2 }}
       onClick={onClick}
       className={cn(
-        'group relative flex cursor-pointer items-center gap-4 rounded-xl border border-l-[3px] bg-card px-4 py-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md',
+        'group relative flex cursor-pointer items-center gap-4 rounded-xl border border-l-[3px] bg-card px-4 py-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md',
         overdue ? 'border-border border-l-red' : `border-border ${priority.color}`
       )}
     >
@@ -96,13 +96,13 @@ export function TaskItem({
       <div className="min-w-0 flex-1">
         <p
           className={cn(
-            'truncate text-[13px] font-medium leading-tight',
+            'truncate text-sm font-medium leading-tight',
             task.status === 'done' ? 'text-muted line-through' : 'text-text'
           )}
         >
           {task.title}
         </p>
-        <div className="mt-1 flex items-center gap-2 text-[11px] text-muted">
+        <div className="mt-1 flex items-center gap-2 text-[13px] text-muted">
           {task.project && (
             <span
               className="rounded-md px-1.5 py-0.5 font-semibold"

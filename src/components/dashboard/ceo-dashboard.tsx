@@ -180,11 +180,11 @@ export function CEODashboard({ tasks, projects, team, projectHealth }: CEODashbo
 
                 <div className="flex items-end justify-between gap-2">
                   <div className="min-w-0">
-                    <p className={cn('text-2xl font-bold tabular-nums tracking-tight', card.color)}>
+                    <p className={cn('text-3xl font-bold tabular-nums tracking-tight', card.color)}>
                       <AnimatedValue value={card.value} suffix={card.hasRing ? '%' : ''} />
                     </p>
-                    <p className="mt-0.5 text-[11px] font-medium text-muted">{card.label}</p>
-                    <p className="text-[10px] text-muted/70">{card.sub}</p>
+                    <p className="mt-0.5 text-[13px] font-medium text-muted">{card.label}</p>
+                    <p className="text-xs text-muted/70">{card.sub}</p>
                   </div>
                   {card.hasRing && (
                     <MiniRing percent={card.value} color={card.ringColor!} delay={delay + 0.3} />
@@ -199,8 +199,8 @@ export function CEODashboard({ tasks, projects, team, projectHealth }: CEODashbo
       {projectHealth.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.4 }}>
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-[14px] font-bold text-text">Project Health</h3>
-            <Link href="/projects" className="text-[11px] font-semibold text-accent transition-colors hover:text-accent-light">View all</Link>
+            <h3 className="text-base font-bold text-text">Project Health</h3>
+            <Link href="/projects" className="text-[13px] font-semibold text-accent transition-colors hover:text-accent-light">View all</Link>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {projectHealth.slice(0, 6).map((ph, i) => (
@@ -208,13 +208,13 @@ export function CEODashboard({ tasks, projects, team, projectHealth }: CEODashbo
                 <Link href={`/projects/${ph.project.id}`} className="group block rounded-xl border border-border bg-card p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98]">
                   <div className="mb-3 flex items-center gap-2">
                     <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: ph.project.color }} />
-                    <h4 className="flex-1 truncate text-[13px] font-semibold text-text">{ph.project.name}</h4>
+                    <h4 className="flex-1 truncate text-sm font-semibold text-text">{ph.project.name}</h4>
                     <span className={cn('h-2 w-2 rounded-full', ph.healthStatus === 'green' ? 'bg-green' : ph.healthStatus === 'yellow' ? 'bg-yellow' : 'bg-red')} />
                   </div>
                   <div className="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-bg">
                     <motion.div initial={{ width: 0 }} animate={{ width: `${ph.progressPercent}%` }} transition={{ delay: 0.5 + i * 0.05, duration: 0.75, ease: [0.4, 0, 0.2, 1] }} className={cn('h-full rounded-full', ph.healthStatus === 'green' ? 'bg-green' : ph.healthStatus === 'yellow' ? 'bg-yellow' : 'bg-red')} />
                   </div>
-                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px]">
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs">
                     <span className="text-muted"><strong className="font-semibold text-text">{ph.progressPercent}%</strong> done</span>
                     {ph.overdueTasks > 0 && <span className="font-semibold text-red">{ph.overdueTasks} overdue</span>}
                     {ph.dueTodayTasks > 0 && <span className="font-semibold text-yellow">{ph.dueTodayTasks} today</span>}
