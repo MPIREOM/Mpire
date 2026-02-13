@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createServerSupabase } from '@/lib/supabase/server';
-import { SUPABASE_SERVICE_ROLE_KEY } from '@/lib/generated/server-env';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,7 +8,6 @@ export async function POST(request: NextRequest) {
   try {
     const { email, password, full_name, role } = await request.json();
 
-    // Validate input
     if (!email || !password || !full_name || !role) {
       return NextResponse.json(
         { error: 'Email, password, full name, and role are required' },
@@ -18,10 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!['owner', 'manager', 'staff', 'investor'].includes(role)) {
-      return NextResponse.json(
-        { error: 'Invalid role' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
     }
 
     if (password.length < 6) {
@@ -31,7 +26,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify the caller is authenticated and is owner/manager
     const supabase = await createServerSupabase();
     const {
       data: { user: authUser },
@@ -52,20 +46,24 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (!caller || !['owner', 'manager'].includes(caller.role)) {
-      return NextResponse.json({ error: 'Only owners and managers can add team members' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'Only owners and managers can add team members' },
+        { status: 403 }
+      );
     }
 
-    // Service role key imported as literal constant from generated file
-    if (!SUPABASE_SERVICE_ROLE_KEY) {
+    // Service role key from environment — NEVER commit this value
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceRoleKey) {
       return NextResponse.json(
-        { error: 'Server configuration error — run: node scripts/gen-server-env.mjs' },
+        { error: 'Server configuration error — SUPABASE_SERVICE_ROLE_KEY env var is missing' },
         { status: 500 }
       );
     }
 
     const adminClient = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      SUPABASE_SERVICE_ROLE_KEY,
+      serviceRoleKey,
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
@@ -77,13 +75,9 @@ export async function POST(request: NextRequest) {
       });
 
     if (authError) {
-      return NextResponse.json(
-        { error: authError.message },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: authError.message }, { status: 400 });
     }
 
-    // Insert into public.users with the caller's company_id
     const { error: profileError } = await adminClient
       .from('users')
       .insert({
@@ -95,21 +89,12 @@ export async function POST(request: NextRequest) {
       });
 
     if (profileError) {
-      // Clean up auth user if profile insert fails
       await adminClient.auth.admin.deleteUser(newAuthUser.user.id);
-      return NextResponse.json(
-        { error: profileError.message },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: profileError.message }, { status: 400 });
     }
 
     return NextResponse.json({
-      user: {
-        id: newAuthUser.user.id,
-        email,
-        full_name,
-        role,
-      },
+      user: { id: newAuthUser.user.id, email, full_name, role },
     });
   } catch (err) {
     console.error('POST /api/users error:', err);

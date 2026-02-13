@@ -4,8 +4,9 @@ import useSWR from 'swr';
 import { createClient } from '@/lib/supabase/client';
 import type { FinanceRecord, FinanceUpload } from '@/types/database';
 
+const supabase = createClient();
+
 export function useFinanceRecords(projectId?: string) {
-  const supabase = createClient();
   const key = projectId ? `finance-records-${projectId}` : 'finance-records-all';
 
   const { data, error, isLoading, mutate } = useSWR<FinanceRecord[]>(
@@ -39,7 +40,6 @@ export function useFinanceRecords(projectId?: string) {
 }
 
 export function useFinanceUploads(projectId?: string) {
-  const supabase = createClient();
   const key = projectId ? `finance-uploads-${projectId}` : 'finance-uploads-all';
 
   const { data, error, isLoading, mutate } = useSWR<FinanceUpload[]>(

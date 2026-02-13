@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useTeam } from '@/hooks/use-team';
+import type { TimeEntry } from '@/components/tasks/time-review-dialog';
 
 type TabKey = 'today' | 'week' | 'overdue' | 'all';
 
@@ -25,6 +26,8 @@ interface StaffDashboardProps {
   currentUser: User;
   projects: Project[];
   onUpdateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
+  onDeleteTask?: (taskId: string) => Promise<void>;
+  onCompleteTask?: (taskId: string, userId: string, timeEntries: TimeEntry[]) => Promise<void>;
 }
 
 const statusOptions: { value: TaskStatus; label: string }[] = [
@@ -39,10 +42,19 @@ export function StaffDashboard({
   currentUser,
   projects,
   onUpdateTask,
+  onDeleteTask,
+  onCompleteTask,
 }: StaffDashboardProps) {
   const [tab, setTab] = useState<TabKey>('today');
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  // Store ID instead of full task object to avoid stale references
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const { team } = useTeam();
+
+  // Derive selected task from latest tasks array
+  const selectedTask = useMemo(
+    () => tasks.find((t) => t.id === selectedTaskId) ?? null,
+    [tasks, selectedTaskId]
+  );
 
   const myTasks = useMemo(
     () => tasks.filter((t) => t.assignee_id === currentUser.id && t.status !== 'done'),
@@ -128,6 +140,7 @@ export function StaffDashboard({
           {tabs.map((t) => (
             <button
               key={t.key}
+              type="button"
               onClick={() => setTab(t.key)}
               className={cn(
                 'relative px-3 py-2 text-[12px] font-semibold transition-colors',
@@ -172,7 +185,7 @@ export function StaffDashboard({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.03, duration: 0.3 }}
-                  onClick={() => setSelectedTask(task)}
+                  onClick={() => setSelectedTaskId(task.id)}
                   className={cn(
                     'flex cursor-pointer items-center gap-3 px-4 py-2.5 transition-colors hover:bg-bg',
                     idx !== filtered.length - 1 && 'border-b border-border'
@@ -242,10 +255,12 @@ export function StaffDashboard({
       {/* Task Detail Drawer */}
       <TaskDetailDrawer
         task={selectedTask}
-        onClose={() => setSelectedTask(null)}
+        onClose={() => setSelectedTaskId(null)}
         currentUser={currentUser}
         team={team}
         onUpdateTask={onUpdateTask}
+        onDeleteTask={onDeleteTask}
+        onCompleteTask={onCompleteTask}
       />
     </div>
   );

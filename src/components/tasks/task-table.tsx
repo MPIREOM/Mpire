@@ -9,6 +9,7 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
+import { toast } from 'sonner';
 import type { Task, User, Project, TaskStatus, TaskPriority } from '@/types/database';
 import { isOverdue, isDueToday, isDueThisWeek, formatDate } from '@/lib/dates';
 import { canViewAllTasks, canAssignTasks, canCreateTasks } from '@/lib/roles';
@@ -202,7 +203,9 @@ export function TaskTable({
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    if (!onCreateTask || !createForm.title.trim() || !createForm.project_id) return;
+    if (!onCreateTask) return;
+    if (!createForm.title.trim()) { toast.error('Title is required'); return; }
+    if (!createForm.project_id) { toast.error('Please select a project'); return; }
     setCreateSaving(true);
     try {
       await onCreateTask({
@@ -217,8 +220,11 @@ export function TaskTable({
         recurring_rule: null,
         tags: [],
       });
+      toast.success('Task created');
       setShowCreate(false);
       setCreateForm({ title: '', project_id: '', priority: 'medium', due_date: '', assignee_id: '' });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to create task');
     } finally {
       setCreateSaving(false);
     }
@@ -492,7 +498,7 @@ export function TaskTable({
           <DialogPanel className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
             <div className="flex items-center justify-between">
               <DialogTitle className="text-[15px] font-bold text-text">New Task</DialogTitle>
-              <button onClick={() => setShowCreate(false)} className="rounded-md p-1 text-muted hover:bg-bg hover:text-text">
+              <button type="button" onClick={() => setShowCreate(false)} className="rounded-md p-1 text-muted hover:bg-bg hover:text-text">
                 <XMarkIcon className="h-5 w-5" />
               </button>
             </div>

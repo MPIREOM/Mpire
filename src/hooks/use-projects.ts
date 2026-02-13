@@ -5,9 +5,9 @@ import { useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { Project } from '@/types/database';
 
-export function useProjects() {
-  const supabase = createClient();
+const supabase = createClient();
 
+export function useProjects() {
   const { data, error, isLoading, mutate } = useSWR<Project[]>(
     'projects',
     async () => {
@@ -31,28 +31,18 @@ export function useProjects() {
       if (error) throw error;
       mutate();
     },
-    [supabase, mutate]
+    [mutate]
   );
 
   const deleteProject = useCallback(
     async (projectId: string) => {
-      // Clean up task comments and activity before deleting (FK constraints)
-      const { data: projectTasks } = await supabase
-        .from('tasks')
-        .select('id')
-        .eq('project_id', projectId);
-
-      if (projectTasks && projectTasks.length > 0) {
-        const taskIds = projectTasks.map((t: { id: string }) => t.id);
-        await supabase.from('task_comments').delete().in('task_id', taskIds);
-        await supabase.from('task_activity').delete().in('task_id', taskIds);
-      }
-
+      // Relies on ON DELETE CASCADE for tasks → task_comments/task_activity.
+      // See supabase/migration-cascade.sql
       const { error } = await supabase.from('projects').delete().eq('id', projectId);
       if (error) throw error;
       mutate();
     },
-    [supabase, mutate]
+    [mutate]
   );
 
   return {

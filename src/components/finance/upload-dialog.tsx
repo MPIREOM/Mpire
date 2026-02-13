@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { XMarkIcon, ArrowUpTrayIcon } from '@heroicons/react/24/outline';
 import { clsx } from 'clsx';
+import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 
 interface UploadDialogProps {
@@ -137,10 +138,12 @@ export function UploadDialog({ open, onClose, projectId, onUploaded }: UploadDia
         return;
       }
 
+      toast.success(`Uploaded ${records.length} finance records`);
       onUploaded();
       onClose();
       reset();
     } catch {
+      toast.error('Upload failed — network error');
       setError('Network error');
     } finally {
       setSaving(false);
@@ -163,6 +166,7 @@ export function UploadDialog({ open, onClose, projectId, onUploaded }: UploadDia
               {step === 'preview' && 'Preview & Confirm'}
             </DialogTitle>
             <button
+              type="button"
               onClick={() => { onClose(); reset(); }}
               className="rounded-md p-1 text-muted hover:bg-bg hover:text-text"
             >
@@ -219,12 +223,14 @@ export function UploadDialog({ open, onClose, projectId, onUploaded }: UploadDia
 
               <div className="flex justify-end gap-2 pt-2">
                 <button
+                  type="button"
                   onClick={() => setStep('upload')}
                   className="rounded-xl border border-border px-4 py-2 text-[13px] font-semibold text-muted hover:bg-bg hover:text-text"
                 >
                   Back
                 </button>
                 <button
+                  type="button"
                   onClick={handleMapNext}
                   className="rounded-xl bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-light"
                 >
@@ -273,12 +279,14 @@ export function UploadDialog({ open, onClose, projectId, onUploaded }: UploadDia
 
               <div className="flex justify-end gap-2 pt-2">
                 <button
+                  type="button"
                   onClick={() => setStep('map')}
                   className="rounded-xl border border-border px-4 py-2 text-[13px] font-semibold text-muted hover:bg-bg hover:text-text"
                 >
                   Back
                 </button>
                 <button
+                  type="button"
                   onClick={handleUpload}
                   disabled={saving}
                   className="rounded-xl bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-light disabled:opacity-50"
