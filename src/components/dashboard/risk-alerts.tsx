@@ -89,7 +89,7 @@ export function RiskAlerts({ tasks, projectHealth }: RiskAlertsProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2, duration: 0.4 }}
     >
-      <h3 className="mb-4 text-[14px] font-bold text-text">Risk & Alerts</h3>
+      <h3 className="mb-4 text-base font-bold text-text">Risk & Alerts</h3>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {alerts.map((group, i) => (
           <motion.div
@@ -105,8 +105,8 @@ export function RiskAlerts({ tasks, projectHealth }: RiskAlertsProps) {
                 <group.icon className={cn('h-4 w-4', group.color)} />
               </div>
               <div className="flex-1">
-                <p className="text-[12px] font-semibold text-text">{group.label}</p>
-                <p className={cn('text-[18px] font-bold tabular-nums', group.color)}>
+                <p className="text-sm font-semibold text-text">{group.label}</p>
+                <p className={cn('text-xl font-bold tabular-nums', group.color)}>
                   {group.items.length}
                 </p>
               </div>
@@ -131,15 +131,15 @@ export function RiskAlerts({ tasks, projectHealth }: RiskAlertsProps) {
                     >
                       <span className={cn('mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full', group.color.replace('text-', 'bg-'))} />
                       <div className="min-w-0">
-                        <p className="truncate text-[12px] font-medium text-text">{item.text}</p>
-                        <p className="text-[10px] text-muted">{item.meta}</p>
+                        <p className="truncate text-[13px] font-medium text-text">{item.text}</p>
+                        <p className="text-xs text-muted">{item.meta}</p>
                       </div>
                     </Link>
                   </motion.div>
                 );
               })}
               {group.items.length > 4 && (
-                <p className="text-[10px] text-muted">+{group.items.length - 4} more</p>
+                <p className="text-xs text-muted">+{group.items.length - 4} more</p>
               )}
             </div>
           </motion.div>

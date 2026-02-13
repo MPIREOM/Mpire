@@ -112,8 +112,8 @@ export default function SettingsPage() {
           transition={{ duration: 0.4 }}
           className="rounded-2xl border border-border bg-card p-6"
         >
-          <h2 className="text-[14px] font-bold text-text">Profile</h2>
-          <p className="mt-1 text-[12px] text-muted">Your personal information</p>
+          <h2 className="text-base font-bold text-text">Profile</h2>
+          <p className="mt-1 text-[13px] text-muted">Your personal information</p>
 
           <div className="mt-6 flex items-start gap-5">
             <div className="shrink-0">
@@ -121,32 +121,32 @@ export default function SettingsPage() {
             </div>
             <div className="min-w-0 flex-1 space-y-4">
               <div>
-                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">
                   Full Name
                 </label>
                 <input
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-bg px-4 py-2.5 text-[13px] text-text placeholder:text-muted/60 transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-muted"
+                  className="w-full rounded-xl border border-border bg-bg px-4 py-2.5 text-sm text-text placeholder:text-muted/60 transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-muted"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">
                   Email
                 </label>
                 <input
                   type="email"
                   value={user.email}
                   disabled
-                  className="w-full rounded-xl border border-border bg-bg px-4 py-2.5 text-[13px] text-muted transition-colors disabled:opacity-60"
+                  className="w-full rounded-xl border border-border bg-bg px-4 py-2.5 text-sm text-muted transition-colors disabled:opacity-60"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">
                   Role
                 </label>
-                <span className="inline-flex items-center rounded-lg bg-accent-muted px-3 py-1.5 text-[12px] font-semibold capitalize text-accent">
+                <span className="inline-flex items-center rounded-lg bg-accent-muted px-3 py-1.5 text-[13px] font-semibold capitalize text-accent">
                   {user.role}
                 </span>
               </div>
@@ -178,15 +178,15 @@ export default function SettingsPage() {
           transition={{ duration: 0.4, delay: 0.1 }}
           className="rounded-2xl border border-border bg-card p-6"
         >
-          <h2 className="text-[14px] font-bold text-text">Appearance</h2>
-          <p className="mt-1 text-[12px] text-muted">Choose your preferred theme</p>
+          <h2 className="text-base font-bold text-text">Appearance</h2>
+          <p className="mt-1 text-[13px] text-muted">Choose your preferred theme</p>
 
           <div className="mt-5 grid grid-cols-3 gap-3">
             {themeOptions.map((opt) => (
               <button
                 key={opt.value}
                 onClick={() => applyTheme(opt.value)}
-                className={`flex flex-col items-center gap-2 rounded-xl border-2 px-4 py-4 text-[12px] font-semibold transition-all ${
+                className={`flex flex-col items-center gap-2 rounded-xl border-2 px-4 py-4 text-[13px] font-semibold transition-all ${
                   theme === opt.value
                     ? 'border-accent bg-accent-muted text-accent'
                     : 'border-border text-muted hover:border-border-hover hover:text-text'
@@ -206,15 +206,15 @@ export default function SettingsPage() {
           transition={{ duration: 0.4, delay: 0.2 }}
           className="rounded-2xl border border-border bg-card p-6"
         >
-          <h2 className="text-[14px] font-bold text-text">Notifications</h2>
-          <p className="mt-1 text-[12px] text-muted">Manage your notification preferences</p>
+          <h2 className="text-base font-bold text-text">Notifications</h2>
+          <p className="mt-1 text-[13px] text-muted">Manage your notification preferences</p>
 
           <div className="mt-5 divide-y divide-border">
             {notifOptions.map((opt) => (
               <div key={opt.key} className="flex items-center justify-between py-3.5">
                 <div>
-                  <p className="text-[13px] font-semibold text-text">{opt.label}</p>
-                  <p className="text-[11px] text-muted">{opt.description}</p>
+                  <p className="text-sm font-semibold text-text">{opt.label}</p>
+                  <p className="text-xs text-muted">{opt.description}</p>
                 </div>
                 <button
                   onClick={() => updateNotification(opt.key, !notifications[opt.key])}
@@ -241,13 +241,13 @@ export default function SettingsPage() {
             transition={{ duration: 0.4, delay: 0.3 }}
             className="rounded-2xl border border-red/20 bg-card p-6"
           >
-            <h2 className="text-[14px] font-bold text-red">Danger Zone</h2>
-            <p className="mt-1 text-[12px] text-muted">Irreversible actions for your organization</p>
+            <h2 className="text-base font-bold text-red">Danger Zone</h2>
+            <p className="mt-1 text-[13px] text-muted">Irreversible actions for your organization</p>
 
             <div className="mt-5 flex items-center justify-between rounded-xl border border-border p-4">
               <div>
-                <p className="text-[13px] font-semibold text-text">Export all data</p>
-                <p className="text-[11px] text-muted">Download a copy of all your organization data</p>
+                <p className="text-sm font-semibold text-text">Export all data</p>
+                <p className="text-xs text-muted">Download a copy of all your organization data</p>
               </div>
               <Button variant="outline" size="sm">
                 Export

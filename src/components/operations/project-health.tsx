@@ -43,7 +43,7 @@ export function ProjectHealthGrid({ projects }: ProjectHealthGridProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
     >
-      <h3 className="mb-4 text-[14px] font-bold text-text">Project Health</h3>
+      <h3 className="mb-4 text-base font-bold text-text">Project Health</h3>
       <div className="grid gap-4 sm:grid-cols-2">
         {projects.map((ph, i) => (
           <motion.div
@@ -62,11 +62,11 @@ export function ProjectHealthGrid({ projects }: ProjectHealthGridProps) {
                     statusColor(ph.healthStatus)
                   )}
                 />
-                <h4 className="text-[13px] font-semibold text-text">
+                <h4 className="text-sm font-semibold text-text">
                   {ph.project.name}
                 </h4>
               </div>
-              <span className="text-[11px] font-semibold tabular-nums text-muted">
+              <span className="text-[13px] font-semibold tabular-nums text-muted">
                 {ph.progressPercent}%
               </span>
             </div>
@@ -85,7 +85,7 @@ export function ProjectHealthGrid({ projects }: ProjectHealthGridProps) {
             </div>
 
             {/* Stats row */}
-            <div className="flex gap-4 text-[11px]">
+            <div className="flex gap-4 text-xs">
               <span className="text-muted">
                 <strong className="font-semibold text-text">
                   {ph.totalTasks}

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { XMarkIcon, ArrowUpTrayIcon } from '@heroicons/react/24/outline';
 import { clsx } from 'clsx';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 
@@ -160,7 +161,7 @@ export function UploadDialog({ open, onClose, projectId, onUploaded }: UploadDia
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <DialogPanel className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-lg">
           <div className="flex items-center justify-between mb-5">
-            <DialogTitle className="text-[15px] font-bold text-text">
+            <DialogTitle className="text-base font-bold text-text">
               {step === 'upload' && 'Upload Finance Data'}
               {step === 'map' && 'Map Columns'}
               {step === 'preview' && 'Preview & Confirm'}
@@ -174,12 +175,28 @@ export function UploadDialog({ open, onClose, projectId, onUploaded }: UploadDia
             </button>
           </div>
 
+          {/* Step indicator */}
+          <div className="mb-6 flex items-center gap-2">
+            {(['upload', 'map', 'preview'] as const).map((s, i) => (
+              <React.Fragment key={s}>
+                {i > 0 && <div className={cn('h-px flex-1', step === s || (['map', 'preview'].indexOf(step) > ['map', 'preview'].indexOf(s)) ? 'bg-accent' : 'bg-border')} />}
+                <div className={cn(
+                  'flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-colors',
+                  step === s ? 'bg-accent text-white' :
+                  (['upload', 'map', 'preview'].indexOf(step) > i) ? 'bg-green text-white' : 'bg-bg text-muted'
+                )}>
+                  {(['upload', 'map', 'preview'].indexOf(step) > i) ? '✓' : i + 1}
+                </div>
+              </React.Fragment>
+            ))}
+          </div>
+
           {/* Step 1: Upload */}
           {step === 'upload' && (
             <div className="space-y-4">
               <label className="flex cursor-pointer flex-col items-center gap-3 rounded-xl border-2 border-dashed border-border p-8 transition-colors hover:border-accent hover:bg-accent-muted">
                 <ArrowUpTrayIcon className="h-8 w-8 text-muted" />
-                <span className="text-[13px] font-medium text-muted">
+                <span className="text-sm font-medium text-muted">
                   Drop Excel or CSV file here, or click to browse
                 </span>
                 <input
@@ -189,7 +206,7 @@ export function UploadDialog({ open, onClose, projectId, onUploaded }: UploadDia
                   className="hidden"
                 />
               </label>
-              <p className="text-[11px] text-muted">
+              <p className="text-xs text-muted">
                 Supported: .xlsx, .xls, .csv — We&apos;ll auto-detect columns and let you map them.
               </p>
             </div>
@@ -198,20 +215,20 @@ export function UploadDialog({ open, onClose, projectId, onUploaded }: UploadDia
           {/* Step 2: Column mapping */}
           {step === 'map' && parsed && (
             <div className="space-y-4">
-              <p className="text-[12px] text-muted">
+              <p className="text-[13px] text-muted">
                 Found <strong>{parsed.rows.length}</strong> rows and <strong>{parsed.headers.length}</strong> columns in <strong>{parsed.fileName}</strong>.
                 Map your columns to the required fields:
               </p>
 
               {REQUIRED_FIELDS.map((field) => (
                 <div key={field}>
-                  <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">
                     {field === 'month' ? 'Month / Date' : field === 'category' ? 'Category / Type' : 'Amount'}
                   </label>
                   <select
                     value={mapping[field]}
                     onChange={(e) => setMapping({ ...mapping, [field]: e.target.value })}
-                    className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-[13px] text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
+                    className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
                   >
                     <option value="">— Select column —</option>
                     {parsed.headers.map((h) => (
@@ -225,14 +242,14 @@ export function UploadDialog({ open, onClose, projectId, onUploaded }: UploadDia
                 <button
                   type="button"
                   onClick={() => setStep('upload')}
-                  className="rounded-xl border border-border px-4 py-2 text-[13px] font-semibold text-muted hover:bg-bg hover:text-text"
+                  className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted hover:bg-bg hover:text-text"
                 >
                   Back
                 </button>
                 <button
                   type="button"
                   onClick={handleMapNext}
-                  className="rounded-xl bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-light"
+                  className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-light"
                 >
                   Next
                 </button>
@@ -243,14 +260,16 @@ export function UploadDialog({ open, onClose, projectId, onUploaded }: UploadDia
           {/* Step 3: Preview */}
           {step === 'preview' && parsed && (
             <div className="space-y-4">
-              <p className="text-[12px] text-muted">
+              <p className="text-[13px] text-muted">
                 Ready to upload <strong>{getMappedRecords().length}</strong> records.
-                This will replace any existing finance data for this project.
               </p>
+              <div className="rounded-lg border border-yellow/20 bg-yellow-bg px-3 py-2 text-[13px] text-yellow">
+                All existing finance records for this project will be replaced.
+              </div>
 
               {/* Preview table */}
               <div className="max-h-64 overflow-auto rounded-lg border border-border">
-                <table className="w-full text-[11px]">
+                <table className="w-full text-xs">
                   <thead className="sticky top-0 bg-card">
                     <tr className="border-b border-border text-left">
                       <th className="px-3 py-1.5 font-semibold text-muted">Month</th>
@@ -271,7 +290,7 @@ export function UploadDialog({ open, onClose, projectId, onUploaded }: UploadDia
                   </tbody>
                 </table>
                 {getMappedRecords().length > 10 && (
-                  <p className="border-t border-border px-3 py-1.5 text-[10px] text-muted">
+                  <p className="border-t border-border px-3 py-1.5 text-xs text-muted">
                     +{getMappedRecords().length - 10} more rows
                   </p>
                 )}
@@ -281,7 +300,7 @@ export function UploadDialog({ open, onClose, projectId, onUploaded }: UploadDia
                 <button
                   type="button"
                   onClick={() => setStep('map')}
-                  className="rounded-xl border border-border px-4 py-2 text-[13px] font-semibold text-muted hover:bg-bg hover:text-text"
+                  className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted hover:bg-bg hover:text-text"
                 >
                   Back
                 </button>
@@ -289,7 +308,7 @@ export function UploadDialog({ open, onClose, projectId, onUploaded }: UploadDia
                   type="button"
                   onClick={handleUpload}
                   disabled={saving}
-                  className="rounded-xl bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-light disabled:opacity-50"
+                  className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-light disabled:opacity-50"
                 >
                   {saving ? 'Uploading...' : 'Upload & Replace'}
                 </button>
@@ -298,7 +317,7 @@ export function UploadDialog({ open, onClose, projectId, onUploaded }: UploadDia
           )}
 
           {error && (
-            <p className="mt-3 text-[12px] font-medium text-red">{error}</p>
+            <p className="mt-3 text-[13px] font-medium text-red">{error}</p>
           )}
         </DialogPanel>
       </div>

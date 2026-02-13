@@ -195,7 +195,7 @@ export function CommandPalette({ open, onClose, onToggleSidebar }: CommandPalett
                 className="flex-1 bg-transparent py-3.5 text-[14px] text-text placeholder:text-muted/50 focus:outline-none"
                 autoFocus
               />
-              <kbd className="hidden rounded border border-border bg-bg px-1.5 py-0.5 text-[10px] font-medium text-muted sm:block">
+              <kbd className="hidden rounded border border-border bg-bg px-1.5 py-0.5 text-[11px] font-medium text-muted sm:block">
                 ESC
               </kbd>
             </div>
@@ -212,10 +212,10 @@ export function CommandPalette({ open, onClose, onToggleSidebar }: CommandPalett
                     className="flex flex-col items-center gap-2 py-10"
                   >
                     <HashtagIcon className="h-8 w-8 text-muted/30" />
-                    <p className="text-[13px] text-muted">
+                    <p className="text-sm text-muted">
                       No results for &ldquo;{query}&rdquo;
                     </p>
-                    <p className="text-[11px] text-muted/60">
+                    <p className="text-xs text-muted/60">
                       Try a different search term
                     </p>
                   </motion.div>
@@ -229,7 +229,7 @@ export function CommandPalette({ open, onClose, onToggleSidebar }: CommandPalett
                   >
                     {sections.map((section) => (
                       <div key={section} className="mb-1">
-                        <p className="px-3 py-2 text-[10px] font-semibold uppercase tracking-widest text-muted">
+                        <p className="px-3 py-2 text-[11px] font-semibold uppercase tracking-widest text-muted">
                           {section}
                         </p>
                         {filtered
@@ -262,7 +262,7 @@ export function CommandPalette({ open, onClose, onToggleSidebar }: CommandPalett
                                 {item.shortcut && (
                                   <kbd
                                     className={cn(
-                                      'rounded border px-1.5 py-0.5 text-[10px] font-medium',
+                                      'rounded border px-1.5 py-0.5 text-[11px] font-medium',
                                       isActive
                                         ? 'border-accent/30 bg-accent/10 text-accent'
                                         : 'border-border bg-bg text-muted'
@@ -283,7 +283,7 @@ export function CommandPalette({ open, onClose, onToggleSidebar }: CommandPalett
 
             {/* Footer — keyboard hints */}
             <div className="flex items-center gap-4 border-t border-border px-4 py-2">
-              <div className="flex items-center gap-1.5 text-[10px] text-muted">
+              <div className="flex items-center gap-1.5 text-[11px] text-muted">
                 <kbd className="rounded border border-border bg-bg px-1 py-0.5 font-medium">
                   &uarr;
                 </kbd>
@@ -292,13 +292,13 @@ export function CommandPalette({ open, onClose, onToggleSidebar }: CommandPalett
                 </kbd>
                 <span>Navigate</span>
               </div>
-              <div className="flex items-center gap-1.5 text-[10px] text-muted">
+              <div className="flex items-center gap-1.5 text-[11px] text-muted">
                 <kbd className="rounded border border-border bg-bg px-1.5 py-0.5 font-medium">
                   &crarr;
                 </kbd>
                 <span>Select</span>
               </div>
-              <div className="flex items-center gap-1.5 text-[10px] text-muted">
+              <div className="flex items-center gap-1.5 text-[11px] text-muted">
                 <kbd className="rounded border border-border bg-bg px-1.5 py-0.5 font-medium">
                   esc
                 </kbd>

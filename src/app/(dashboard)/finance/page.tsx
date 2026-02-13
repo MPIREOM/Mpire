@@ -97,17 +97,17 @@ export default function FinancePage() {
         </div>
       ) : records.length === 0 ? (
         <div className="flex h-64 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border">
-          <p className="text-[13px] text-muted">No finance data uploaded yet</p>
-          <p className="text-[11px] text-muted">Go to a project and upload Excel/CSV finance data</p>
+          <p className="text-sm text-muted">No finance data uploaded yet</p>
+          <p className="text-[13px] text-muted">Go to a project and upload Excel/CSV finance data</p>
         </div>
       ) : (
         <div className="space-y-6">
           {/* KPI row */}
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             {kpiCards.map((c) => (
-              <div key={c.label} className="rounded-xl border border-border bg-card p-4">
-                <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted">{c.label}</p>
-                <p className={clsx('text-xl font-bold tabular-nums', c.color)}>
+              <div key={c.label} className="rounded-xl border border-border bg-card p-5">
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">{c.label}</p>
+                <p className={clsx('text-2xl font-bold tabular-nums', c.color)}>
                   {c.isCount
                     ? c.value
                     : c.value.toLocaleString(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 0 })}
@@ -119,8 +119,8 @@ export default function FinancePage() {
           {/* Stale data alert */}
           {summary.staleProjects.length > 0 && (
             <div className="rounded-xl border border-yellow/20 bg-yellow-bg p-4">
-              <p className="mb-2 text-[12px] font-semibold text-yellow">Data Freshness Alert</p>
-              <p className="text-[11px] text-muted">
+              <p className="mb-2 text-sm font-semibold text-yellow">Data Freshness Alert</p>
+              <p className="text-[13px] text-muted">
                 {summary.staleProjects.length} project{summary.staleProjects.length !== 1 ? 's have' : ' has'} finance data older than 30 days:
               </p>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -128,7 +128,7 @@ export default function FinancePage() {
                   <Link
                     key={p.project!.id}
                     href={`/projects/${p.project!.id}`}
-                    className="rounded-md bg-card px-2 py-0.5 text-[11px] font-semibold text-text hover:bg-bg"
+                    className="rounded-md bg-card px-2 py-0.5 text-xs font-semibold text-text hover:bg-bg"
                   >
                     {p.project!.name}
                   </Link>
@@ -140,7 +140,7 @@ export default function FinancePage() {
           {/* Monthly trend chart */}
           {summary.monthlyTrend.length > 1 && (
             <div>
-              <h3 className="mb-3 text-[13px] font-bold text-text">Monthly Trend (All Projects)</h3>
+              <h3 className="mb-3 text-base font-bold text-text">Monthly Trend (All Projects)</h3>
               <div className="rounded-xl border border-border bg-card p-4">
                 <ResponsiveContainer width="100%" height={220}>
                   <BarChart data={summary.monthlyTrend}>
@@ -162,7 +162,7 @@ export default function FinancePage() {
 
           {/* Per-project breakdown */}
           <div>
-            <h3 className="mb-3 text-[13px] font-bold text-text">By Project</h3>
+            <h3 className="mb-3 text-base font-bold text-text">By Project</h3>
             <div className="rounded-xl border border-border bg-card">
               {summary.byProject.map((p, idx) => (
                 <Link
@@ -177,10 +177,10 @@ export default function FinancePage() {
                     className="h-2.5 w-2.5 shrink-0 rounded-full"
                     style={{ backgroundColor: p.project!.color }}
                   />
-                  <span className="flex-1 truncate text-[13px] font-semibold text-text">
+                  <span className="flex-1 truncate text-sm font-semibold text-text">
                     {p.project!.name}
                   </span>
-                  <span className="text-[12px] font-semibold tabular-nums text-text">
+                  <span className="text-[13px] font-semibold tabular-nums text-text">
                     {p.amount.toLocaleString(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 0 })}
                   </span>
                 </Link>

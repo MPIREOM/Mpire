@@ -88,7 +88,7 @@ function CompletionRing({
           transition={{ delay, duration: 1.25, ease: [0.4, 0, 0.2, 1] }}
         />
       </svg>
-      <span className="absolute text-[9px] font-bold tabular-nums text-text">{percent}%</span>
+      <span className="absolute text-[11px] font-bold tabular-nums text-text">{percent}%</span>
     </div>
   );
 }
@@ -119,7 +119,7 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
 function TeamAvatars({ metrics }: { metrics: ProjectMetrics }) {
   const shown = metrics.assignees.slice(0, 4);
   const extra = metrics.assignees.length - shown.length;
-  if (shown.length === 0) return <span className="text-[11px] text-muted">No assignees</span>;
+  if (shown.length === 0) return <span className="text-xs text-muted">No assignees</span>;
   return (
     <div className="flex items-center">
       <div className="flex -space-x-1.5">
@@ -130,7 +130,7 @@ function TeamAvatars({ metrics }: { metrics: ProjectMetrics }) {
         ))}
       </div>
       {extra > 0 && (
-        <span className="ml-1.5 text-[10px] font-semibold text-muted">+{extra}</span>
+        <span className="ml-1.5 text-xs font-semibold text-muted">+{extra}</span>
       )}
     </div>
   );
@@ -167,11 +167,11 @@ export function ProjectKPICard({ metrics, onDelete }: ProjectKPICardProps) {
                   className="h-1.5 w-1.5 sm:h-2 sm:w-2 shrink-0 rounded-full"
                   style={{ backgroundColor: m.project.color }}
                 />
-                <h3 className="truncate text-[11px] sm:text-[15px] font-bold leading-tight text-text">
+                <h3 className="truncate text-xs sm:text-base font-bold leading-tight text-text">
                   {m.project.name}
                 </h3>
               </div>
-              <p className="hidden sm:block text-[11px] text-muted">
+              <p className="hidden sm:block text-xs text-muted">
                 {m.totalTasks} tasks
                 {m.lastActivityAt && (
                   <> · Updated {m.lastActivityRelative}</>
@@ -198,7 +198,7 @@ export function ProjectKPICard({ metrics, onDelete }: ProjectKPICardProps) {
             <div className="flex flex-col">
               <div className="flex items-center gap-1 text-muted">
                 <ClipboardDocumentListIcon className="hidden sm:block h-3 w-3" />
-                <span className="text-[8px] sm:text-[9px] font-semibold uppercase tracking-wide">Total</span>
+                <span className="text-[9px] sm:text-[11px] font-semibold uppercase tracking-wide">Total</span>
               </div>
               <p className="text-[15px] sm:text-[20px] font-bold leading-tight tabular-nums text-text">
                 <AnimatedNum value={m.totalTasks} />
@@ -207,7 +207,7 @@ export function ProjectKPICard({ metrics, onDelete }: ProjectKPICardProps) {
             <div className="flex flex-col">
               <div className="flex items-center gap-1">
                 <ExclamationTriangleIcon className={cn('hidden sm:block h-3 w-3', m.overdueTasks > 0 ? 'text-red' : 'text-muted')} />
-                <span className="text-[8px] sm:text-[9px] font-semibold uppercase tracking-wide text-muted">Overdue</span>
+                <span className="text-[9px] sm:text-[11px] font-semibold uppercase tracking-wide text-muted">Overdue</span>
               </div>
               <p className={cn('text-[15px] sm:text-[20px] font-bold leading-tight tabular-nums', m.overdueTasks > 0 ? 'text-red' : 'text-muted/40')}>
                 <AnimatedNum value={m.overdueTasks} />
@@ -216,7 +216,7 @@ export function ProjectKPICard({ metrics, onDelete }: ProjectKPICardProps) {
             <div className="hidden sm:flex flex-col">
               <div className="flex items-center gap-1 text-blue">
                 <ArrowPathIcon className="h-3 w-3" />
-                <span className="text-[9px] font-semibold uppercase tracking-wide text-muted">In Prog</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">In Prog</span>
               </div>
               <p className="text-[20px] font-bold leading-tight tabular-nums text-blue">
                 <AnimatedNum value={m.inProgressTasks} />
@@ -225,7 +225,7 @@ export function ProjectKPICard({ metrics, onDelete }: ProjectKPICardProps) {
             <div className="hidden sm:flex flex-col">
               <div className="flex items-center gap-1">
                 <NoSymbolIcon className={cn('h-3 w-3', m.blockedTasks > 0 ? 'text-yellow' : 'text-muted')} />
-                <span className="text-[9px] font-semibold uppercase tracking-wide text-muted">Blocked</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">Blocked</span>
               </div>
               <p className={cn('text-[20px] font-bold leading-tight tabular-nums', m.blockedTasks > 0 ? 'text-yellow' : 'text-muted/40')}>
                 <AnimatedNum value={m.blockedTasks} />
@@ -237,11 +237,11 @@ export function ProjectKPICard({ metrics, onDelete }: ProjectKPICardProps) {
           <div className="mb-1.5 sm:mb-3">
             <div className="mb-1 sm:mb-1.5 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-[9px] sm:text-[11px] font-semibold text-muted">{m.progressPercent}%</span>
+                <span className="text-[11px] sm:text-xs font-semibold text-muted">{m.progressPercent}%</span>
                 <span className="hidden sm:inline"><Sparkline data={m.weeklyCompletions} color={progressRaw} /></span>
               </div>
               <div className="hidden sm:flex items-center gap-2">
-                <span className="text-[11px] text-muted">
+                <span className="text-xs text-muted">
                   <CheckCircleIcon className="mr-0.5 inline h-3 w-3 text-green" />
                   {m.doneTasks}/{m.totalTasks}
                 </span>
@@ -262,19 +262,19 @@ export function ProjectKPICard({ metrics, onDelete }: ProjectKPICardProps) {
           {(m.dueToday > 0 || m.dueThisWeek > 0 || m.highPriorityCount > 0) && (
             <div className="hidden sm:flex mb-3 flex-wrap items-center gap-1.5">
               {m.dueToday > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-md bg-yellow-bg px-1.5 py-0.5 text-[9px] font-bold text-yellow">
+                <span className="inline-flex items-center gap-1 rounded-md bg-yellow-bg px-1.5 py-0.5 text-[11px] font-bold text-yellow">
                   <CalendarIcon className="h-2.5 w-2.5" />
                   {m.dueToday} today
                 </span>
               )}
               {m.dueThisWeek > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-md bg-blue-bg px-1.5 py-0.5 text-[9px] font-bold text-blue">
+                <span className="inline-flex items-center gap-1 rounded-md bg-blue-bg px-1.5 py-0.5 text-[11px] font-bold text-blue">
                   <ClockIcon className="h-2.5 w-2.5" />
                   {m.dueThisWeek} this week
                 </span>
               )}
               {m.highPriorityCount > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-md bg-red-bg px-1.5 py-0.5 text-[9px] font-bold text-red">
+                <span className="inline-flex items-center gap-1 rounded-md bg-red-bg px-1.5 py-0.5 text-[11px] font-bold text-red">
                   <ExclamationTriangleIcon className="h-2.5 w-2.5" />
                   {m.highPriorityCount} high
                 </span>
@@ -288,7 +288,7 @@ export function ProjectKPICard({ metrics, onDelete }: ProjectKPICardProps) {
               <TeamAvatars metrics={m} />
             </div>
             {/* Mobile: minimal footer */}
-            <span className="sm:hidden text-[9px] font-medium text-muted">{m.totalTasks} tasks</span>
+            <span className="sm:hidden text-[11px] font-medium text-muted">{m.totalTasks} tasks</span>
             <div className="flex items-center gap-1">
               {onDelete && (
                 <button
@@ -328,13 +328,13 @@ export function ProjectListRow({ metrics, onDelete }: ProjectKPICardProps) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <div className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: m.project.color }} />
-            <h3 className="truncate text-[13px] font-bold text-text">{m.project.name}</h3>
+            <h3 className="truncate text-sm font-bold text-text">{m.project.name}</h3>
             <Badge variant={getStatusBadgeVariant(m.project.status)} className="hidden sm:inline-flex">
               {m.project.status}
             </Badge>
             {m.health === 'red' && <Badge variant="danger" className="hidden sm:inline-flex">At Risk</Badge>}
           </div>
-          <p className="mt-0.5 text-[11px] text-muted">
+          <p className="mt-0.5 text-xs text-muted">
             {m.totalTasks} tasks · Updated {m.lastActivityRelative}
           </p>
         </div>
@@ -349,16 +349,16 @@ export function ProjectListRow({ metrics, onDelete }: ProjectKPICardProps) {
               transition={{ duration: 0.75, ease: [0.4, 0, 0.2, 1] }}
             />
           </div>
-          <span className="text-[10px] font-semibold tabular-nums text-muted">{m.progressPercent}%</span>
+          <span className="text-xs font-semibold tabular-nums text-muted">{m.progressPercent}%</span>
         </div>
 
         {/* Overdue */}
-        <span className={cn('hidden w-12 text-center text-[12px] font-bold tabular-nums sm:block', m.overdueTasks > 0 ? 'text-red' : 'text-muted')}>
+        <span className={cn('hidden w-12 text-center text-[13px] font-bold tabular-nums sm:block', m.overdueTasks > 0 ? 'text-red' : 'text-muted')}>
           {m.overdueTasks}
         </span>
 
         {/* This week */}
-        <span className={cn('hidden w-12 text-center text-[12px] font-bold tabular-nums md:block', m.dueThisWeek > 0 ? 'text-yellow' : 'text-muted')}>
+        <span className={cn('hidden w-12 text-center text-[13px] font-bold tabular-nums md:block', m.dueThisWeek > 0 ? 'text-yellow' : 'text-muted')}>
           {m.dueThisWeek}
         </span>
 

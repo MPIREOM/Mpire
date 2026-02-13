@@ -255,13 +255,13 @@ export function KPICards({ kpi, onTogglePeriod }: KPICardsProps) {
               {/* Value + optional ring */}
               <div className="flex items-end justify-between gap-2">
                 <div className="min-w-0">
-                  <p className={cn('text-2xl font-bold tracking-tight', card.color)}>
+                  <p className={cn('text-3xl font-bold tracking-tight', card.color)}>
                     <AnimatedNumber
                       value={card.value}
                       suffix={card.format === 'percent' ? '%' : ''}
                     />
                   </p>
-                  <p className="mt-0.5 text-[11px] font-medium text-muted">{card.label}</p>
+                  <p className="mt-0.5 text-[13px] font-medium text-muted">{card.label}</p>
                 </div>
 
                 {isCompletion && (

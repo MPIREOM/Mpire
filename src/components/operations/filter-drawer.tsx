@@ -60,7 +60,7 @@ function FilterChip({
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
       className={cn(
-        'rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-all duration-200',
+        'rounded-lg border px-3 py-1.5 text-[13px] font-medium transition-all duration-200',
         active
           ? 'border-accent bg-accent-muted text-accent shadow-sm'
           : 'border-border text-muted hover:border-border-hover hover:text-text'
@@ -119,7 +119,7 @@ export function FilterDrawer({
                 <div className="rounded-lg bg-accent-muted p-1.5">
                   <FunnelIcon className="h-4 w-4 text-accent" />
                 </div>
-                <DialogTitle className="text-[15px] font-bold text-text">
+                <DialogTitle className="text-base font-bold text-text">
                   Filters
                 </DialogTitle>
                 {activeCount > 0 && (
@@ -138,7 +138,7 @@ export function FilterDrawer({
             <div className="flex-1 space-y-6 overflow-y-auto p-5">
               {/* Due Date */}
               <fieldset>
-                <legend className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
+                <legend className="mb-2.5 text-xs font-semibold uppercase tracking-wide text-muted">
                   Due Date
                 </legend>
                 <div className="flex flex-wrap gap-2">
@@ -155,7 +155,7 @@ export function FilterDrawer({
 
               {/* Status */}
               <fieldset>
-                <legend className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
+                <legend className="mb-2.5 text-xs font-semibold uppercase tracking-wide text-muted">
                   Status
                 </legend>
                 <div className="flex flex-wrap gap-2">
@@ -172,7 +172,7 @@ export function FilterDrawer({
 
               {/* Priority */}
               <fieldset>
-                <legend className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
+                <legend className="mb-2.5 text-xs font-semibold uppercase tracking-wide text-muted">
                   Priority
                 </legend>
                 <div className="flex flex-wrap gap-2">
@@ -189,7 +189,7 @@ export function FilterDrawer({
 
               {/* Project */}
               <fieldset>
-                <legend className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
+                <legend className="mb-2.5 text-xs font-semibold uppercase tracking-wide text-muted">
                   Project
                 </legend>
                 <div className="flex flex-wrap gap-2">
@@ -207,7 +207,7 @@ export function FilterDrawer({
               {/* Assignee */}
               {team.length > 0 && (
                 <fieldset>
-                  <legend className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
+                  <legend className="mb-2.5 text-xs font-semibold uppercase tracking-wide text-muted">
                     Assignee
                   </legend>
                   <div className="flex flex-wrap gap-2">
