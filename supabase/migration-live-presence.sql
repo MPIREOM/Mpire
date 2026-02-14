@@ -41,6 +41,9 @@ create policy "Users can delete own sessions"
 -- 2. Add last_seen_at to users table for quick presence check
 alter table public.users add column if not exists last_seen_at timestamptz;
 
--- 3. Enable realtime for projects and user_sessions
-alter publication supabase_realtime add table public.projects;
-alter publication supabase_realtime add table public.user_sessions;
+-- 3. Enable realtime for user_sessions (projects already added in schema.sql)
+-- Use IF NOT EXISTS pattern via DO block to avoid duplicate errors
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.user_sessions;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;

@@ -313,9 +313,12 @@ create policy "Users can log task activity"
   );
 
 -- ============================================================
--- ENABLE REALTIME for tasks
+-- ENABLE REALTIME
 -- ============================================================
 alter publication supabase_realtime add table public.tasks;
 alter publication supabase_realtime add table public.task_assignees;
 alter publication supabase_realtime add table public.projects;
 alter publication supabase_realtime add table public.user_sessions;
+alter publication supabase_realtime add table public.task_comments;
+alter publication supabase_realtime add table public.task_activity;
+alter publication supabase_realtime add table public.users;

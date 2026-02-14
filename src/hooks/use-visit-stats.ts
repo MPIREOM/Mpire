@@ -2,7 +2,6 @@
 
 import useSWR from 'swr';
 import { createClient } from '@/lib/supabase/client';
-import type { UserSession } from '@/types/database';
 
 const supabase = createClient();
 

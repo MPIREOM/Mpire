@@ -96,6 +96,27 @@ export function TaskDetailDrawer({
     }
   }, [task, loadDetails]);
 
+  // Realtime subscription for live comments and activity updates
+  useEffect(() => {
+    if (!task) return;
+
+    const channel = supabase
+      .channel(`task-detail-${task.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'task_comments', filter: `task_id=eq.${task.id}` },
+        () => { loadDetails(); }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'task_activity', filter: `task_id=eq.${task.id}` },
+        () => { loadDetails(); }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [task?.id, loadDetails]); // eslint-disable-line react-hooks/exhaustive-deps
+
   async function handleAddComment() {
     if (!task || !newComment.trim()) return;
     setSending(true);

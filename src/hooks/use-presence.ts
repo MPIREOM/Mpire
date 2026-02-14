@@ -27,6 +27,8 @@ export function usePresence(currentUser: User | null) {
   const sessionIdRef = useRef<string | null>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const pathnameRef = useRef(pathname);
+  pathnameRef.current = pathname; // keep ref fresh for heartbeat closure
 
   // Always include current user as online — merge with channel presence
   const onlineUsers = useMemo(() => {
@@ -76,7 +78,7 @@ export function usePresence(currentUser: User | null) {
       if (sessionIdRef.current) {
         await supabase
           .from('user_sessions')
-          .update({ last_seen_at: new Date().toISOString(), page: pathname })
+          .update({ last_seen_at: new Date().toISOString(), page: pathnameRef.current })
           .eq('id', sessionIdRef.current);
       }
       await supabase
@@ -85,7 +87,22 @@ export function usePresence(currentUser: User | null) {
         .eq('id', currentUser.id);
     }, 30000);
 
+    // Best-effort cleanup on browser/tab close (won't fire reliably but helps)
+    const handleBeforeUnload = () => {
+      if (sessionIdRef.current) {
+        // navigator.sendBeacon isn't available for Supabase client,
+        // so fire-and-forget the delete via fetch
+        supabase
+          .from('user_sessions')
+          .delete()
+          .eq('id', sessionIdRef.current)
+          .then();
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
     return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
       clearInterval(heartbeatRef.current);
       // Clean up session on unmount
       if (sessionIdRef.current) {
@@ -113,7 +130,8 @@ export function usePresence(currentUser: User | null) {
   useEffect(() => {
     if (!currentUser) return;
 
-    const channel = supabase.channel('online-users', {
+    // Scope presence channel to company to prevent cross-company data leaks
+    const channel = supabase.channel(`online-users-${currentUser.company_id}`, {
       config: { presence: { key: currentUser.id } },
     });
     channelRef.current = channel;
