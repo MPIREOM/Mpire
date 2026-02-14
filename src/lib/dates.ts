@@ -1,4 +1,4 @@
-import { format, isToday, isTomorrow, isPast, startOfDay, isThisWeek, parseISO } from 'date-fns';
+import { isToday, isTomorrow, isPast, startOfDay, isThisWeek, parseISO, format } from 'date-fns';
 
 export function formatDate(date: string | null): string {
   if (!date) return '—';
@@ -21,8 +21,4 @@ export function isDueToday(dueDate: string | null): boolean {
 export function isDueThisWeek(dueDate: string | null): boolean {
   if (!dueDate) return false;
   return isThisWeek(parseISO(dueDate), { weekStartsOn: 0 });
-}
-
-export function todayISO(): string {
-  return format(new Date(), 'yyyy-MM-dd');
 }

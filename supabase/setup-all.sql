@@ -50,7 +50,7 @@ create table if not exists public.tasks (
   project_id uuid not null references public.projects(id) on delete cascade,
   title text not null,
   description text,
-  status text not null default 'todo' check (status in ('todo', 'in_progress', 'done', 'blocked')),
+  status text not null default 'todo' check (status in ('backlog', 'todo', 'in_progress', 'done', 'blocked')),
   priority text not null default 'medium' check (priority in ('high', 'medium', 'low')),
   due_date date,
   assignee_id uuid references public.users(id) on delete set null,
@@ -64,6 +64,15 @@ create index if not exists idx_tasks_due_date on public.tasks(due_date);
 create index if not exists idx_tasks_assignee on public.tasks(assignee_id);
 create index if not exists idx_tasks_status on public.tasks(status);
 create index if not exists idx_tasks_priority on public.tasks(priority);
+
+-- 5b. Task Assignees (many-to-many junction)
+create table if not exists public.task_assignees (
+  task_id uuid not null references public.tasks(id) on delete cascade,
+  user_id uuid not null references public.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (task_id, user_id)
+);
+create index if not exists idx_task_assignees_user on public.task_assignees(user_id);
 
 -- 6. Task Comments
 create table if not exists public.task_comments (
@@ -106,6 +115,7 @@ alter table public.business_units enable row level security;
 alter table public.users enable row level security;
 alter table public.projects enable row level security;
 alter table public.tasks enable row level security;
+alter table public.task_assignees enable row level security;
 alter table public.task_comments enable row level security;
 alter table public.task_activity enable row level security;
 
@@ -145,16 +155,26 @@ do $$ begin
     create policy "Managers can delete projects" on public.projects for delete using (company_id = public.get_my_company_id() and public.get_my_role() in ('owner', 'manager'));
   end if;
   if not exists (select 1 from pg_policies where policyname = 'Staff read assigned tasks') then
-    create policy "Staff read assigned tasks" on public.tasks for select using (exists (select 1 from public.projects p where p.id = tasks.project_id and p.company_id = public.get_my_company_id()) and (public.get_my_role() in ('owner', 'manager') or assignee_id = auth.uid()));
+    create policy "Staff read assigned tasks" on public.tasks for select using (exists (select 1 from public.projects p where p.id = tasks.project_id and p.company_id = public.get_my_company_id()) and (public.get_my_role() in ('owner', 'manager') or assignee_id = auth.uid() or exists (select 1 from public.task_assignees ta where ta.task_id = tasks.id and ta.user_id = auth.uid())));
   end if;
   if not exists (select 1 from pg_policies where policyname = 'Managers can insert tasks') then
     create policy "Managers can insert tasks" on public.tasks for insert with check (exists (select 1 from public.projects p where p.id = tasks.project_id and p.company_id = public.get_my_company_id()) and public.get_my_role() in ('owner', 'manager'));
   end if;
   if not exists (select 1 from pg_policies where policyname = 'Staff can update own task status') then
-    create policy "Staff can update own task status" on public.tasks for update using (exists (select 1 from public.projects p where p.id = tasks.project_id and p.company_id = public.get_my_company_id()) and (public.get_my_role() in ('owner', 'manager') or assignee_id = auth.uid()));
+    create policy "Staff can update own task status" on public.tasks for update using (exists (select 1 from public.projects p where p.id = tasks.project_id and p.company_id = public.get_my_company_id()) and (public.get_my_role() in ('owner', 'manager') or assignee_id = auth.uid() or exists (select 1 from public.task_assignees ta where ta.task_id = tasks.id and ta.user_id = auth.uid())));
   end if;
   if not exists (select 1 from pg_policies where policyname = 'Managers can delete tasks') then
     create policy "Managers can delete tasks" on public.tasks for delete using (exists (select 1 from public.projects p where p.id = tasks.project_id and p.company_id = public.get_my_company_id()) and public.get_my_role() in ('owner', 'manager'));
+  end if;
+  -- Task assignees RLS
+  if not exists (select 1 from pg_policies where policyname = 'Users can read task assignees') then
+    create policy "Users can read task assignees" on public.task_assignees for select using (exists (select 1 from public.tasks t join public.projects p on p.id = t.project_id where t.id = task_assignees.task_id and p.company_id = public.get_my_company_id()));
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'Managers can insert task assignees') then
+    create policy "Managers can insert task assignees" on public.task_assignees for insert with check (public.get_my_role() in ('owner', 'manager'));
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'Managers can delete task assignees') then
+    create policy "Managers can delete task assignees" on public.task_assignees for delete using (public.get_my_role() in ('owner', 'manager'));
   end if;
   if not exists (select 1 from pg_policies where policyname = 'Users can read task comments') then
     create policy "Users can read task comments" on public.task_comments for select using (exists (select 1 from public.tasks t join public.projects p on p.id = t.project_id where t.id = task_comments.task_id and p.company_id = public.get_my_company_id() and (public.get_my_role() in ('owner', 'manager') or t.assignee_id = auth.uid())));
