@@ -203,12 +203,22 @@ export function TaskTable({
   }
 
   async function bulkUpdateStatus(status: TaskStatus) {
-    await Promise.all(Array.from(selectedIds).map((id) => onUpdateTask(id, { status })));
+    if (status === 'done' && onCompleteTask) {
+      // Use completeTask so activity is logged properly (skip time review for bulk)
+      await Promise.all(Array.from(selectedIds).map((id) => onCompleteTask(id, currentUser.id, [])));
+    } else {
+      await Promise.all(Array.from(selectedIds).map((id) => onUpdateTask(id, { status })));
+    }
     setSelectedIds(new Set());
   }
 
   async function bulkUpdateAssignee(assigneeId: string | null) {
-    await Promise.all(Array.from(selectedIds).map((id) => onUpdateTask(id, { assignee_id: assigneeId })));
+    if (onSetAssignees) {
+      // Use junction table for multi-assignee support
+      await Promise.all(Array.from(selectedIds).map((id) => onSetAssignees(id, assigneeId ? [assigneeId] : [])));
+    } else {
+      await Promise.all(Array.from(selectedIds).map((id) => onUpdateTask(id, { assignee_id: assigneeId })));
+    }
     setSelectedIds(new Set());
   }
 

@@ -1,6 +1,7 @@
 'use client';
 
 import useSWR from 'swr';
+import { useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { FinanceRecord, FinanceUpload } from '@/types/database';
 
@@ -30,6 +31,20 @@ export function useFinanceRecords(projectId?: string) {
       dedupingInterval: 30000,
     }
   );
+
+  // Realtime subscription for live finance record updates
+  useEffect(() => {
+    const channel = supabase
+      .channel(`finance-records-realtime-${key}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'finance_records' },
+        () => { mutate(); }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [key, mutate]);
 
   return {
     records: data ?? [],
@@ -63,6 +78,20 @@ export function useFinanceUploads(projectId?: string) {
       dedupingInterval: 30000,
     }
   );
+
+  // Realtime subscription for live finance upload updates
+  useEffect(() => {
+    const channel = supabase
+      .channel(`finance-uploads-realtime-${key}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'finance_uploads' },
+        () => { mutate(); }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [key, mutate]);
 
   return {
     uploads: data ?? [],
