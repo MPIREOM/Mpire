@@ -1,6 +1,7 @@
 'use client';
 
 import useSWR from 'swr';
+import { useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@/types/database';
 
@@ -23,6 +24,20 @@ export function useTeam() {
       dedupingInterval: 60000,
     }
   );
+
+  // Realtime subscription — live updates when users are added/edited/removed
+  useEffect(() => {
+    const channel = supabase
+      .channel('team-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'users' },
+        () => { mutate(); }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [mutate]);
 
   return {
     team: data ?? [],

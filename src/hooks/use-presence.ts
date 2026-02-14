@@ -87,7 +87,22 @@ export function usePresence(currentUser: User | null) {
         .eq('id', currentUser.id);
     }, 30000);
 
+    // Best-effort cleanup on browser/tab close (won't fire reliably but helps)
+    const handleBeforeUnload = () => {
+      if (sessionIdRef.current) {
+        // navigator.sendBeacon isn't available for Supabase client,
+        // so fire-and-forget the delete via fetch
+        supabase
+          .from('user_sessions')
+          .delete()
+          .eq('id', sessionIdRef.current)
+          .then();
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
     return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
       clearInterval(heartbeatRef.current);
       // Clean up session on unmount
       if (sessionIdRef.current) {
@@ -115,7 +130,8 @@ export function usePresence(currentUser: User | null) {
   useEffect(() => {
     if (!currentUser) return;
 
-    const channel = supabase.channel('online-users', {
+    // Scope presence channel to company to prevent cross-company data leaks
+    const channel = supabase.channel(`online-users-${currentUser.company_id}`, {
       config: { presence: { key: currentUser.id } },
     });
     channelRef.current = channel;
