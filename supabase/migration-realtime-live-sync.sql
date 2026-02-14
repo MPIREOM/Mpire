@@ -1,5 +1,5 @@
 -- ============================================================
--- MPIRE — Enable Realtime for Comments, Activity & Users
+-- MPIRE — Enable Realtime for Comments, Activity, Users & Finance
 -- Run this in Supabase SQL Editor to enable live updates
 -- ============================================================
 
@@ -18,5 +18,17 @@ END $$;
 -- Add users to realtime publication (live team updates)
 DO $$ BEGIN
   ALTER PUBLICATION supabase_realtime ADD TABLE public.users;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+-- Add finance_records to realtime publication (live finance data)
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.finance_records;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+-- Add finance_uploads to realtime publication (live upload tracking)
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.finance_uploads;
 EXCEPTION WHEN duplicate_object THEN null;
 END $$;
