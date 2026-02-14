@@ -2,19 +2,19 @@
 -- Run this in Supabase SQL Editor before deploying.
 -- This allows deleting tasks/projects without manual child cleanup.
 
--- task_comments → tasks
+-- task_comments -> tasks
 ALTER TABLE task_comments
   DROP CONSTRAINT IF EXISTS task_comments_task_id_fkey,
   ADD CONSTRAINT task_comments_task_id_fkey
     FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE;
 
--- task_activity → tasks
+-- task_activity -> tasks
 ALTER TABLE task_activity
   DROP CONSTRAINT IF EXISTS task_activity_task_id_fkey,
   ADD CONSTRAINT task_activity_task_id_fkey
     FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE;
 
--- tasks → projects
+-- tasks -> projects
 ALTER TABLE tasks
   DROP CONSTRAINT IF EXISTS tasks_project_id_fkey,
   ADD CONSTRAINT tasks_project_id_fkey

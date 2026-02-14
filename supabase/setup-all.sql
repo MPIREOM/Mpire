@@ -1,5 +1,5 @@
 -- ============================================================
--- MPIRE FULL SETUP (schema + seed) — paste into SQL Editor & run
+-- MPIRE FULL SETUP (schema + seed) - paste into SQL Editor & run
 -- ============================================================
 
 -- 1. Companies
@@ -229,7 +229,7 @@ insert into public.projects (id, company_id, business_unit_id, name, status, col
   (gen_random_uuid(), v_company_id, v_bu_ops, 'Daily Operations', 'active', '#f59e0b')
   returning id into v_proj_ops;
 
--- Tasks — Website Redesign
+-- Tasks - Website Redesign
 insert into public.tasks (project_id, title, description, status, priority, due_date, assignee_id, created_by) values
   (v_proj_website, 'Design landing page mockups', 'Create high-fidelity mockups for the new landing page', 'in_progress', 'high', current_date, v_owner_id, v_owner_id),
   (v_proj_website, 'Implement auth flow', 'Set up Supabase Auth with email/password and OAuth', 'todo', 'high', current_date + 1, v_owner_id, v_owner_id),
@@ -238,14 +238,14 @@ insert into public.tasks (project_id, title, description, status, priority, due_
   (v_proj_website, 'Optimize page load speed', 'Target LCP under 2.5s', 'todo', 'low', current_date + 7, v_owner_id, v_owner_id),
   (v_proj_website, 'Fix mobile nav bug', 'Hamburger menu not closing on route change', 'todo', 'high', current_date - 1, v_owner_id, v_owner_id);
 
--- Tasks — Mobile App
+-- Tasks - Mobile App
 insert into public.tasks (project_id, title, description, status, priority, due_date, assignee_id, created_by) values
   (v_proj_mobile, 'Set up React Native project', 'Initialize with Expo and configure TypeScript', 'done', 'high', current_date - 5, v_owner_id, v_owner_id),
   (v_proj_mobile, 'Build onboarding screens', 'Three-step onboarding with illustrations', 'in_progress', 'medium', current_date + 2, v_owner_id, v_owner_id),
   (v_proj_mobile, 'Integrate push notifications', 'Firebase Cloud Messaging setup', 'todo', 'medium', current_date + 5, v_owner_id, v_owner_id),
   (v_proj_mobile, 'Design app icon and splash', 'Final assets for App Store and Play Store', 'todo', 'low', current_date + 10, v_owner_id, v_owner_id);
 
--- Tasks — Daily Operations
+-- Tasks - Daily Operations
 insert into public.tasks (project_id, title, description, status, priority, due_date, assignee_id, created_by) values
   (v_proj_ops, 'Review weekly financials', 'Check P&L and cash position', 'todo', 'high', current_date, v_owner_id, v_owner_id),
   (v_proj_ops, 'Team standup prep', 'Prepare agenda for Monday standup', 'todo', 'medium', current_date, v_owner_id, v_owner_id),

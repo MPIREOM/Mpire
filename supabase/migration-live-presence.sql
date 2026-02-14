@@ -1,8 +1,8 @@
 -- ============================================================
--- MPIRE — Live Presence & Session Tracking Migration
+-- MPIRE - Live Presence & Session Tracking Migration
 -- ============================================================
 
--- 1. User Sessions — tracks each time a user enters the app
+-- 1. User Sessions - tracks each time a user enters the app
 create table if not exists public.user_sessions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.users(id) on delete cascade,

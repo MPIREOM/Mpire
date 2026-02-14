@@ -1,5 +1,5 @@
 -- ============================================================
--- MPIRE — Enable Realtime for Comments, Activity, Users & Finance
+-- MPIRE - Enable Realtime for Comments, Activity, Users & Finance
 -- Run this in Supabase SQL Editor to enable live updates
 -- ============================================================
 

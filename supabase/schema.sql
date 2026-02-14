@@ -1,5 +1,5 @@
 -- ============================================================
--- MPIRE Command Center — Supabase Schema
+-- MPIRE Command Center - Supabase Schema
 -- ============================================================
 
 -- 1. Companies
@@ -320,7 +320,7 @@ create policy "Users can log task activity"
   );
 
 -- ============================================================
--- ENABLE REALTIME (idempotent — safe to re-run)
+-- ENABLE REALTIME (idempotent - safe to re-run)
 -- ============================================================
 DO $$ BEGIN
   ALTER PUBLICATION supabase_realtime ADD TABLE public.tasks;

@@ -1,12 +1,12 @@
 -- ============================================================
--- MPIRE — Fix task_assignees RLS to scope by company
+-- MPIRE - Fix task_assignees RLS to scope by company
 -- Run this in Supabase SQL Editor to close cross-company leak
 -- ============================================================
 
 -- Drop the old permissive policy
 DROP POLICY IF EXISTS "Users can read task assignees" ON public.task_assignees;
 
--- Recreate with company scoping via project → company join
+-- Recreate with company scoping via project -> company join
 CREATE POLICY "Users can read task assignees"
   ON public.task_assignees FOR SELECT
   USING (

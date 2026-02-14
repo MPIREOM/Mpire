@@ -1,5 +1,5 @@
 -- ============================================================
--- MPIRE — Add Backlog Status Migration
+-- MPIRE - Add Backlog Status Migration
 -- ============================================================
 
 -- Update the check constraint on tasks.status to include 'backlog'
