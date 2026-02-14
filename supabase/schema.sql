@@ -241,11 +241,18 @@ create policy "Managers can delete tasks"
     and public.get_my_role() in ('owner', 'manager')
   );
 
--- TASK ASSIGNEES: managers can manage, anyone can read own
+-- TASK ASSIGNEES: managers can manage, company users can read
 alter table public.task_assignees enable row level security;
 create policy "Users can read task assignees"
   on public.task_assignees for select
-  using (true);
+  using (
+    exists (
+      select 1 from public.tasks t
+      join public.projects p on p.id = t.project_id
+      where t.id = task_assignees.task_id
+        and p.company_id = public.get_my_company_id()
+    )
+  );
 
 create policy "Managers can insert task assignees"
   on public.task_assignees for insert
@@ -313,12 +320,33 @@ create policy "Users can log task activity"
   );
 
 -- ============================================================
--- ENABLE REALTIME
+-- ENABLE REALTIME (idempotent — safe to re-run)
 -- ============================================================
-alter publication supabase_realtime add table public.tasks;
-alter publication supabase_realtime add table public.task_assignees;
-alter publication supabase_realtime add table public.projects;
-alter publication supabase_realtime add table public.user_sessions;
-alter publication supabase_realtime add table public.task_comments;
-alter publication supabase_realtime add table public.task_activity;
-alter publication supabase_realtime add table public.users;
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.tasks;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.task_assignees;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.projects;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.user_sessions;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.task_comments;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.task_activity;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.users;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;

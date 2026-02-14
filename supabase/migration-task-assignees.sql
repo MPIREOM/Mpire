@@ -21,7 +21,14 @@ alter table public.task_assignees enable row level security;
 
 create policy "Users can read task assignees"
   on public.task_assignees for select
-  using (true);
+  using (
+    exists (
+      select 1 from public.tasks t
+      join public.projects p on p.id = t.project_id
+      where t.id = task_assignees.task_id
+        and p.company_id = public.get_my_company_id()
+    )
+  );
 
 create policy "Managers can insert task assignees"
   on public.task_assignees for insert
