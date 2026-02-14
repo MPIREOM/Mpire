@@ -15,12 +15,25 @@ import {
 import { Shell } from '@/components/layout/shell';
 import { useFinanceRecords, useFinanceUploads } from '@/hooks/use-finance';
 import { useProjects } from '@/hooks/use-projects';
+import { useUser } from '@/hooks/use-user';
+import { canAccessFinance } from '@/lib/roles';
 import { differenceInDays } from 'date-fns';
 
 export default function FinancePage() {
+  const { user } = useUser();
   const { records, isLoading } = useFinanceRecords();
   const { uploads } = useFinanceUploads();
   const { projects } = useProjects();
+
+  if (!user || !canAccessFinance(user.role)) {
+    return (
+      <Shell title="Finance" subtitle="Access denied">
+        <div className="flex h-64 flex-col items-center justify-center gap-2">
+          <p className="text-sm font-medium text-muted">You don&apos;t have access to finance data.</p>
+        </div>
+      </Shell>
+    );
+  }
 
   const summary = useMemo(() => {
     const now = new Date();
