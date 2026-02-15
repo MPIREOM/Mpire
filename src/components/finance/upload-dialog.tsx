@@ -3,7 +3,6 @@
 import React, { useState, useCallback } from 'react';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { XMarkIcon, ArrowUpTrayIcon } from '@heroicons/react/24/outline';
-import { clsx } from 'clsx';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
@@ -27,7 +26,87 @@ interface ColumnMapping {
   amount: string;
 }
 
+type CellValue = string | number | boolean | Date | null | undefined;
+
 const REQUIRED_FIELDS = ['month', 'category', 'amount'] as const;
+
+// Patterns that identify a likely header row
+const HEADER_PATTERNS = [
+  /month|date|period/i,
+  /category|type|item|description/i,
+  /amount|total|value|cost|revenue|expense/i,
+];
+
+/** Scan the first 20 rows and return the index of the most likely header row. */
+function detectHeaderRow(rows: CellValue[][]): number {
+  // First pass: find a row where 2+ cells match known header keywords
+  for (let i = 0; i < Math.min(rows.length, 20); i++) {
+    const row = rows[i];
+    if (!row || row.length < 2) continue;
+    const strings = row.filter((c): c is string => typeof c === 'string' && c.trim().length > 0);
+    if (strings.length < 2) continue;
+    const matches = HEADER_PATTERNS.filter((p) => strings.some((c) => p.test(c)));
+    if (matches.length >= 2) return i;
+  }
+  // Second pass: first row with 3+ non-empty string cells (likely a header)
+  for (let i = 0; i < Math.min(rows.length, 20); i++) {
+    const row = rows[i];
+    if (!row) continue;
+    const strings = row.filter((c): c is string => typeof c === 'string' && c.trim().length > 0);
+    if (strings.length >= 3) return i;
+  }
+  return 0;
+}
+
+/** Build headers + data rows from the raw 2D array given a header row index. */
+function deriveData(rawRows: CellValue[][], headerIdx: number) {
+  const headerRow = rawRows[headerIdx] ?? [];
+  const headers: string[] = headerRow.map((cell, i) => {
+    const val = (cell == null ? '' : String(cell)).trim();
+    return val || `Column ${i + 1}`;
+  });
+
+  const rows: Record<string, string | number | Date>[] = [];
+  for (let i = headerIdx + 1; i < rawRows.length; i++) {
+    const row = rawRows[i];
+    if (!row || row.every((c) => c == null || String(c).trim() === '')) continue;
+    const obj: Record<string, string | number | Date> = {};
+    for (let j = 0; j < headers.length; j++) {
+      const val = row[j];
+      if (val instanceof Date) obj[headers[j]] = val;
+      else if (typeof val === 'number') obj[headers[j]] = val;
+      else obj[headers[j]] = val == null ? '' : String(val);
+    }
+    rows.push(obj);
+  }
+
+  return { headers, rows };
+}
+
+/** Auto-detect column mapping from header names. */
+function autoDetectMapping(headers: string[]): ColumnMapping {
+  const m: ColumnMapping = { month: '', category: '', amount: '' };
+  for (const h of headers) {
+    const lower = h.toLowerCase();
+    if (!m.month && (lower.includes('month') || lower.includes('date') || lower.includes('period')))
+      m.month = h;
+    else if (!m.category && (lower.includes('category') || lower.includes('type') || lower.includes('item') || lower.includes('description')))
+      m.category = h;
+    else if (!m.amount && (lower.includes('amount') || lower.includes('total') || lower.includes('value') || lower.includes('cost')))
+      m.amount = h;
+  }
+  return m;
+}
+
+/** Summarise a raw row for display in the header-row picker (first 3 non-empty cells). */
+function rowPreview(row: CellValue[] | undefined): string {
+  if (!row) return '(empty)';
+  const cells = row
+    .filter((c) => c != null && String(c).trim() !== '')
+    .slice(0, 3)
+    .map((c) => (c instanceof Date ? c.toLocaleDateString() : String(c).slice(0, 24)));
+  return cells.length ? cells.join(' | ') : '(empty)';
+}
 
 export function UploadDialog({ open, onClose, businessId, onUploaded }: UploadDialogProps) {
   const [step, setStep] = useState<'upload' | 'map' | 'preview'>('upload');
@@ -36,13 +115,28 @@ export function UploadDialog({ open, onClose, businessId, onUploaded }: UploadDi
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  // Raw 2D array from the sheet + which row is the header
+  const [rawRows, setRawRows] = useState<CellValue[][]>([]);
+  const [headerRowIdx, setHeaderRowIdx] = useState(0);
+  const [fileName, setFileName] = useState('');
+
   const reset = useCallback(() => {
     setStep('upload');
     setParsed(null);
     setMapping({ month: '', category: '', amount: '' });
     setError('');
     setSaving(false);
+    setRawRows([]);
+    setHeaderRowIdx(0);
+    setFileName('');
   }, []);
+
+  function applyHeaderRow(raw: CellValue[][], idx: number, name: string) {
+    const { headers, rows } = deriveData(raw, idx);
+    setParsed({ headers, rows, fileName: name });
+    setMapping(autoDetectMapping(headers));
+    setHeaderRowIdx(idx);
+  }
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -55,31 +149,29 @@ export function UploadDialog({ open, onClose, businessId, onUploaded }: UploadDi
         const data = evt.target?.result;
         const workbook = XLSX.read(data, { type: 'array', cellDates: true });
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const json = XLSX.utils.sheet_to_json<Record<string, string | number>>(sheet);
+        // Read as raw 2D array so we control which row is the header
+        const raw = XLSX.utils.sheet_to_json<CellValue[]>(sheet, { header: 1, defval: '' });
 
-        if (json.length === 0) {
-          setError('File is empty');
+        if (raw.length < 2) {
+          setError('File is empty or has no data rows');
           return;
         }
 
-        const headers = Object.keys(json[0]);
-        setParsed({ headers, rows: json, fileName: file.name });
+        setRawRows(raw);
+        setFileName(file.name);
 
-        // Auto-detect columns
-        const autoMapping: ColumnMapping = { month: '', category: '', amount: '' };
-        for (const h of headers) {
-          const lower = h.toLowerCase();
-          if (lower.includes('month') || lower.includes('date') || lower.includes('period')) autoMapping.month = h;
-          else if (lower.includes('category') || lower.includes('type') || lower.includes('item') || lower.includes('description')) autoMapping.category = h;
-          else if (lower.includes('amount') || lower.includes('total') || lower.includes('value') || lower.includes('cost')) autoMapping.amount = h;
-        }
-        setMapping(autoMapping);
+        const headerIdx = detectHeaderRow(raw);
+        applyHeaderRow(raw, headerIdx, file.name);
         setStep('map');
       } catch {
         setError('Failed to parse file. Please use a valid Excel or CSV file.');
       }
     };
     reader.readAsArrayBuffer(file);
+  }
+
+  function handleHeaderRowChange(idx: number) {
+    applyHeaderRow(rawRows, idx, fileName);
   }
 
   function handleMapNext() {
@@ -107,7 +199,6 @@ export function UploadDialog({ open, onClose, businessId, onUploaded }: UploadDi
         // Normalize month to YYYY-MM
         let month = '';
         if (rawMonth instanceof Date) {
-          // cellDates: true returns JS Date objects for date cells
           month = `${rawMonth.getFullYear()}-${String(rawMonth.getMonth() + 1).padStart(2, '0')}`;
         } else if (typeof rawMonth === 'number' && rawMonth > 1 && rawMonth < 2958466) {
           // Excel serial number fallback (days since 1900-01-01)
@@ -166,6 +257,9 @@ export function UploadDialog({ open, onClose, businessId, onUploaded }: UploadDi
       setSaving(false);
     }
   }
+
+  // How many rows to show in the header-row picker
+  const headerPickerLimit = Math.min(rawRows.length, 15);
 
   return (
     <Dialog
@@ -233,6 +327,31 @@ export function UploadDialog({ open, onClose, businessId, onUploaded }: UploadDi
             <div className="space-y-4">
               <p className="text-[13px] text-muted">
                 Found <strong>{parsed.rows.length}</strong> rows and <strong>{parsed.headers.length}</strong> columns in <strong>{parsed.fileName}</strong>.
+              </p>
+
+              {/* Header row selector */}
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">
+                  Header Row
+                </label>
+                <select
+                  value={headerRowIdx}
+                  onChange={(e) => handleHeaderRowChange(Number(e.target.value))}
+                  className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
+                >
+                  {Array.from({ length: headerPickerLimit }, (_, i) => (
+                    <option key={i} value={i}>
+                      Row {i + 1}: {rowPreview(rawRows[i])}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-[11px] text-muted">
+                  Pick the row that contains your column headers. Data is read from the next row down.
+                </p>
+              </div>
+
+              {/* Column mapping dropdowns */}
+              <p className="text-[13px] text-muted">
                 Map your columns to the required fields:
               </p>
 
