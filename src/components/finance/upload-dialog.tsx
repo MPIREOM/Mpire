@@ -17,7 +17,7 @@ interface UploadDialogProps {
 
 interface ParsedData {
   headers: string[];
-  rows: Record<string, string | number>[];
+  rows: Record<string, string | number | Date>[];
   fileName: string;
 }
 
@@ -53,7 +53,7 @@ export function UploadDialog({ open, onClose, businessId, onUploaded }: UploadDi
     reader.onload = (evt) => {
       try {
         const data = evt.target?.result;
-        const workbook = XLSX.read(data, { type: 'array' });
+        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const json = XLSX.utils.sheet_to_json<Record<string, string | number>>(sheet);
 
@@ -96,18 +96,34 @@ export function UploadDialog({ open, onClose, businessId, onUploaded }: UploadDi
     if (!parsed) return [];
     return parsed.rows
       .map((row) => {
-        const monthRaw = String(row[mapping.month] ?? '');
+        const rawMonth = row[mapping.month];
         const category = String(row[mapping.category] ?? '').trim();
-        const amount = Number(row[mapping.amount]) || 0;
+
+        // Parse amount — strip currency symbols, commas, spaces before converting
+        const rawAmount = row[mapping.amount];
+        const amount = typeof rawAmount === 'number' ? rawAmount
+          : Number(String(rawAmount).replace(/[^0-9.\-]/g, '')) || 0;
 
         // Normalize month to YYYY-MM
-        let month = monthRaw;
-        if (/^\d{4}-\d{2}$/.test(monthRaw)) {
-          month = monthRaw;
-        } else {
-          const d = new Date(monthRaw);
+        let month = '';
+        if (rawMonth instanceof Date) {
+          // cellDates: true returns JS Date objects for date cells
+          month = `${rawMonth.getFullYear()}-${String(rawMonth.getMonth() + 1).padStart(2, '0')}`;
+        } else if (typeof rawMonth === 'number' && rawMonth > 1 && rawMonth < 2958466) {
+          // Excel serial number fallback (days since 1900-01-01)
+          const d = new Date((rawMonth - 25569) * 86400 * 1000);
           if (!isNaN(d.getTime())) {
             month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          }
+        } else {
+          const monthRaw = String(rawMonth ?? '');
+          if (/^\d{4}-\d{2}$/.test(monthRaw)) {
+            month = monthRaw;
+          } else {
+            const d = new Date(monthRaw);
+            if (!isNaN(d.getTime())) {
+              month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            }
           }
         }
 
