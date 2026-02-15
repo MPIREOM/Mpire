@@ -26,6 +26,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate Supabase URL is configured
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!supabaseUrl) {
+      console.error('POST /api/users: NEXT_PUBLIC_SUPABASE_URL is not set');
+      return NextResponse.json(
+        { error: 'Server configuration error — NEXT_PUBLIC_SUPABASE_URL is missing' },
+        { status: 500 }
+      );
+    }
+
     const supabase = await createServerSupabase();
     const {
       data: { user: authUser },
@@ -33,17 +43,26 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (getUserError || !authUser) {
+      console.error('POST /api/users: auth.getUser failed:', getUserError?.message ?? 'no user');
       return NextResponse.json(
         { error: 'Session expired — please log in again' },
         { status: 401 }
       );
     }
 
-    const { data: caller } = await supabase
+    const { data: caller, error: callerError } = await supabase
       .from('users')
       .select('role, company_id')
       .eq('id', authUser.id)
       .single();
+
+    if (callerError) {
+      console.error('POST /api/users: caller profile lookup failed:', callerError.message);
+      return NextResponse.json(
+        { error: 'Could not verify your permissions — your profile may be missing from the users table' },
+        { status: 403 }
+      );
+    }
 
     if (!caller || !['owner', 'manager'].includes(caller.role)) {
       return NextResponse.json(
@@ -55,14 +74,15 @@ export async function POST(request: NextRequest) {
     // Service role key from environment — NEVER commit this value
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!serviceRoleKey) {
+      console.error('POST /api/users: SUPABASE_SERVICE_ROLE_KEY is not set');
       return NextResponse.json(
-        { error: 'Server configuration error — SUPABASE_SERVICE_ROLE_KEY env var is missing' },
+        { error: 'Server configuration error — SUPABASE_SERVICE_ROLE_KEY is not set. Add it to your .env.local file.' },
         { status: 500 }
       );
     }
 
     const adminClient = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      supabaseUrl,
       serviceRoleKey,
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
@@ -75,6 +95,7 @@ export async function POST(request: NextRequest) {
       });
 
     if (authError) {
+      console.error('POST /api/users: auth.admin.createUser failed:', authError.message);
       return NextResponse.json({ error: authError.message }, { status: 400 });
     }
 
@@ -89,15 +110,20 @@ export async function POST(request: NextRequest) {
       });
 
     if (profileError) {
+      console.error('POST /api/users: profile insert failed:', profileError.message, profileError.details, profileError.hint);
+      // Roll back the auth user since profile creation failed
       await adminClient.auth.admin.deleteUser(newAuthUser.user.id);
-      return NextResponse.json({ error: profileError.message }, { status: 400 });
+      return NextResponse.json(
+        { error: `Failed to create user profile: ${profileError.message}` },
+        { status: 400 }
+      );
     }
 
     return NextResponse.json({
       user: { id: newAuthUser.user.id, email, full_name, role },
     });
   } catch (err) {
-    console.error('POST /api/users error:', err);
+    console.error('POST /api/users unexpected error:', err);
     return NextResponse.json(
       { error: 'An unexpected error occurred' },
       { status: 500 }
