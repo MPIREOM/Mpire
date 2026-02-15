@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
-import { XMarkIcon, PlusIcon, PencilIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, PlusIcon, PencilIcon, KeyIcon } from '@heroicons/react/24/outline';
 import { Shell } from '@/components/layout/shell';
 import { useTeam } from '@/hooks/use-team';
 import { useUser } from '@/hooks/use-user';
@@ -39,6 +39,11 @@ export default function PeoplePage() {
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState('');
 
+  // Change password state (owner only)
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordMsg, setPasswordMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   const showManage = user && canManage(user.role);
   const ownerMode = user && isOwner(user.role);
 
@@ -49,6 +54,33 @@ export default function PeoplePage() {
       allowed_project_ids: u.allowed_project_ids ?? [],
     });
     setEditError('');
+    setNewPassword('');
+    setPasswordMsg(null);
+  }
+
+  async function handleChangePassword() {
+    if (!editUser || !newPassword) return;
+    setPasswordSaving(true);
+    setPasswordMsg(null);
+    try {
+      const res = await fetch('/api/users', {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: editUser.id, password: newPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPasswordMsg({ type: 'error', text: data.error || 'Failed to change password' });
+        return;
+      }
+      setPasswordMsg({ type: 'success', text: 'Password updated successfully' });
+      setNewPassword('');
+    } catch {
+      setPasswordMsg({ type: 'error', text: 'Network error — please try again' });
+    } finally {
+      setPasswordSaving(false);
+    }
   }
 
   async function handleEditSubmit(e: React.FormEvent) {
@@ -279,6 +311,37 @@ export default function PeoplePage() {
                 </button>
               </div>
             </form>
+
+            {/* Change Password Section */}
+            <div className="mt-5 border-t border-border pt-5">
+              <div className="flex items-center gap-2 mb-3">
+                <KeyIcon className="h-4 w-4 text-muted" />
+                <h3 className="text-sm font-bold text-text">Change Password</h3>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="New password (min 6 chars)"
+                  minLength={6}
+                  className="flex-1 rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
+                />
+                <button
+                  type="button"
+                  onClick={handleChangePassword}
+                  disabled={passwordSaving || newPassword.length < 6}
+                  className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-accent-light active:scale-95 disabled:opacity-50"
+                >
+                  {passwordSaving ? 'Updating...' : 'Update'}
+                </button>
+              </div>
+              {passwordMsg && (
+                <p className={`mt-2 text-[13px] font-medium ${passwordMsg.type === 'success' ? 'text-green' : 'text-red'}`}>
+                  {passwordMsg.text}
+                </p>
+              )}
+            </div>
           </DialogPanel>
         </div>
       </Dialog>

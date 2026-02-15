@@ -138,3 +138,97 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const { user_id, password } = await request.json();
+
+    if (!user_id || !password) {
+      return NextResponse.json(
+        { error: 'user_id and password are required' },
+        { status: 400 }
+      );
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json(
+        { error: 'Password must be at least 6 characters' },
+        { status: 400 }
+      );
+    }
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!supabaseUrl) {
+      return NextResponse.json(
+        { error: 'Server configuration error — NEXT_PUBLIC_SUPABASE_URL is missing' },
+        { status: 500 }
+      );
+    }
+
+    const supabase = await createServerSupabase();
+    const {
+      data: { user: authUser },
+      error: getUserError,
+    } = await supabase.auth.getUser();
+
+    if (getUserError || !authUser) {
+      return NextResponse.json(
+        { error: 'Session expired — please log in again' },
+        { status: 401 }
+      );
+    }
+
+    const { data: caller, error: callerError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', authUser.id)
+      .single();
+
+    if (callerError || !caller) {
+      return NextResponse.json(
+        { error: 'Could not verify your permissions' },
+        { status: 403 }
+      );
+    }
+
+    if (caller.role !== 'owner') {
+      return NextResponse.json(
+        { error: 'Only owners can change user passwords' },
+        { status: 403 }
+      );
+    }
+
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceRoleKey) {
+      return NextResponse.json(
+        { error: 'Server configuration error — SUPABASE_SERVICE_ROLE_KEY is not set' },
+        { status: 500 }
+      );
+    }
+
+    const adminClient = createClient(
+      supabaseUrl,
+      serviceRoleKey,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+
+    const { error: updateError } =
+      await adminClient.auth.admin.updateUserById(user_id, { password });
+
+    if (updateError) {
+      console.error('PATCH /api/users: updateUserById failed:', updateError.message);
+      return NextResponse.json(
+        { error: updateError.message },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error('PATCH /api/users unexpected error:', err);
+    return NextResponse.json(
+      { error: 'An unexpected error occurred' },
+      { status: 500 }
+    );
+  }
+}
