@@ -98,6 +98,7 @@ export default function PeoplePage() {
     try {
       const res = await fetch('/api/users', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
