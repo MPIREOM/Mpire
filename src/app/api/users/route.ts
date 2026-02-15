@@ -96,7 +96,15 @@ export async function POST(request: NextRequest) {
 
     if (authError) {
       console.error('POST /api/users: auth.admin.createUser failed:', authError.message);
-      return NextResponse.json({ error: authError.message }, { status: 400 });
+      const isApiKeyError = authError.message?.toLowerCase().includes('invalid api key');
+      return NextResponse.json(
+        {
+          error: isApiKeyError
+            ? 'Supabase rejected the service role key — the project may be paused or the key is incorrect. Check your Supabase dashboard and Vercel environment variables.'
+            : authError.message,
+        },
+        { status: isApiKeyError ? 500 : 400 }
+      );
     }
 
     const { error: profileError } = await adminClient
