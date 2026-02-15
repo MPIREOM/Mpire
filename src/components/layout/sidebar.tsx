@@ -58,8 +58,15 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse, pinned, on
   const role = user?.role ?? 'staff';
 
   async function handleLogout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signOut();
+      if (error) console.error('Sign-out error:', error.message);
+    } catch (err) {
+      console.error('Sign-out failed:', err);
+    }
+    // Always redirect — even if signOut had an error the session cookie
+    // will be cleared by the middleware on the next request.
     router.push('/login');
   }
 

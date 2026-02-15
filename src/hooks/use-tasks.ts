@@ -39,6 +39,7 @@ export function useTasks(options?: UseTasksOptions) {
       if (!error) return data as Task[];
 
       // Fallback: query without task_assignees (table may not exist yet)
+      console.warn('Tasks query with assignees failed, falling back:', error.message);
       const fallback = await buildQuery(false);
       if (fallback.error) throw fallback.error;
       return fallback.data as Task[];
@@ -161,11 +162,14 @@ export function useTasks(options?: UseTasksOptions) {
   const setTaskAssignees = useCallback(
     async (taskId: string, userIds: string[]) => {
       // Try junction table operations (non-fatal if table doesn't exist yet)
-      await supabase.from('task_assignees').delete().eq('task_id', taskId);
+      const { error: deleteError } = await supabase.from('task_assignees').delete().eq('task_id', taskId);
+      if (deleteError) console.warn('task_assignees delete:', deleteError.message);
+
       if (userIds.length > 0) {
-        await supabase
+        const { error: insertError } = await supabase
           .from('task_assignees')
           .insert(userIds.map((uid) => ({ task_id: taskId, user_id: uid })));
+        if (insertError) console.warn('task_assignees insert:', insertError.message);
       }
 
       // Keep legacy assignee_id in sync (first assignee or null)

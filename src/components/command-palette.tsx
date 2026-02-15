@@ -82,8 +82,13 @@ export function CommandPalette({ open, onClose, onToggleSidebar }: CommandPalett
         label: 'Sign Out',
         icon: ArrowRightOnRectangleIcon,
         action: async () => {
-          const supabase = createClient();
-          await supabase.auth.signOut();
+          try {
+            const supabase = createClient();
+            const { error } = await supabase.auth.signOut();
+            if (error) console.error('Sign-out error:', error.message);
+          } catch (err) {
+            console.error('Sign-out failed:', err);
+          }
           router.push('/login');
         },
         section: 'Actions',
