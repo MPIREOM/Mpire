@@ -22,11 +22,11 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { project_id, file_name, column_mapping, records } = body;
+  const { business_id, file_name, column_mapping, records } = body;
 
-  if (!project_id || !file_name || !column_mapping || !Array.isArray(records)) {
+  if (!business_id || !file_name || !column_mapping || !Array.isArray(records)) {
     return NextResponse.json(
-      { error: 'project_id, file_name, column_mapping, and records are required' },
+      { error: 'business_id, file_name, column_mapping, and records are required' },
       { status: 400 }
     );
   }
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
   const { data: lastUpload } = await supabase
     .from('finance_uploads')
     .select('version')
-    .eq('project_id', project_id)
+    .eq('business_id', business_id)
     .order('version', { ascending: false })
     .limit(1)
     .single();
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
   const { data: upload, error: uploadError } = await supabase
     .from('finance_uploads')
     .insert({
-      project_id,
+      business_id,
       uploaded_by: authUser.id,
       file_name,
       column_mapping,
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 
   // 2. Insert new records FIRST (atomic: never delete old data before confirming new insert)
   const financeRecords = records.map((r: { month: string; category: string; amount: number }) => ({
-    project_id,
+    business_id,
     upload_id: upload.id,
     month: r.month,
     category: r.category,
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
   await supabase
     .from('finance_records')
     .delete()
-    .eq('project_id', project_id)
+    .eq('business_id', business_id)
     .neq('upload_id', upload.id);
 
   return NextResponse.json({ upload, recordCount: records.length });

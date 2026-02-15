@@ -95,7 +95,7 @@ export interface TaskActivity {
 // Finance types
 export interface FinanceUpload {
   id: string;
-  project_id: string;
+  business_id: string;
   uploaded_by: string;
   file_name: string;
   column_mapping: Record<string, string>;
@@ -107,7 +107,7 @@ export interface FinanceUpload {
 
 export interface FinanceRecord {
   id: string;
-  project_id: string;
+  business_id: string;
   upload_id: string;
   month: string; // YYYY-MM
   category: string;
@@ -116,7 +116,7 @@ export interface FinanceRecord {
 }
 
 export interface FinanceSummary {
-  project: Project;
+  business: BusinessUnit;
   burnThisMonth: number;
   totalSpend: number;
   recordCount: number;

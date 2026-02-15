@@ -11,7 +11,7 @@ import * as XLSX from 'xlsx';
 interface UploadDialogProps {
   open: boolean;
   onClose: () => void;
-  projectId: string;
+  businessId: string;
   onUploaded: () => void;
 }
 
@@ -29,7 +29,7 @@ interface ColumnMapping {
 
 const REQUIRED_FIELDS = ['month', 'category', 'amount'] as const;
 
-export function UploadDialog({ open, onClose, projectId, onUploaded }: UploadDialogProps) {
+export function UploadDialog({ open, onClose, businessId, onUploaded }: UploadDialogProps) {
   const [step, setStep] = useState<'upload' | 'map' | 'preview'>('upload');
   const [parsed, setParsed] = useState<ParsedData | null>(null);
   const [mapping, setMapping] = useState<ColumnMapping>({ month: '', category: '', amount: '' });
@@ -126,7 +126,7 @@ export function UploadDialog({ open, onClose, projectId, onUploaded }: UploadDia
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          project_id: projectId,
+          business_id: businessId,
           file_name: parsed?.fileName ?? 'upload.xlsx',
           column_mapping: mapping,
           records,
@@ -264,7 +264,7 @@ export function UploadDialog({ open, onClose, projectId, onUploaded }: UploadDia
                 Ready to upload <strong>{getMappedRecords().length}</strong> records.
               </p>
               <div className="rounded-lg border border-yellow/20 bg-yellow-bg px-3 py-2 text-[13px] text-yellow">
-                All existing finance records for this project will be replaced.
+                All existing finance records for this business will be replaced.
               </div>
 
               {/* Preview table */}
