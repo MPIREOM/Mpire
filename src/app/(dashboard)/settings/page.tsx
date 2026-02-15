@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { isOwner } from '@/lib/roles';
+import { toast } from 'sonner';
 import {
   SunIcon,
   MoonIcon,
@@ -57,6 +58,8 @@ export default function SettingsPage() {
       mutate();
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save profile');
     } finally {
       setSaving(false);
     }

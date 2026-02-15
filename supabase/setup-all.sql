@@ -26,6 +26,8 @@ create table if not exists public.users (
   role text not null check (role in ('owner', 'manager', 'staff', 'investor')),
   company_id uuid not null references public.companies(id) on delete cascade,
   avatar_url text,
+  last_seen_at timestamptz,
+  allowed_project_ids uuid[] default null,
   created_at timestamptz not null default now()
 );
 create index if not exists idx_users_company on public.users(company_id);
@@ -56,6 +58,7 @@ create table if not exists public.tasks (
   assignee_id uuid references public.users(id) on delete set null,
   created_by uuid references public.users(id) on delete set null,
   recurring_rule text,
+  tags text[] not null default '{}',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -95,6 +98,45 @@ create table if not exists public.task_activity (
 );
 create index if not exists idx_task_activity_task on public.task_activity(task_id);
 
+-- 8. Finance Uploads (version history per project)
+create table if not exists public.finance_uploads (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects(id) on delete cascade,
+  uploaded_by uuid not null references public.users(id) on delete cascade,
+  file_name text not null,
+  column_mapping jsonb not null default '{}',
+  row_count integer not null default 0,
+  version integer not null default 1,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_finance_uploads_project on public.finance_uploads(project_id);
+create index if not exists idx_finance_uploads_uploaded_by on public.finance_uploads(uploaded_by);
+
+-- 9. Finance Records (the actual data rows)
+create table if not exists public.finance_records (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects(id) on delete cascade,
+  upload_id uuid not null references public.finance_uploads(id) on delete cascade,
+  month text not null,
+  category text not null,
+  amount numeric(14,2) not null default 0,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_finance_records_project on public.finance_records(project_id);
+create index if not exists idx_finance_records_upload on public.finance_records(upload_id);
+create index if not exists idx_finance_records_month on public.finance_records(month);
+
+-- 10. User Sessions (presence & visit tracking)
+create table if not exists public.user_sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users(id) on delete cascade,
+  started_at timestamptz not null default now(),
+  last_seen_at timestamptz not null default now(),
+  page text
+);
+create index if not exists idx_user_sessions_user on public.user_sessions(user_id);
+create index if not exists idx_user_sessions_last_seen on public.user_sessions(last_seen_at);
+
 -- AUTO-UPDATE updated_at
 create or replace function public.handle_updated_at()
 returns trigger as $$
@@ -118,6 +160,9 @@ alter table public.tasks enable row level security;
 alter table public.task_assignees enable row level security;
 alter table public.task_comments enable row level security;
 alter table public.task_activity enable row level security;
+alter table public.finance_uploads enable row level security;
+alter table public.finance_records enable row level security;
+alter table public.user_sessions enable row level security;
 
 create or replace function public.get_my_company_id()
 returns uuid as $$
@@ -188,7 +233,84 @@ do $$ begin
   if not exists (select 1 from pg_policies where policyname = 'Users can log task activity') then
     create policy "Users can log task activity" on public.task_activity for insert with check (user_id = auth.uid());
   end if;
+  -- Owners can update any user in the same company
+  if not exists (select 1 from pg_policies where policyname = 'Owners can update company users') then
+    create policy "Owners can update company users" on public.users for update using (company_id = public.get_my_company_id() and public.get_my_role() = 'owner') with check (company_id = public.get_my_company_id() and public.get_my_role() = 'owner');
+  end if;
+  -- Finance uploads RLS
+  if not exists (select 1 from pg_policies where policyname = 'Finance users can read uploads') then
+    create policy "Finance users can read uploads" on public.finance_uploads for select using (exists (select 1 from public.projects p where p.id = finance_uploads.project_id and p.company_id = public.get_my_company_id()) and public.get_my_role() in ('owner', 'investor'));
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'Finance users can insert uploads') then
+    create policy "Finance users can insert uploads" on public.finance_uploads for insert with check (uploaded_by = auth.uid() and exists (select 1 from public.projects p where p.id = finance_uploads.project_id and p.company_id = public.get_my_company_id()) and public.get_my_role() in ('owner', 'investor'));
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'Owner can delete uploads') then
+    create policy "Owner can delete uploads" on public.finance_uploads for delete using (exists (select 1 from public.projects p where p.id = finance_uploads.project_id and p.company_id = public.get_my_company_id()) and public.get_my_role() = 'owner');
+  end if;
+  -- Finance records RLS
+  if not exists (select 1 from pg_policies where policyname = 'Finance users can read records') then
+    create policy "Finance users can read records" on public.finance_records for select using (exists (select 1 from public.projects p where p.id = finance_records.project_id and p.company_id = public.get_my_company_id()) and public.get_my_role() in ('owner', 'investor'));
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'Finance users can insert records') then
+    create policy "Finance users can insert records" on public.finance_records for insert with check (exists (select 1 from public.projects p where p.id = finance_records.project_id and p.company_id = public.get_my_company_id()) and public.get_my_role() in ('owner', 'investor'));
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'Finance users can delete records') then
+    create policy "Finance users can delete records" on public.finance_records for delete using (exists (select 1 from public.projects p where p.id = finance_records.project_id and p.company_id = public.get_my_company_id()) and public.get_my_role() in ('owner', 'investor'));
+  end if;
+  -- User sessions RLS
+  if not exists (select 1 from pg_policies where policyname = 'Users can read company sessions') then
+    create policy "Users can read company sessions" on public.user_sessions for select using (exists (select 1 from public.users u where u.id = user_sessions.user_id and u.company_id = public.get_my_company_id()));
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'Users can insert own sessions') then
+    create policy "Users can insert own sessions" on public.user_sessions for insert with check (user_id = auth.uid());
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'Users can update own sessions') then
+    create policy "Users can update own sessions" on public.user_sessions for update using (user_id = auth.uid());
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'Users can delete own sessions') then
+    create policy "Users can delete own sessions" on public.user_sessions for delete using (user_id = auth.uid());
+  end if;
 end $$;
+
+-- ============================================================
+-- ENABLE REALTIME
+-- ============================================================
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.tasks;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.task_assignees;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.projects;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.users;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.task_comments;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.task_activity;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.user_sessions;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.finance_records;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.finance_uploads;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
 
 -- ============================================================
 -- SEED DATA
