@@ -14,6 +14,7 @@ import {
   MoonIcon,
   ComputerDesktopIcon,
   CheckIcon,
+  ChatBubbleLeftEllipsisIcon,
 } from '@heroicons/react/24/outline';
 
 type ThemePref = 'light' | 'dark' | 'system';
@@ -23,8 +24,11 @@ export default function SettingsPage() {
   const supabase = createClient();
 
   const [fullName, setFullName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [whatsappOptedIn, setWhatsappOptedIn] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [savingWhatsApp, setSavingWhatsApp] = useState(false);
   const [theme, setTheme] = useState<ThemePref>('system');
   const [notifications, setNotifications] = useState({
     taskAssigned: true,
@@ -34,7 +38,11 @@ export default function SettingsPage() {
 
   // Initialize from user data and localStorage
   useEffect(() => {
-    if (user) setFullName(user.full_name);
+    if (user) {
+      setFullName(user.full_name);
+      setPhoneNumber(user.phone_number ?? '');
+      setWhatsappOptedIn(user.whatsapp_opted_in ?? false);
+    }
     const stored = localStorage.getItem('theme');
     if (stored === 'dark') setTheme('dark');
     else if (stored === 'light') setTheme('light');
@@ -64,6 +72,34 @@ export default function SettingsPage() {
       setSaving(false);
     }
   }, [user, fullName, supabase, mutate]);
+
+  const handleSaveWhatsApp = useCallback(async () => {
+    if (!user) return;
+
+    // Basic validation: if opting in, phone is required
+    if (whatsappOptedIn && !phoneNumber.trim()) {
+      toast.error('Please enter your WhatsApp phone number');
+      return;
+    }
+
+    setSavingWhatsApp(true);
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({
+          phone_number: phoneNumber.trim() || null,
+          whatsapp_opted_in: whatsappOptedIn,
+        })
+        .eq('id', user.id);
+      if (error) throw error;
+      mutate();
+      toast.success('WhatsApp settings saved');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save WhatsApp settings');
+    } finally {
+      setSavingWhatsApp(false);
+    }
+  }, [user, phoneNumber, whatsappOptedIn, supabase, mutate]);
 
   function applyTheme(pref: ThemePref) {
     setTheme(pref);
@@ -104,6 +140,10 @@ export default function SettingsPage() {
     { key: 'taskDue', label: 'Task due soon', description: 'Reminders for upcoming deadlines' },
     { key: 'comments', label: 'New comments', description: 'When someone comments on your tasks' },
   ];
+
+  const whatsappDirty =
+    phoneNumber !== (user.phone_number ?? '') ||
+    whatsappOptedIn !== (user.whatsapp_opted_in ?? false);
 
   return (
     <Shell title="Settings" subtitle="System configuration">
@@ -170,6 +210,81 @@ export default function SettingsPage() {
                   )}
                 </Button>
               </div>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* WhatsApp Notifications Section */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
+          className="rounded-2xl border border-border bg-card p-6"
+        >
+          <div className="flex items-center gap-2">
+            <ChatBubbleLeftEllipsisIcon className="h-5 w-5 text-green" />
+            <h2 className="text-base font-bold text-text">WhatsApp Notifications</h2>
+          </div>
+          <p className="mt-1 text-[13px] text-muted">
+            Receive task and comment notifications on WhatsApp
+          </p>
+
+          <div className="mt-5 space-y-4">
+            {/* Phone number input */}
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">
+                WhatsApp Phone Number
+              </label>
+              <input
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="+1 234 567 8900"
+                className="w-full rounded-xl border border-border bg-bg px-4 py-2.5 text-sm text-text placeholder:text-muted/60 transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-muted"
+              />
+              <p className="mt-1 text-[11px] text-muted">
+                Include country code (e.g. +1 for US, +91 for India)
+              </p>
+            </div>
+
+            {/* Opt-in toggle */}
+            <div className="flex items-center justify-between rounded-xl border border-border p-4">
+              <div>
+                <p className="text-sm font-semibold text-text">Enable WhatsApp notifications</p>
+                <p className="text-xs text-muted">
+                  Get notified when tasks are created, assigned, or commented on
+                </p>
+              </div>
+              <button
+                onClick={() => setWhatsappOptedIn(!whatsappOptedIn)}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ${
+                  whatsappOptedIn ? 'bg-green' : 'bg-border'
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                    whatsappOptedIn ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Save button */}
+            <div className="flex items-center gap-3 pt-1">
+              <Button
+                onClick={handleSaveWhatsApp}
+                loading={savingWhatsApp}
+                disabled={!whatsappDirty}
+                size="sm"
+              >
+                Save WhatsApp Settings
+              </Button>
+              {whatsappOptedIn && phoneNumber && !whatsappDirty && (
+                <span className="flex items-center gap-1 text-xs text-green">
+                  <CheckIcon className="h-3.5 w-3.5" />
+                  Active
+                </span>
+              )}
             </div>
           </div>
         </motion.section>
