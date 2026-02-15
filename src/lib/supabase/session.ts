@@ -36,7 +36,16 @@ export async function updateSession(request: NextRequest) {
 
   const {
     data: { user },
+    error: getUserError,
   } = await supabase.auth.getUser();
+
+  // If Supabase itself is unreachable or the API key is invalid, log it and
+  // let the request through so the page can show a meaningful error instead
+  // of an infinite redirect loop to /login.
+  if (getUserError && getUserError.message?.toLowerCase().includes('invalid api key')) {
+    console.error('[middleware] Supabase returned "Invalid API key" — check your environment variables and whether the project is paused.');
+    return NextResponse.next({ request });
+  }
 
   // Redirect unauthenticated users to login
   // Skip API routes — they return proper 401 JSON responses themselves

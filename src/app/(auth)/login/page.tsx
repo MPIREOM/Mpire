@@ -23,7 +23,16 @@ export default function LoginPage() {
     });
 
     if (error) {
-      setError(error.message);
+      // Surface a helpful message when Supabase rejects the API key
+      if (error.message?.toLowerCase().includes('invalid api key')) {
+        setError(
+          'Supabase connection failed (Invalid API key). ' +
+          'The project may be paused — check your Supabase dashboard. ' +
+          'Or verify your NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel environment variables.'
+        );
+      } else {
+        setError(error.message);
+      }
       setLoading(false);
       return;
     }
