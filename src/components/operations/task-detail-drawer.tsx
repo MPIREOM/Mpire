@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
+import { fireNotification } from '@/lib/notify';
 import { canAssignTasks, canDeleteTasks } from '@/lib/roles';
 import { formatDate, isOverdue } from '@/lib/dates';
 import { Badge } from '@/components/ui/badge';
@@ -132,6 +133,17 @@ export function TaskDetailDrawer({
       user_id: currentUser.id,
       action: 'commented',
       meta: { body: newComment.trim().substring(0, 100) },
+    });
+
+    // Fire WhatsApp notification for comment (non-blocking)
+    fireNotification({
+      event: 'comment_added',
+      taskId: task.id,
+      taskTitle: task.title,
+      projectName: task.project?.name,
+      actorId: currentUser.id,
+      actorName: currentUser.full_name,
+      commentBody: newComment.trim(),
     });
 
     setNewComment('');

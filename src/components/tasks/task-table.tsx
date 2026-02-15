@@ -17,6 +17,7 @@ import { getTaskAssignees, isAssignedTo } from '@/lib/task-helpers';
 import { AssigneePicker, AvatarStack } from '@/components/ui/assignee-picker';
 import { TaskDetailDrawer } from '@/components/operations/task-detail-drawer';
 import { TimeReviewDialog, type TimeEntry } from '@/components/tasks/time-review-dialog';
+import { fireNotification } from '@/lib/notify';
 
 type TabKey = 'today' | 'week' | 'overdue' | 'all' | 'backlog';
 type GroupBy = 'none' | 'project' | 'status' | 'priority';
@@ -245,6 +246,30 @@ export function TaskTable({
         createForm.assignee_ids
       );
       toast.success('Task created');
+
+      // Fire WhatsApp notifications (non-blocking)
+      const proj = projects.find((p) => p.id === createForm.project_id);
+      fireNotification({
+        event: 'task_created',
+        taskId: '', // ID not available from hook, notification route handles lookup
+        taskTitle: createForm.title.trim(),
+        projectName: proj?.name,
+        actorId: currentUser.id,
+        actorName: currentUser.full_name,
+        assigneeIds: createForm.assignee_ids,
+      });
+      if (createForm.assignee_ids.length > 0) {
+        fireNotification({
+          event: 'task_assigned',
+          taskId: '',
+          taskTitle: createForm.title.trim(),
+          projectName: proj?.name,
+          actorId: currentUser.id,
+          actorName: currentUser.full_name,
+          assigneeIds: createForm.assignee_ids,
+        });
+      }
+
       setShowCreate(false);
       setCreateForm({ title: '', project_id: '', priority: 'medium', due_date: '', assignee_ids: [] });
     } catch (err) {
