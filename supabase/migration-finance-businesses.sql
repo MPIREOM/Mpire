@@ -36,9 +36,25 @@ do $$ begin
 end $$;
 
 -- --------------------------------------------------------
+-- 2b. Backfill existing rows: assign business_id from their
+--     project's business_unit, defaulting to Operations.
+-- --------------------------------------------------------
+update public.finance_uploads
+  set business_id = coalesce(
+    (select p.business_unit_id from public.projects p where p.id = finance_uploads.project_id),
+    '28a80e59-72a2-474c-a609-d965089f3853'   -- Operations fallback
+  )
+where business_id is null;
+
+update public.finance_records
+  set business_id = coalesce(
+    (select fu.business_id from public.finance_uploads fu where fu.id = finance_records.upload_id),
+    '28a80e59-72a2-474c-a609-d965089f3853'   -- Operations fallback
+  )
+where business_id is null;
+
+-- --------------------------------------------------------
 -- 3. Drop old project_id columns (they are no longer used)
---    Only safe if you have no existing finance data to keep.
---    If you DO have data, skip this section and migrate first.
 -- --------------------------------------------------------
 do $$ begin
   -- Drop foreign key constraints first, then the columns
