@@ -21,28 +21,23 @@ import {
 import { Shell } from '@/components/layout/shell';
 import { UploadDialog } from '@/components/finance/upload-dialog';
 import { useFinanceRecords, useFinanceUploads } from '@/hooks/use-finance';
-import { useProjects } from '@/hooks/use-projects';
+import { useBusinesses } from '@/hooks/use-businesses';
 import { useUser } from '@/hooks/use-user';
 import { canAccessFinance } from '@/lib/roles';
 import { differenceInDays, format } from 'date-fns';
 import { toast } from 'sonner';
 
-const PROJECT_COLORS = [
-  '#3b82f6', '#8b5cf6', '#f59e0b', '#10b981', '#ef4444',
-  '#ec4899', '#06b6d4', '#f97316',
-];
-
 export default function FinancePage() {
   const { user } = useUser();
   const { records, isLoading, mutate: mutateRecords } = useFinanceRecords();
   const { uploads, mutate: mutateUploads } = useFinanceUploads();
-  const { projects, createProject } = useProjects();
+  const { businesses, createBusiness } = useBusinesses();
 
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
   const [showUpload, setShowUpload] = useState(false);
-  const [showNewProject, setShowNewProject] = useState(false);
-  const [newProjectName, setNewProjectName] = useState('');
-  const [creatingProject, setCreatingProject] = useState(false);
+  const [showNewBusiness, setShowNewBusiness] = useState(false);
+  const [newBusinessName, setNewBusinessName] = useState('');
+  const [creatingBusiness, setCreatingBusiness] = useState(false);
 
   if (!user || !canAccessFinance(user.role)) {
     return (
@@ -54,31 +49,31 @@ export default function FinancePage() {
     );
   }
 
-  // Filter records/uploads for the selected project
-  const projectRecords = selectedProjectId
-    ? records.filter((r) => r.project_id === selectedProjectId)
+  // Filter records/uploads for the selected business
+  const businessRecords = selectedBusinessId
+    ? records.filter((r) => r.business_id === selectedBusinessId)
     : records;
 
-  const projectUploads = selectedProjectId
-    ? uploads.filter((u) => u.project_id === selectedProjectId)
+  const businessUploads = selectedBusinessId
+    ? uploads.filter((u) => u.business_id === selectedBusinessId)
     : uploads;
 
-  const selectedProject = projects.find((p) => p.id === selectedProjectId);
+  const selectedBusiness = businesses.find((b) => b.id === selectedBusinessId);
 
   // Summary computed from current view (filtered or all)
   const summary = useMemo(() => {
     const now = new Date();
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-    const totalBurn = projectRecords
+    const totalBurn = businessRecords
       .filter((r) => r.month === currentMonth)
       .reduce((sum, r) => sum + r.amount, 0);
 
-    const totalAllTime = projectRecords.reduce((sum, r) => sum + r.amount, 0);
+    const totalAllTime = businessRecords.reduce((sum, r) => sum + r.amount, 0);
 
     // Monthly trend
     const monthMap = new Map<string, number>();
-    for (const r of projectRecords) {
+    for (const r of businessRecords) {
       monthMap.set(r.month, (monthMap.get(r.month) ?? 0) + r.amount);
     }
     const monthlyTrend = Array.from(monthMap.entries())
@@ -87,56 +82,53 @@ export default function FinancePage() {
 
     // By category
     const catMap = new Map<string, number>();
-    for (const r of projectRecords) {
+    for (const r of businessRecords) {
       catMap.set(r.category, (catMap.get(r.category) ?? 0) + r.amount);
     }
     const byCategory = Array.from(catMap.entries())
       .map(([category, amount]) => ({ category, amount }))
       .sort((a, b) => b.amount - a.amount);
 
-    // Per project breakdown (for all-projects view)
-    const projectMap = new Map<string, number>();
-    for (const r of projectRecords) {
-      projectMap.set(r.project_id, (projectMap.get(r.project_id) ?? 0) + r.amount);
+    // Per business breakdown (for all-businesses view)
+    const bizMap = new Map<string, number>();
+    for (const r of businessRecords) {
+      bizMap.set(r.business_id, (bizMap.get(r.business_id) ?? 0) + r.amount);
     }
-    const byProject = Array.from(projectMap.entries())
-      .map(([projectId, amount]) => ({
-        project: projects.find((p) => p.id === projectId),
+    const byBusiness = Array.from(bizMap.entries())
+      .map(([businessId, amount]) => ({
+        business: businesses.find((b) => b.id === businessId),
         amount,
-        lastUpload: uploads.find((u) => u.project_id === projectId),
+        lastUpload: uploads.find((u) => u.business_id === businessId),
       }))
-      .filter((p) => p.project)
+      .filter((b) => b.business)
       .sort((a, b) => b.amount - a.amount);
 
     // Stale data alerts
-    const staleProjects = byProject.filter((p) => {
-      if (!p.lastUpload) return true;
-      return differenceInDays(now, new Date(p.lastUpload.created_at)) > 30;
+    const staleBusinesses = byBusiness.filter((b) => {
+      if (!b.lastUpload) return true;
+      return differenceInDays(now, new Date(b.lastUpload.created_at)) > 30;
     });
 
-    return { totalBurn, totalAllTime, monthlyTrend, byCategory, byProject, staleProjects };
-  }, [projectRecords, projects, uploads]);
+    return { totalBurn, totalAllTime, monthlyTrend, byCategory, byBusiness, staleBusinesses };
+  }, [businessRecords, businesses, uploads]);
 
-  const handleCreateProject = useCallback(async () => {
-    if (!newProjectName.trim() || !user) return;
-    setCreatingProject(true);
+  const handleCreateBusiness = useCallback(async () => {
+    if (!newBusinessName.trim() || !user) return;
+    setCreatingBusiness(true);
     try {
-      const color = PROJECT_COLORS[projects.length % PROJECT_COLORS.length];
-      await createProject({
-        name: newProjectName.trim(),
-        status: 'active',
-        color,
+      await createBusiness({
+        name: newBusinessName.trim(),
         company_id: user.company_id,
       });
-      toast.success(`Project "${newProjectName.trim()}" created`);
-      setNewProjectName('');
-      setShowNewProject(false);
+      toast.success(`Business "${newBusinessName.trim()}" created`);
+      setNewBusinessName('');
+      setShowNewBusiness(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to create project');
+      toast.error(err instanceof Error ? err.message : 'Failed to create business');
     } finally {
-      setCreatingProject(false);
+      setCreatingBusiness(false);
     }
-  }, [newProjectName, user, projects.length, createProject]);
+  }, [newBusinessName, user, createBusiness]);
 
   const kpiCards = [
     {
@@ -150,53 +142,53 @@ export default function FinancePage() {
       color: 'text-text',
     },
     {
-      label: selectedProjectId ? 'Records' : 'Projects with Data',
-      value: selectedProjectId ? projectRecords.length : summary.byProject.length,
+      label: selectedBusinessId ? 'Records' : 'Businesses with Data',
+      value: selectedBusinessId ? businessRecords.length : summary.byBusiness.length,
       color: 'text-blue',
       isCount: true,
     },
-    ...(selectedProjectId
+    ...(selectedBusinessId
       ? []
       : [
           {
             label: 'Stale Data',
-            value: summary.staleProjects.length,
-            color: summary.staleProjects.length > 0 ? 'text-yellow' : 'text-green',
+            value: summary.staleBusinesses.length,
+            color: summary.staleBusinesses.length > 0 ? 'text-yellow' : 'text-green',
             isCount: true,
           },
         ]),
   ];
 
   return (
-    <Shell title="Finance" subtitle="Financial overview & data uploads">
-      {/* Toolbar: project selector + actions */}
+    <Shell title="Finance" subtitle="Business financial overview & data uploads">
+      {/* Toolbar: business selector + actions */}
       <div className="mb-6 flex flex-wrap items-center gap-3">
-        {/* Project selector */}
+        {/* Business selector */}
         <div className="relative">
           <select
-            value={selectedProjectId ?? ''}
-            onChange={(e) => setSelectedProjectId(e.target.value || null)}
+            value={selectedBusinessId ?? ''}
+            onChange={(e) => setSelectedBusinessId(e.target.value || null)}
             className="appearance-none rounded-xl border border-border bg-card py-2 pl-4 pr-10 text-sm font-semibold text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
           >
-            <option value="">All Projects</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
+            <option value="">All Businesses</option>
+            {businesses.map((b) => (
+              <option key={b.id} value={b.id}>{b.name}</option>
             ))}
           </select>
           <ChevronDownIcon className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
         </div>
 
-        {/* Create project button */}
+        {/* Create business button */}
         <button
-          onClick={() => setShowNewProject(true)}
+          onClick={() => setShowNewBusiness(true)}
           className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-sm font-semibold text-muted transition-all hover:bg-bg hover:text-text active:scale-95"
         >
           <PlusIcon className="h-4 w-4" />
-          New Project
+          New Business
         </button>
 
-        {/* Upload button (only when a project is selected) */}
-        {selectedProjectId && (
+        {/* Upload button (only when a business is selected) */}
+        {selectedBusinessId && (
           <button
             onClick={() => setShowUpload(true)}
             className="flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-accent-light active:scale-95"
@@ -211,19 +203,19 @@ export default function FinancePage() {
         <div className="flex h-64 items-center justify-center">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
         </div>
-      ) : projectRecords.length === 0 ? (
+      ) : businessRecords.length === 0 ? (
         <div className="flex h-64 flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border">
           <p className="text-sm font-medium text-muted">
-            {selectedProjectId
-              ? `No finance data for "${selectedProject?.name}"`
+            {selectedBusinessId
+              ? `No finance data for "${selectedBusiness?.name}"`
               : 'No finance data uploaded yet'}
           </p>
           <p className="text-[13px] text-muted">
-            {selectedProjectId
+            {selectedBusinessId
               ? 'Upload an Excel or CSV file to get started'
-              : 'Select a project and upload Excel/CSV finance data'}
+              : 'Select a business and upload Excel/CSV finance data'}
           </p>
-          {selectedProjectId && (
+          {selectedBusinessId && (
             <button
               onClick={() => setShowUpload(true)}
               className="flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-light"
@@ -232,20 +224,20 @@ export default function FinancePage() {
               Upload Excel/CSV
             </button>
           )}
-          {!selectedProjectId && projects.length === 0 && (
+          {!selectedBusinessId && businesses.length === 0 && (
             <button
-              onClick={() => setShowNewProject(true)}
+              onClick={() => setShowNewBusiness(true)}
               className="flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-light"
             >
               <PlusIcon className="h-4 w-4" />
-              Create Your First Project
+              Add Your First Business
             </button>
           )}
         </div>
       ) : (
         <div className="space-y-6">
           {/* KPI row */}
-          <div className={clsx('grid gap-4', selectedProjectId ? 'grid-cols-2 lg:grid-cols-3' : 'grid-cols-2 lg:grid-cols-4')}>
+          <div className={clsx('grid gap-4', selectedBusinessId ? 'grid-cols-2 lg:grid-cols-3' : 'grid-cols-2 lg:grid-cols-4')}>
             {kpiCards.map((c) => (
               <div key={c.label} className="rounded-xl border border-border bg-card p-5">
                 <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">{c.label}</p>
@@ -258,21 +250,21 @@ export default function FinancePage() {
             ))}
           </div>
 
-          {/* Stale data alert (all projects view only) */}
-          {!selectedProjectId && summary.staleProjects.length > 0 && (
+          {/* Stale data alert (all businesses view only) */}
+          {!selectedBusinessId && summary.staleBusinesses.length > 0 && (
             <div className="rounded-xl border border-yellow/20 bg-yellow-bg p-4">
               <p className="mb-2 text-sm font-semibold text-yellow">Data Freshness Alert</p>
               <p className="text-[13px] text-muted">
-                {summary.staleProjects.length} project{summary.staleProjects.length !== 1 ? 's have' : ' has'} finance data older than 30 days:
+                {summary.staleBusinesses.length} business{summary.staleBusinesses.length !== 1 ? 'es have' : ' has'} finance data older than 30 days:
               </p>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
-                {summary.staleProjects.map((p) => (
+                {summary.staleBusinesses.map((b) => (
                   <button
-                    key={p.project!.id}
-                    onClick={() => setSelectedProjectId(p.project!.id)}
+                    key={b.business!.id}
+                    onClick={() => setSelectedBusinessId(b.business!.id)}
                     className="rounded-md bg-card px-2 py-0.5 text-xs font-semibold text-text hover:bg-bg"
                   >
-                    {p.project!.name}
+                    {b.business!.name}
                   </button>
                 ))}
               </div>
@@ -283,7 +275,7 @@ export default function FinancePage() {
           {summary.monthlyTrend.length > 1 && (
             <div>
               <h3 className="mb-3 text-base font-bold text-text">
-                Monthly Trend{selectedProjectId ? '' : ' (All Projects)'}
+                Monthly Trend{selectedBusinessId ? '' : ' (All Businesses)'}
               </h3>
               <div className="rounded-xl border border-border bg-card p-4">
                 <ResponsiveContainer width="100%" height={220}>
@@ -304,8 +296,8 @@ export default function FinancePage() {
             </div>
           )}
 
-          {/* Category breakdown (when a project is selected) */}
-          {selectedProjectId && summary.byCategory.length > 0 && (
+          {/* Category breakdown (when a business is selected) */}
+          {selectedBusinessId && summary.byCategory.length > 0 && (
             <div>
               <h3 className="mb-3 text-base font-bold text-text">By Category</h3>
               <div className="rounded-xl border border-border bg-card">
@@ -327,29 +319,28 @@ export default function FinancePage() {
             </div>
           )}
 
-          {/* Per-project breakdown (all projects view) */}
-          {!selectedProjectId && summary.byProject.length > 0 && (
+          {/* Per-business breakdown (all businesses view) */}
+          {!selectedBusinessId && summary.byBusiness.length > 0 && (
             <div>
-              <h3 className="mb-3 text-base font-bold text-text">By Project</h3>
+              <h3 className="mb-3 text-base font-bold text-text">By Business</h3>
               <div className="rounded-xl border border-border bg-card">
-                {summary.byProject.map((p, idx) => (
+                {summary.byBusiness.map((b, idx) => (
                   <button
-                    key={p.project!.id}
-                    onClick={() => setSelectedProjectId(p.project!.id)}
+                    key={b.business!.id}
+                    onClick={() => setSelectedBusinessId(b.business!.id)}
                     className={clsx(
                       'flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-bg',
-                      idx !== summary.byProject.length - 1 && 'border-b border-border'
+                      idx !== summary.byBusiness.length - 1 && 'border-b border-border'
                     )}
                   >
-                    <div
-                      className="h-2.5 w-2.5 shrink-0 rounded-full"
-                      style={{ backgroundColor: p.project!.color }}
-                    />
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-xs font-bold text-white">
+                      {b.business!.name.charAt(0)}
+                    </div>
                     <span className="flex-1 truncate text-sm font-semibold text-text">
-                      {p.project!.name}
+                      {b.business!.name}
                     </span>
                     <span className="text-[13px] font-semibold tabular-nums text-text">
-                      {p.amount.toLocaleString(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 0 })}
+                      {b.amount.toLocaleString(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 0 })}
                     </span>
                   </button>
                 ))}
@@ -357,17 +348,17 @@ export default function FinancePage() {
             </div>
           )}
 
-          {/* Upload history (when a project is selected) */}
-          {selectedProjectId && projectUploads.length > 0 && (
+          {/* Upload history (when a business is selected) */}
+          {selectedBusinessId && businessUploads.length > 0 && (
             <div>
               <h3 className="mb-3 text-base font-bold text-text">Upload History</h3>
               <div className="rounded-xl border border-border bg-card">
-                {projectUploads.map((u, idx) => (
+                {businessUploads.map((u, idx) => (
                   <div
                     key={u.id}
                     className={clsx(
                       'flex items-center justify-between px-4 py-2.5',
-                      idx !== projectUploads.length - 1 && 'border-b border-border'
+                      idx !== businessUploads.length - 1 && 'border-b border-border'
                     )}
                   >
                     <div>
@@ -388,48 +379,48 @@ export default function FinancePage() {
       )}
 
       {/* Upload dialog */}
-      {selectedProjectId && (
+      {selectedBusinessId && (
         <UploadDialog
           open={showUpload}
           onClose={() => setShowUpload(false)}
-          projectId={selectedProjectId}
+          businessId={selectedBusinessId}
           onUploaded={() => { mutateRecords(); mutateUploads(); }}
         />
       )}
 
-      {/* New project dialog */}
-      <Dialog open={showNewProject} onClose={() => setShowNewProject(false)} className="relative z-50">
+      {/* New business dialog */}
+      <Dialog open={showNewBusiness} onClose={() => setShowNewBusiness(false)} className="relative z-50">
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
           <DialogPanel className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-lg">
             <div className="flex items-center justify-between">
               <DialogTitle className="text-base font-bold text-text">
-                New Finance Project
+                Add Business
               </DialogTitle>
               <button
-                onClick={() => setShowNewProject(false)}
+                onClick={() => setShowNewBusiness(false)}
                 className="rounded-md p-1 text-muted hover:bg-bg hover:text-text"
               >
                 <XMarkIcon className="h-5 w-5" />
               </button>
             </div>
             <p className="mt-1 text-[13px] text-muted">
-              Create a project to upload finance data for.
+              Create a business to track its financial performance.
             </p>
             <form
-              onSubmit={(e) => { e.preventDefault(); handleCreateProject(); }}
+              onSubmit={(e) => { e.preventDefault(); handleCreateBusiness(); }}
               className="mt-5 space-y-4"
             >
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">
-                  Project Name
+                  Business Name
                 </label>
                 <input
                   type="text"
                   required
-                  value={newProjectName}
-                  onChange={(e) => setNewProjectName(e.target.value)}
-                  placeholder="e.g. Q1 2026 Budget"
+                  value={newBusinessName}
+                  onChange={(e) => setNewBusinessName(e.target.value)}
+                  placeholder="e.g. Coffee Shop Downtown"
                   className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
                   autoFocus
                 />
@@ -437,17 +428,17 @@ export default function FinancePage() {
               <div className="flex justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setShowNewProject(false)}
+                  onClick={() => setShowNewBusiness(false)}
                   className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted transition-all hover:bg-bg hover:text-text active:scale-95"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={creatingProject || !newProjectName.trim()}
+                  disabled={creatingBusiness || !newBusinessName.trim()}
                   className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-accent-light active:scale-95 disabled:opacity-50"
                 >
-                  {creatingProject ? 'Creating...' : 'Create Project'}
+                  {creatingBusiness ? 'Creating...' : 'Add Business'}
                 </button>
               </div>
             </form>

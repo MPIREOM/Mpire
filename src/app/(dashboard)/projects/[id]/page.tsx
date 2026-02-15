@@ -155,7 +155,7 @@ export default function ProjectDetailPage() {
         )}
 
         {tab === 'finance' && showFinance && (
-          <ProjectFinanceTab projectId={id} />
+          <ProjectFinanceTab />
         )}
       </div>
     </Shell>

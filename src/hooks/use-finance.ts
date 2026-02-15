@@ -7,8 +7,8 @@ import type { FinanceRecord, FinanceUpload } from '@/types/database';
 
 const supabase = createClient();
 
-export function useFinanceRecords(projectId?: string) {
-  const key = projectId ? `finance-records-${projectId}` : 'finance-records-all';
+export function useFinanceRecords(businessId?: string) {
+  const key = businessId ? `finance-records-${businessId}` : 'finance-records-all';
 
   const { data, error, isLoading, mutate } = useSWR<FinanceRecord[]>(
     key,
@@ -18,8 +18,8 @@ export function useFinanceRecords(projectId?: string) {
         .select('*')
         .order('month', { ascending: true });
 
-      if (projectId) {
-        query = query.eq('project_id', projectId);
+      if (businessId) {
+        query = query.eq('business_id', businessId);
       }
 
       const { data, error } = await query;
@@ -54,8 +54,8 @@ export function useFinanceRecords(projectId?: string) {
   };
 }
 
-export function useFinanceUploads(projectId?: string) {
-  const key = projectId ? `finance-uploads-${projectId}` : 'finance-uploads-all';
+export function useFinanceUploads(businessId?: string) {
+  const key = businessId ? `finance-uploads-${businessId}` : 'finance-uploads-all';
 
   const { data, error, isLoading, mutate } = useSWR<FinanceUpload[]>(
     key,
@@ -65,8 +65,8 @@ export function useFinanceUploads(projectId?: string) {
         .select('*, uploader:users!finance_uploads_uploaded_by_fkey(*)')
         .order('created_at', { ascending: false });
 
-      if (projectId) {
-        query = query.eq('project_id', projectId);
+      if (businessId) {
+        query = query.eq('business_id', businessId);
       }
 
       const { data, error } = await query;
