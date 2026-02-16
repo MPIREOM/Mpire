@@ -20,6 +20,7 @@ interface NotifyParams {
 export function fireNotification(params: NotifyParams): void {
   fetch('/api/notifications', {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       event: params.event,
@@ -31,7 +32,7 @@ export function fireNotification(params: NotifyParams): void {
       comment_body: params.commentBody,
       assignee_ids: params.assigneeIds,
     }),
-  }).catch(() => {
-    // Silently ignore — notifications should never break the app
+  }).catch((err) => {
+    console.warn('[Notification] Failed to send:', err);
   });
 }

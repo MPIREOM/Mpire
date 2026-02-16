@@ -28,6 +28,7 @@ create table if not exists public.users (
   avatar_url text,
   last_seen_at timestamptz,
   allowed_project_ids uuid[] default null,
+  phone_number text,
   created_at timestamptz not null default now()
 );
 create index if not exists idx_users_company on public.users(company_id);
