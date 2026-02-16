@@ -140,6 +140,127 @@ export async function POST(request: NextRequest) {
   }
 }
 
+export async function PUT(request: NextRequest) {
+  try {
+    const { user_id, role, allowed_project_ids, phone_number } = await request.json();
+
+    if (!user_id) {
+      return NextResponse.json(
+        { error: 'user_id is required' },
+        { status: 400 }
+      );
+    }
+
+    if (role && !['owner', 'manager', 'staff', 'investor'].includes(role)) {
+      return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
+    }
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!supabaseUrl) {
+      return NextResponse.json(
+        { error: 'Server configuration error — NEXT_PUBLIC_SUPABASE_URL is missing' },
+        { status: 500 }
+      );
+    }
+
+    const supabase = await createServerSupabase();
+    const {
+      data: { user: authUser },
+      error: getUserError,
+    } = await supabase.auth.getUser();
+
+    if (getUserError || !authUser) {
+      return NextResponse.json(
+        { error: 'Session expired — please log in again' },
+        { status: 401 }
+      );
+    }
+
+    const { data: caller, error: callerError } = await supabase
+      .from('users')
+      .select('role, company_id')
+      .eq('id', authUser.id)
+      .single();
+
+    if (callerError || !caller) {
+      return NextResponse.json(
+        { error: 'Could not verify your permissions' },
+        { status: 403 }
+      );
+    }
+
+    if (caller.role !== 'owner') {
+      return NextResponse.json(
+        { error: 'Only owners can edit user profiles' },
+        { status: 403 }
+      );
+    }
+
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceRoleKey) {
+      return NextResponse.json(
+        { error: 'Server configuration error — SUPABASE_SERVICE_ROLE_KEY is not set' },
+        { status: 500 }
+      );
+    }
+
+    const adminClient = createClient(
+      supabaseUrl,
+      serviceRoleKey,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+
+    // Verify target user belongs to the same company
+    const { data: targetUser, error: targetError } = await adminClient
+      .from('users')
+      .select('id, company_id')
+      .eq('id', user_id)
+      .single();
+
+    if (targetError || !targetUser || targetUser.company_id !== caller.company_id) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    const updates: Record<string, unknown> = {};
+    if (role) updates.role = role;
+    if (allowed_project_ids !== undefined) {
+      updates.allowed_project_ids =
+        Array.isArray(allowed_project_ids) && allowed_project_ids.length > 0
+          ? allowed_project_ids
+          : null;
+    }
+    if (phone_number !== undefined) {
+      updates.phone_number = typeof phone_number === 'string' && phone_number.trim()
+        ? phone_number.trim()
+        : null;
+    }
+
+    const { error: updateError } = await adminClient
+      .from('users')
+      .update(updates)
+      .eq('id', user_id);
+
+    if (updateError) {
+      console.error('PUT /api/users: update failed:', updateError.message);
+      return NextResponse.json(
+        { error: updateError.message },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error('PUT /api/users unexpected error:', err);
+    return NextResponse.json(
+      { error: 'An unexpected error occurred' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PATCH(request: NextRequest) {
   try {
     const { user_id, password } = await request.json();
