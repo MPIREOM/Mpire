@@ -26,7 +26,6 @@ export interface User {
   allowed_project_ids: string[] | null; // null = all projects visible
   last_seen_at: string | null;
   phone_number: string | null;
-  whatsapp_opted_in: boolean;
   created_at: string;
 }
 
