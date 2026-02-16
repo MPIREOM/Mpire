@@ -86,11 +86,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
     }
 
+    // Recipients: users in same company who have a phone number, excluding the actor
     let recipientQuery = admin
       .from('users')
-      .select('id, full_name, phone_number, whatsapp_opted_in')
+      .select('id, full_name, phone_number')
       .eq('company_id', caller.company_id)
-      .eq('whatsapp_opted_in', true)
       .not('phone_number', 'is', null)
       .neq('id', actor_id);
 

@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, full_name, role } = await request.json();
+    const { email, password, full_name, role, phone_number } = await request.json();
 
     if (!email || !password || !full_name || !role) {
       return NextResponse.json(
@@ -115,6 +115,7 @@ export async function POST(request: NextRequest) {
         full_name,
         role,
         company_id: caller.company_id,
+        phone_number: phone_number?.trim() || null,
       });
 
     if (profileError) {

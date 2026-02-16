@@ -2,10 +2,9 @@
 -- WhatsApp Notifications — Schema Migration
 -- ============================================================
 
--- 1. Add WhatsApp fields to users
+-- 1. Add phone_number to users (auto-opted-in when set)
 ALTER TABLE public.users
-  ADD COLUMN IF NOT EXISTS phone_number text,
-  ADD COLUMN IF NOT EXISTS whatsapp_opted_in boolean NOT NULL DEFAULT false;
+  ADD COLUMN IF NOT EXISTS phone_number text;
 
 -- 2. Notification log — tracks every sent message
 CREATE TABLE IF NOT EXISTS public.notification_log (

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
-import { XMarkIcon, PlusIcon, PencilIcon, KeyIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, PlusIcon, PencilIcon, KeyIcon, PhoneIcon } from '@heroicons/react/24/outline';
 import { Shell } from '@/components/layout/shell';
 import { useTeam } from '@/hooks/use-team';
 import { useUser } from '@/hooks/use-user';
@@ -29,13 +29,14 @@ export default function PeoplePage() {
     password: '',
     full_name: '',
     role: 'staff' as Role,
+    phone_number: '',
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   // Edit user state (owner only)
   const [editUser, setEditUser] = useState<User | null>(null);
-  const [editForm, setEditForm] = useState({ role: 'staff' as Role, allowed_project_ids: [] as string[] });
+  const [editForm, setEditForm] = useState({ role: 'staff' as Role, allowed_project_ids: [] as string[], phone_number: '' });
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState('');
 
@@ -52,6 +53,7 @@ export default function PeoplePage() {
     setEditForm({
       role: u.role,
       allowed_project_ids: u.allowed_project_ids ?? [],
+      phone_number: u.phone_number ?? '',
     });
     setEditError('');
     setNewPassword('');
@@ -94,6 +96,7 @@ export default function PeoplePage() {
       updates.allowed_project_ids = editForm.allowed_project_ids.length > 0
         ? editForm.allowed_project_ids
         : null;
+      updates.phone_number = editForm.phone_number.trim() || null;
 
       const { error: err } = await supabase
         .from('users')
@@ -150,7 +153,7 @@ export default function PeoplePage() {
       }
 
       setShowAdd(false);
-      setForm({ email: '', password: '', full_name: '', role: 'staff' });
+      setForm({ email: '', password: '', full_name: '', role: 'staff', phone_number: '' });
       mutate();
     } catch {
       setError('Network error — please check your connection and try again');
@@ -200,6 +203,12 @@ export default function PeoplePage() {
                       </span>
                     )}
                   </p>
+                  {u.phone_number && (
+                    <p className="mt-0.5 flex items-center gap-1 text-[11px] text-green">
+                      <PhoneIcon className="h-3 w-3" />
+                      WhatsApp active
+                    </p>
+                  )}
                 </div>
                 {ownerMode && u.id !== user.id && (
                   <button
@@ -312,6 +321,26 @@ export default function PeoplePage() {
               </div>
             </form>
 
+            {/* WhatsApp Phone Number */}
+            <div className="mt-5 border-t border-border pt-5">
+              <div className="flex items-center gap-2 mb-3">
+                <PhoneIcon className="h-4 w-4 text-green" />
+                <h3 className="text-sm font-bold text-text">WhatsApp Notifications</h3>
+              </div>
+              <p className="mb-2 text-xs text-muted">
+                Enter a phone number to enable WhatsApp notifications for this user.
+                Leave blank to disable.
+              </p>
+              <input
+                type="tel"
+                value={editForm.phone_number}
+                onChange={(e) => setEditForm({ ...editForm, phone_number: e.target.value })}
+                placeholder="+1 234 567 8900"
+                className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
+              />
+              <p className="mt-1 text-[11px] text-muted">Include country code (e.g. +1 for US, +91 for India)</p>
+            </div>
+
             {/* Change Password Section */}
             <div className="mt-5 border-t border-border pt-5">
               <div className="flex items-center gap-2 mb-3">
@@ -423,6 +452,22 @@ export default function PeoplePage() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">
+                  WhatsApp Phone <span className="normal-case font-normal">(optional)</span>
+                </label>
+                <input
+                  type="tel"
+                  value={form.phone_number}
+                  onChange={(e) => setForm({ ...form, phone_number: e.target.value })}
+                  placeholder="+1 234 567 8900"
+                  className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
+                />
+                <p className="mt-1 text-[11px] text-muted">
+                  If set, this user will receive WhatsApp notifications for tasks and comments
+                </p>
               </div>
 
               {error && (
