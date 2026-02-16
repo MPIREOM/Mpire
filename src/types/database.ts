@@ -34,6 +34,7 @@ export interface UserSession {
   user_id: string;
   started_at: string;
   last_seen_at: string;
+  ended_at: string | null;
   page: string | null;
   user?: User;
 }

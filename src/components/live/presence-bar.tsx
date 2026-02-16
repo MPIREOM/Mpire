@@ -14,6 +14,7 @@ const pageLabels: Record<string, string> = {
   '/people': 'People',
   '/finance': 'Finance',
   '/settings': 'Settings',
+  '/activity': 'Activity',
 };
 
 export function getPageLabel(page: string): string {

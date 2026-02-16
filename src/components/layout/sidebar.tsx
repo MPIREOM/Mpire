@@ -44,6 +44,7 @@ const navigation: NavItem[] = [
   { name: 'Timesheet', emoji: '🕐', href: '/timesheet' },
   { name: 'People', emoji: '👥', href: '/people', requiresManage: true },
   { name: 'Finance', emoji: '💰', href: '/finance', requiresFinance: true },
+  { name: 'Activity', emoji: '📋', href: '/activity', requiresManage: true },
 ];
 
 const bottomNavigation: NavItem[] = [

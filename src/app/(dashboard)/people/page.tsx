@@ -91,19 +91,21 @@ export default function PeoplePage() {
     setEditSaving(true);
     setEditError('');
     try {
-      const updates: Record<string, unknown> = { role: editForm.role };
-      // Empty array = no restriction (null), otherwise set specific projects
-      updates.allowed_project_ids = editForm.allowed_project_ids.length > 0
-        ? editForm.allowed_project_ids
-        : null;
-      updates.phone_number = editForm.phone_number.trim() || null;
-
-      const { error: err } = await supabase
-        .from('users')
-        .update(updates)
-        .eq('id', editUser.id);
-
-      if (err) throw err;
+      const res = await fetch('/api/users', {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: editUser.id,
+          role: editForm.role,
+          allowed_project_ids: editForm.allowed_project_ids,
+          phone_number: editForm.phone_number,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to update user');
+      }
       setEditUser(null);
       mutate();
     } catch (err: unknown) {

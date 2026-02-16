@@ -87,14 +87,12 @@ export function usePresence(currentUser: User | null) {
         .eq('id', currentUser.id);
     }, 30000);
 
-    // Best-effort cleanup on browser/tab close (won't fire reliably but helps)
+    // Mark session as ended on browser/tab close
     const handleBeforeUnload = () => {
       if (sessionIdRef.current) {
-        // navigator.sendBeacon isn't available for Supabase client,
-        // so fire-and-forget the delete via fetch
         supabase
           .from('user_sessions')
-          .delete()
+          .update({ ended_at: new Date().toISOString() })
           .eq('id', sessionIdRef.current)
           .then();
       }
@@ -104,11 +102,11 @@ export function usePresence(currentUser: User | null) {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       clearInterval(heartbeatRef.current);
-      // Clean up session on unmount
+      // Mark session as ended on unmount
       if (sessionIdRef.current) {
         supabase
           .from('user_sessions')
-          .delete()
+          .update({ ended_at: new Date().toISOString() })
           .eq('id', sessionIdRef.current)
           .then();
       }

@@ -38,6 +38,10 @@ create policy "Users can delete own sessions"
   on public.user_sessions for delete
   using (user_id = auth.uid());
 
+-- 1b. Add ended_at for session duration tracking (backlog)
+alter table public.user_sessions add column if not exists ended_at timestamptz;
+create index if not exists idx_user_sessions_started on public.user_sessions(started_at);
+
 -- 2. Add last_seen_at to users table for quick presence check
 alter table public.users add column if not exists last_seen_at timestamptz;
 
