@@ -301,6 +301,22 @@ export default function PeoplePage() {
                 )}
               </div>
 
+              {/* WhatsApp Phone Number */}
+              <div className="border-t border-border pt-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <PhoneIcon className="h-4 w-4 text-green" />
+                  <label className="text-xs font-semibold uppercase tracking-wide text-muted">WhatsApp Phone</label>
+                </div>
+                <input
+                  type="tel"
+                  value={editForm.phone_number}
+                  onChange={(e) => setEditForm({ ...editForm, phone_number: e.target.value })}
+                  placeholder="+1 234 567 8900"
+                  className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
+                />
+                <p className="mt-1 text-[11px] text-muted">Include country code (e.g. +1 for US, +91 for India). Leave blank to disable.</p>
+              </div>
+
               {editError && (
                 <p className="text-[13px] font-medium text-red">{editError}</p>
               )}
@@ -322,26 +338,6 @@ export default function PeoplePage() {
                 </button>
               </div>
             </form>
-
-            {/* WhatsApp Phone Number */}
-            <div className="mt-5 border-t border-border pt-5">
-              <div className="flex items-center gap-2 mb-3">
-                <PhoneIcon className="h-4 w-4 text-green" />
-                <h3 className="text-sm font-bold text-text">WhatsApp Notifications</h3>
-              </div>
-              <p className="mb-2 text-xs text-muted">
-                Enter a phone number to enable WhatsApp notifications for this user.
-                Leave blank to disable.
-              </p>
-              <input
-                type="tel"
-                value={editForm.phone_number}
-                onChange={(e) => setEditForm({ ...editForm, phone_number: e.target.value })}
-                placeholder="+1 234 567 8900"
-                className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
-              />
-              <p className="mt-1 text-[11px] text-muted">Include country code (e.g. +1 for US, +91 for India)</p>
-            </div>
 
             {/* Change Password Section */}
             <div className="mt-5 border-t border-border pt-5">
