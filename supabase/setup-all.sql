@@ -133,6 +133,7 @@ create table if not exists public.user_sessions (
   user_id uuid not null references public.users(id) on delete cascade,
   started_at timestamptz not null default now(),
   last_seen_at timestamptz not null default now(),
+  ended_at timestamptz,
   page text
 );
 create index if not exists idx_user_sessions_user on public.user_sessions(user_id);
