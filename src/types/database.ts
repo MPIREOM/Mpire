@@ -178,10 +178,23 @@ export interface Expense {
   amount: number;
   expense_date: string; // YYYY-MM-DD
   client_id: string | null;
+  recurring_id: string | null;
   created_by: string | null;
   created_at: string;
   client?: FinanceClient;
   creator?: User;
+}
+
+export interface RecurringExpense {
+  id: string;
+  company_id: string;
+  type: ExpenseType;
+  category: string;
+  description: string | null;
+  amount: number;
+  active: boolean;
+  created_by: string | null;
+  created_at: string;
 }
 
 // KPI types
