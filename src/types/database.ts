@@ -127,6 +127,55 @@ export interface FinanceSummary {
   byCategory: { category: string; amount: number }[];
 }
 
+// ── Structured finance (clients, invoices, expenses) ──
+export type ClientType = 'retainer' | 'campaign';
+export type ClientStatus = 'active' | 'inactive';
+export type PaidStatus = 'unpaid' | 'partial' | 'paid';
+export type ExpenseType = 'fixed' | 'operational';
+
+export interface FinanceClient {
+  id: string;
+  company_id: string;
+  name: string;
+  type: ClientType;
+  monthly_amount: number;
+  status: ClientStatus;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface ClientInvoice {
+  id: string;
+  company_id: string;
+  client_id: string;
+  month: string; // YYYY-MM-DD (first of month)
+  label: string | null;
+  amount: number;
+  paid_status: PaidStatus;
+  paid_amount: number;
+  paid_date: string | null;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+  client?: FinanceClient;
+}
+
+export interface Expense {
+  id: string;
+  company_id: string;
+  type: ExpenseType;
+  category: string;
+  description: string | null;
+  amount: number;
+  expense_date: string; // YYYY-MM-DD
+  client_id: string | null;
+  created_by: string | null;
+  created_at: string;
+  client?: FinanceClient;
+  creator?: User;
+}
+
 // KPI types
 export interface OperationsKPI {
   dueToday: number;
