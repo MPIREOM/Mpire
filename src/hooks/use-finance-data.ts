@@ -3,7 +3,7 @@
 import useSWR from 'swr';
 import { useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import type { FinanceClient, ClientInvoice, Expense, ClientName } from '@/types/database';
+import type { FinanceClient, ClientInvoice, Expense, ClientName, RecurringExpense, User } from '@/types/database';
 
 const supabase = createClient();
 
@@ -139,4 +139,71 @@ export function useExpenses() {
   }
 
   return { expenses: data ?? [], isLoading, error, mutate, addExpense, updateExpense, deleteExpense };
+}
+
+/* ── Recurring expense templates (owner/manager) ── */
+export function useRecurringExpenses() {
+  const { data, error, isLoading, mutate } = useSWR<RecurringExpense[]>(
+    'recurring-expenses',
+    async () => {
+      const { data, error } = await supabase
+        .from('recurring_expenses')
+        .select('*')
+        .order('category', { ascending: true });
+      if (error) throw error;
+      return data as RecurringExpense[];
+    },
+    { revalidateOnFocus: false, dedupingInterval: 15000 }
+  );
+  useRealtime('recurring_expenses', mutate, 'recurring');
+
+  async function addRecurring(payload: Partial<RecurringExpense>) {
+    const { error } = await supabase.from('recurring_expenses').insert(payload);
+    if (error) throw error;
+    mutate();
+  }
+  async function updateRecurring(id: string, updates: Partial<RecurringExpense>) {
+    const { error } = await supabase.from('recurring_expenses').update(updates).eq('id', id);
+    if (error) throw error;
+    mutate();
+  }
+  async function deleteRecurring(id: string) {
+    const { error } = await supabase.from('recurring_expenses').delete().eq('id', id);
+    if (error) throw error;
+    mutate();
+  }
+
+  // Returns the list of active templates not yet generated for the given month (first-of-month ISO).
+  async function pendingForMonth(monthFirst: string): Promise<RecurringExpense[]> {
+    const active = (data ?? []).filter((t) => t.active);
+    if (active.length === 0) return [];
+    const { data: existing } = await supabase
+      .from('expenses')
+      .select('recurring_id')
+      .eq('expense_date', monthFirst)
+      .not('recurring_id', 'is', null);
+    const done = new Set((existing ?? []).map((e: { recurring_id: string | null }) => e.recurring_id));
+    return active.filter((t) => !done.has(t.id));
+  }
+
+  // Generates expense rows for the month from pending templates. Returns count added.
+  async function generateForMonth(monthFirst: string, user: User): Promise<number> {
+    const pending = await pendingForMonth(monthFirst);
+    if (pending.length === 0) return 0;
+    const rows = pending.map((t) => ({
+      company_id: t.company_id,
+      type: t.type,
+      category: t.category,
+      description: t.description,
+      amount: t.amount,
+      expense_date: monthFirst,
+      recurring_id: t.id,
+      created_by: user.id,
+    }));
+    const { error } = await supabase.from('expenses').insert(rows);
+    if (error) throw error;
+    return rows.length;
+  }
+
+  return { recurring: data ?? [], isLoading, error, mutate, addRecurring, updateRecurring, deleteRecurring, pendingForMonth, generateForMonth };
 }

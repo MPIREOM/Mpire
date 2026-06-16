@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { canViewFixedExpenses, canManageFinance } from '@/lib/roles';
 import { useExpenses, useClientNames } from '@/hooks/use-finance-data';
+import { RecurringExpenses } from '@/components/finance/recurring-expenses';
 import type { User, ExpenseType } from '@/types/database';
 
 const OPERATIONAL_CATEGORIES = ['Models', 'Editor', 'Space Rental', 'Equipment', 'Travel', 'Other'];
@@ -65,7 +66,9 @@ export function ExpenseEntry({ user }: { user: User }) {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
+    <div className="space-y-6">
+      {canManageFinance(user.role) && <RecurringExpenses user={user} />}
+      <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
       {/* ── Entry form ── */}
       <div className="rounded-card border border-border bg-card p-5 lg:sticky lg:top-20 lg:self-start">
         <h3 className="font-display text-lg font-semibold tracking-tight text-text">Log an Expense</h3>
@@ -180,6 +183,7 @@ export function ExpenseEntry({ user }: { user: User }) {
             })}
           </div>
         )}
+      </div>
       </div>
     </div>
   );
