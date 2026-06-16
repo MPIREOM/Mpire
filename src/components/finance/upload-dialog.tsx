@@ -269,9 +269,9 @@ export function UploadDialog({ open, onClose, businessId, onUploaded }: UploadDi
     >
       <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" />
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <DialogPanel className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-lg">
+        <DialogPanel className="w-full max-w-lg rounded-card border border-border bg-card p-6 shadow-xl">
           <div className="flex items-center justify-between mb-5">
-            <DialogTitle className="text-base font-bold text-text">
+            <DialogTitle className="font-display text-lg font-semibold tracking-tight text-text">
               {step === 'upload' && 'Upload Finance Data'}
               {step === 'map' && 'Map Columns'}
               {step === 'preview' && 'Preview & Confirm'}
@@ -384,7 +384,7 @@ export function UploadDialog({ open, onClose, businessId, onUploaded }: UploadDi
                 <button
                   type="button"
                   onClick={handleMapNext}
-                  className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-light"
+                  className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-light"
                 >
                   Next
                 </button>
@@ -443,7 +443,7 @@ export function UploadDialog({ open, onClose, businessId, onUploaded }: UploadDi
                   type="button"
                   onClick={handleUpload}
                   disabled={saving}
-                  className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-light disabled:opacity-50"
+                  className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-light disabled:opacity-50"
                 >
                   {saving ? 'Uploading...' : 'Upload & Replace'}
                 </button>

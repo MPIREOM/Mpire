@@ -68,7 +68,7 @@ export function TeamWorkload({ tasks, team, projects }: TeamWorkloadProps) {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-base font-bold text-text">Team Workload</h3>
+        <h3 className="font-display text-lg font-semibold tracking-tight text-text">Team Workload</h3>
         <select
           value={filterProject}
           onChange={(e) => setFilterProject(e.target.value)}

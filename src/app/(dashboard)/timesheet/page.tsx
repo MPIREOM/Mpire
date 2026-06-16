@@ -189,7 +189,7 @@ export default function TimesheetPage() {
             >
               <ChevronRightIcon className="h-4 w-4" />
             </button>
-            <h2 className="text-base font-bold text-text">
+            <h2 className="font-display text-lg font-semibold tracking-tight text-text">
               {format(weekStart, 'MMM d')} &ndash; {format(weekEnd, 'MMM d, yyyy')}
             </h2>
           </div>
@@ -217,7 +217,7 @@ export default function TimesheetPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="overflow-x-auto rounded-2xl border border-border bg-card"
+          className="overflow-x-auto rounded-card border border-border bg-card"
         >
           <table className="w-full min-w-[640px]">
             <thead>
@@ -237,7 +237,7 @@ export default function TimesheetPage() {
                     <div
                       className={clsx(
                         'mx-auto mt-0.5 flex h-6 w-6 items-center justify-center rounded-full text-[13px]',
-                        isToday(day) ? 'bg-accent text-white' : ''
+                        isToday(day) ? 'bg-primary text-primary-foreground' : ''
                       )}
                     >
                       {format(day, 'd')}
@@ -334,9 +334,9 @@ export default function TimesheetPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.1 }}
-            className="rounded-2xl border border-border bg-card p-6"
+            className="rounded-card border border-border bg-card p-6"
           >
-            <h3 className="text-base font-bold text-text">Task Breakdown</h3>
+            <h3 className="font-display text-lg font-semibold tracking-tight text-text">Task Breakdown</h3>
             <p className="mt-1 text-[13px] text-muted">
               Hours logged per completed task this week
             </p>
@@ -382,33 +382,33 @@ export default function TimesheetPage() {
           transition={{ duration: 0.4, delay: 0.2 }}
           className="grid grid-cols-2 gap-4 sm:grid-cols-4"
         >
-          <div className="rounded-2xl border border-border bg-card p-4">
+          <div className="rounded-card border border-border bg-card p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">
               Total Hours
             </p>
-            <p className="mt-1 text-2xl font-bold text-text">{weekTotal}h</p>
+            <p className="stat-numeral mt-2 text-3xl text-text">{weekTotal}h</p>
           </div>
-          <div className="rounded-2xl border border-border bg-card p-4">
+          <div className="rounded-card border border-border bg-card p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">
               Projects
             </p>
-            <p className="mt-1 text-2xl font-bold text-text">
+            <p className="stat-numeral mt-2 text-3xl text-text">
               {projectRows.length}
             </p>
           </div>
-          <div className="rounded-2xl border border-border bg-card p-4">
+          <div className="rounded-card border border-border bg-card p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">
               Avg / Day
             </p>
-            <p className="mt-1 text-2xl font-bold text-text">
+            <p className="stat-numeral mt-2 text-3xl text-text">
               {weekTotal > 0 ? (weekTotal / 5).toFixed(1) : '0'}h
             </p>
           </div>
-          <div className="rounded-2xl border border-border bg-card p-4">
+          <div className="rounded-card border border-border bg-card p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">
               Tasks Logged
             </p>
-            <p className="mt-1 text-2xl font-bold text-text">
+            <p className="stat-numeral mt-2 text-3xl text-text">
               {taskBreakdown.length}
             </p>
           </div>

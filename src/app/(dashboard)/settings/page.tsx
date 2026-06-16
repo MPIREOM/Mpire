@@ -116,9 +116,9 @@ export default function SettingsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="rounded-2xl border border-border bg-card p-6"
+          className="rounded-card border border-border bg-card p-6"
         >
-          <h2 className="text-base font-bold text-text">Profile</h2>
+          <h2 className="font-display text-lg font-semibold tracking-tight text-text">Profile</h2>
           <p className="mt-1 text-[13px] text-muted">Your personal information</p>
 
           <div className="mt-6 flex items-start gap-5">
@@ -200,9 +200,9 @@ export default function SettingsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
-          className="rounded-2xl border border-border bg-card p-6"
+          className="rounded-card border border-border bg-card p-6"
         >
-          <h2 className="text-base font-bold text-text">Appearance</h2>
+          <h2 className="font-display text-lg font-semibold tracking-tight text-text">Appearance</h2>
           <p className="mt-1 text-[13px] text-muted">Choose your preferred theme</p>
 
           <div className="mt-5 grid grid-cols-3 gap-3">
@@ -228,9 +228,9 @@ export default function SettingsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.2 }}
-          className="rounded-2xl border border-border bg-card p-6"
+          className="rounded-card border border-border bg-card p-6"
         >
-          <h2 className="text-base font-bold text-text">Notifications</h2>
+          <h2 className="font-display text-lg font-semibold tracking-tight text-text">Notifications</h2>
           <p className="mt-1 text-[13px] text-muted">Manage your notification preferences</p>
 
           <div className="mt-5 divide-y divide-border">
@@ -263,9 +263,9 @@ export default function SettingsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.3 }}
-            className="rounded-2xl border border-red/20 bg-card p-6"
+            className="rounded-card border border-red/20 bg-card p-6"
           >
-            <h2 className="text-base font-bold text-red">Danger Zone</h2>
+            <h2 className="font-display text-lg font-semibold tracking-tight text-red">Danger Zone</h2>
             <p className="mt-1 text-[13px] text-muted">Irreversible actions for your organization</p>
 
             <div className="mt-5 flex items-center justify-between rounded-xl border border-border p-4">

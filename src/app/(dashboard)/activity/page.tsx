@@ -177,7 +177,7 @@ export default function ActivityPage() {
                 onClick={() => setRange(opt.value)}
                 className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
                   range === opt.value
-                    ? 'bg-accent text-white shadow-sm'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
                     : 'text-muted hover:text-text'
                 }`}
               >
@@ -206,30 +206,30 @@ export default function ActivityPage() {
           transition={{ duration: 0.3 }}
           className="grid grid-cols-1 gap-4 sm:grid-cols-3"
         >
-          <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center gap-3 rounded-card border border-border bg-card p-5">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-muted">
               <UserGroupIcon className="h-5 w-5 text-accent" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-text">{uniqueUsers}</p>
+              <p className="stat-numeral text-3xl text-text">{uniqueUsers}</p>
               <p className="text-xs text-muted">Active Users</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center gap-3 rounded-card border border-border bg-card p-5">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10">
               <CalendarDaysIcon className="h-5 w-5 text-blue-500" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-text">{totalSessions}</p>
+              <p className="stat-numeral text-3xl text-text">{totalSessions}</p>
               <p className="text-xs text-muted">Total Sessions</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center gap-3 rounded-card border border-border bg-card p-5">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green/10">
               <ClockIcon className="h-5 w-5 text-green" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-text">{formatDuration(totalMs)}</p>
+              <p className="stat-numeral text-3xl text-text">{formatDuration(totalMs)}</p>
               <p className="text-xs text-muted">Total Time Online</p>
             </div>
           </div>
@@ -241,7 +241,7 @@ export default function ActivityPage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.1 }}
-            className="rounded-2xl border border-border bg-card overflow-hidden"
+            className="rounded-card border border-border bg-card overflow-hidden"
           >
             <div className="border-b border-border px-5 py-3">
               <h2 className="text-sm font-bold text-text">User Summary</h2>
@@ -285,7 +285,7 @@ export default function ActivityPage() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: 0.05 * Math.min(i, 5) }}
-              className="rounded-2xl border border-border bg-card overflow-hidden"
+              className="rounded-card border border-border bg-card overflow-hidden"
             >
               <div className="border-b border-border bg-bg/50 px-5 py-2.5">
                 <h3 className="text-xs font-bold uppercase tracking-wide text-muted">
