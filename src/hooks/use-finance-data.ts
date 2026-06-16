@@ -3,7 +3,7 @@
 import useSWR from 'swr';
 import { useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import type { FinanceClient, ClientInvoice, Expense } from '@/types/database';
+import type { FinanceClient, ClientInvoice, Expense, ClientName } from '@/types/database';
 
 const supabase = createClient();
 
@@ -50,6 +50,24 @@ export function useFinanceClients() {
   }
 
   return { clients: data ?? [], isLoading, error, mutate, addClient, updateClient, deleteClient };
+}
+
+/* ── Client names (names-only view; readable by all roles incl. staff) ── */
+export function useClientNames() {
+  const { data, mutate } = useSWR<ClientName[]>(
+    'finance-client-names',
+    async () => {
+      const { data, error } = await supabase
+        .from('finance_client_names')
+        .select('id, name, type, status')
+        .order('name', { ascending: true });
+      if (error) throw error;
+      return data as ClientName[];
+    },
+    { revalidateOnFocus: false, dedupingInterval: 15000 }
+  );
+  useRealtime('finance_clients', mutate, 'client-names');
+  return { clientNames: data ?? [], mutate };
 }
 
 /* ── Client invoices (revenue) ── */
