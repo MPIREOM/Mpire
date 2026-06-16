@@ -12,6 +12,14 @@ import {
   XMarkIcon,
   MapPinIcon,
   ArrowRightOnRectangleIcon,
+  Squares2X2Icon,
+  FolderIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  UsersIcon,
+  BanknotesIcon,
+  RectangleStackIcon,
+  Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -29,7 +37,7 @@ interface SidebarProps {
 
 interface NavItem {
   name: string;
-  emoji: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   href: string;
   requiresManage?: boolean;
   requiresFinance?: boolean;
@@ -38,17 +46,17 @@ interface NavItem {
 }
 
 const navigation: NavItem[] = [
-  { name: 'Dashboard', emoji: '📊', href: '/operations' },
-  { name: 'Projects', emoji: '📁', href: '/projects', requiresManage: true },
-  { name: 'Tasks', emoji: '✅', href: '/tasks' },
-  { name: 'Timesheet', emoji: '🕐', href: '/timesheet' },
-  { name: 'People', emoji: '👥', href: '/people', requiresManage: true },
-  { name: 'Finance', emoji: '💰', href: '/finance', requiresFinance: true },
-  { name: 'Activity', emoji: '📋', href: '/activity', requiresManage: true },
+  { name: 'Dashboard', icon: Squares2X2Icon, href: '/operations' },
+  { name: 'Projects', icon: FolderIcon, href: '/projects', requiresManage: true },
+  { name: 'Tasks', icon: CheckCircleIcon, href: '/tasks' },
+  { name: 'Timesheet', icon: ClockIcon, href: '/timesheet' },
+  { name: 'People', icon: UsersIcon, href: '/people', requiresManage: true },
+  { name: 'Finance', icon: BanknotesIcon, href: '/finance', requiresFinance: true },
+  { name: 'Activity', icon: RectangleStackIcon, href: '/activity', requiresManage: true },
 ];
 
 const bottomNavigation: NavItem[] = [
-  { name: 'Settings', emoji: '⚙️', href: '/settings', requiresSettings: true },
+  { name: 'Settings', icon: Cog6ToothIcon, href: '/settings', requiresSettings: true },
 ];
 
 export function Sidebar({ open, onClose, collapsed, onToggleCollapse, pinned, onTogglePin }: SidebarProps) {
@@ -99,7 +107,7 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse, pinned, on
 
       <aside
         className={cn(
-          'sidebar-dark fixed inset-y-0 left-0 z-50 flex flex-col border-r border-white/[0.06] bg-gradient-to-b from-gray-900 to-gray-950 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+          'sidebar-dark fixed inset-y-0 left-0 z-50 flex flex-col border-r border-white/[0.06] bg-[#0b0b0c] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
           collapsed ? 'lg:w-[72px]' : 'lg:w-60',
           'w-60 lg:translate-x-0',
           open ? 'translate-x-0' : '-translate-x-full'
@@ -113,11 +121,10 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse, pinned, on
             onClick={onClose}
           >
             <motion.div
-              whileHover={{ scale: 1.08, rotate: -3 }}
               whileTap={{ scale: 0.95 }}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-xl shadow-lg shadow-blue-500/20"
+              className="font-display flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-accent text-[20px] font-bold leading-none text-black"
             >
-              🎯
+              M
             </motion.div>
             <AnimatePresence mode="wait">
               {!collapsed && (
@@ -126,7 +133,7 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse, pinned, on
                   animate={{ opacity: 1, width: 'auto' }}
                   exit={{ opacity: 0, width: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="whitespace-nowrap text-[16px] font-bold tracking-wider text-white"
+                  className="font-display whitespace-nowrap text-[17px] font-bold tracking-[0.18em] text-white"
                 >
                   MPIRE
                 </motion.span>
@@ -223,7 +230,7 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse, pinned, on
               className={cn(
                 'flex items-center justify-center rounded-xl p-2.5 text-[12px] transition-colors',
                 pinned
-                  ? 'text-blue-400 hover:text-blue-300'
+                  ? 'text-accent hover:text-accent-light'
                   : 'text-gray-500 hover:text-gray-300'
               )}
             >
@@ -275,7 +282,7 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse, pinned, on
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -8 }}
-                  className="text-[11px] font-medium text-blue-400"
+                  className="text-[11px] font-medium text-accent"
                 >
                   Pinned
                 </motion.span>
@@ -355,36 +362,32 @@ function NavLink({
       href={item.href}
       onClick={onClick}
       className={cn(
-        'group relative flex items-center rounded-xl pl-2 py-2.5 text-sm font-medium transition-all duration-200 active:scale-[0.97]',
+        'group relative flex items-center rounded-lg pl-2 py-2.5 text-sm font-medium transition-all duration-150 active:scale-[0.98]',
         !collapsed && 'gap-2',
         isActive
-          ? 'bg-gradient-to-r from-blue-600/90 to-purple-600/90 text-white shadow-lg shadow-blue-500/20'
-          : 'text-gray-400 hover:bg-white/[0.06] hover:text-white'
+          ? 'bg-white/[0.08] text-white'
+          : 'text-gray-400 hover:bg-white/[0.05] hover:text-white'
       )}
     >
       {/* Active indicator bar */}
       {isActive && (
         <motion.span
           layoutId="sidebarIndicator"
-          className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-white"
+          className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-accent"
           transition={{ type: 'spring', stiffness: 350, damping: 30 }}
         />
       )}
 
-      {/* Emoji icon — fixed-width slot so it stays pinned when collapsing */}
-      <motion.span
-        whileHover={{ scale: 1.15 }}
-        transition={{ duration: 0.15 }}
-        className="relative flex w-10 shrink-0 items-center justify-center text-[22px] leading-none"
-      >
-        {item.emoji}
+      {/* Line icon — fixed-width slot so it stays pinned when collapsing */}
+      <span className="relative flex w-10 shrink-0 items-center justify-center">
+        <item.icon className={cn('h-[18px] w-[18px]', isActive && 'text-accent')} />
         {/* Notification badge */}
         {item.badge != null && item.badge > 0 && (
-          <span className="absolute -top-1.5 -right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white shadow-sm">
+          <span className="absolute -top-1.5 -right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red px-1 text-[9px] font-bold text-white shadow-sm">
             {item.badge > 99 ? '99+' : item.badge}
           </span>
         )}
-      </motion.span>
+      </span>
 
       {/* Label */}
       <AnimatePresence mode="wait">

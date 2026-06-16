@@ -5,21 +5,22 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer',
   {
     variants: {
       variant: {
-        default: 'bg-accent text-white shadow-sm hover:bg-accent-light active:scale-[0.98]',
-        destructive: 'bg-red text-white shadow-sm hover:bg-red/90 active:scale-[0.98]',
-        outline: 'border border-border bg-card text-text shadow-sm hover:bg-bg hover:border-border-hover active:scale-[0.98]',
-        secondary: 'bg-bg text-text hover:bg-border/50 active:scale-[0.98]',
+        default: 'bg-primary text-primary-foreground hover:bg-primary-light active:scale-[0.98]',
+        accent: 'bg-accent text-white hover:bg-accent-light active:scale-[0.98]',
+        destructive: 'bg-red text-white hover:bg-red/90 active:scale-[0.98]',
+        outline: 'border border-border bg-card text-text hover:border-hairline hover:bg-bg active:scale-[0.98]',
+        secondary: 'bg-bg text-text border border-border hover:bg-border/40 active:scale-[0.98]',
         ghost: 'text-muted hover:bg-bg hover:text-text active:scale-95',
         link: 'text-accent underline-offset-4 hover:underline',
       },
       size: {
         default: 'h-9 px-4 py-2',
         sm: 'h-8 rounded-md px-3 text-xs',
-        lg: 'h-10 rounded-lg px-6',
+        lg: 'h-11 rounded-lg px-6 text-[15px]',
         icon: 'h-9 w-9',
       },
     },

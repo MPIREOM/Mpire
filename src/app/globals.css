@@ -1,47 +1,78 @@
 @import "tailwindcss";
 
+/* ============================================================
+   MPIRE — Editorial design system
+   High-contrast, display-driven, light-first with dark mode.
+   ============================================================ */
+
 @theme {
-  --color-bg: #f8f9fb;
+  /* Surfaces & text — high contrast, warm paper whites */
+  --color-bg: #faf9f6;
   --color-card: #ffffff;
-  --color-text: #111827;
-  --color-muted: #6b7280;
-  --color-border: #e5e7eb;
-  --color-border-hover: #d1d5db;
-  --color-accent: #b08a3e;
-  --color-accent-light: #c9a46c;
-  --color-accent-muted: rgba(176, 138, 62, 0.08);
-  --color-green: #10b981;
-  --color-green-bg: rgba(16, 185, 129, 0.08);
-  --color-red: #ef4444;
-  --color-red-bg: rgba(239, 68, 68, 0.08);
-  --color-yellow: #f59e0b;
-  --color-yellow-bg: rgba(245, 158, 11, 0.08);
-  --color-blue: #3b82f6;
-  --color-blue-bg: rgba(59, 130, 246, 0.08);
-  --color-purple: #8b5cf6;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --radius-card: 12px;
+  --color-elevated: #ffffff;
+  --color-text: #0a0a0a;
+  --color-muted: #6b6862;
+  --color-faint: #9c988f;
+  --color-border: #ece9e2;
+  --color-border-hover: #d8d4c9;
+  --color-hairline: #0a0a0a;
+
+  /* Ink primary — the bold black used for blocks & primary actions */
+  --color-primary: #0a0a0a;
+  --color-primary-light: #2b2b2b;
+  --color-primary-foreground: #ffffff;
+
+  /* MPIRE gold — the single brand accent */
+  --color-accent: #a4791f;
+  --color-accent-light: #c19a3e;
+  --color-accent-muted: rgba(164, 121, 31, 0.1);
+
+  /* Status — flat, confident */
+  --color-green: #0f9d6c;
+  --color-green-bg: rgba(15, 157, 108, 0.1);
+  --color-red: #dc3a3a;
+  --color-red-bg: rgba(220, 58, 58, 0.1);
+  --color-yellow: #d98a0b;
+  --color-yellow-bg: rgba(217, 138, 11, 0.12);
+  --color-blue: #2563eb;
+  --color-blue-bg: rgba(37, 99, 235, 0.1);
+  --color-purple: #7c3aed;
+
+  /* Type — grotesk display + clean sans body */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display), var(--font-inter), sans-serif;
+
+  --radius-card: 14px;
 }
 
-/* ── Dark mode overrides ── */
+/* ── Dark mode ── */
 .dark {
-  --color-bg: #0f1117;
-  --color-card: #1a1d27;
-  --color-text: #f1f3f5;
-  --color-muted: #8b8fa3;
-  --color-border: #2a2d3a;
-  --color-border-hover: #3a3d4a;
-  --color-accent: #c9a046;
-  --color-accent-light: #d4b76a;
-  --color-accent-muted: rgba(201, 160, 70, 0.1);
+  --color-bg: #0b0b0c;
+  --color-card: #151517;
+  --color-elevated: #1c1c1f;
+  --color-text: #f7f6f2;
+  --color-muted: #9b9890;
+  --color-faint: #6d6a64;
+  --color-border: #262629;
+  --color-border-hover: #3a3a40;
+  --color-hairline: #f7f6f2;
+
+  --color-primary: #f7f6f2;
+  --color-primary-light: #e2e0d8;
+  --color-primary-foreground: #0b0b0c;
+
+  --color-accent: #d4af56;
+  --color-accent-light: #e2c378;
+  --color-accent-muted: rgba(212, 175, 86, 0.12);
+
   --color-green: #34d399;
-  --color-green-bg: rgba(52, 211, 153, 0.1);
+  --color-green-bg: rgba(52, 211, 153, 0.12);
   --color-red: #f87171;
-  --color-red-bg: rgba(248, 113, 113, 0.1);
+  --color-red-bg: rgba(248, 113, 113, 0.12);
   --color-yellow: #fbbf24;
-  --color-yellow-bg: rgba(251, 191, 36, 0.1);
+  --color-yellow-bg: rgba(251, 191, 36, 0.12);
   --color-blue: #60a5fa;
-  --color-blue-bg: rgba(96, 165, 250, 0.1);
+  --color-blue-bg: rgba(96, 165, 250, 0.12);
   --color-purple: #a78bfa;
   color-scheme: dark;
 }
@@ -51,78 +82,71 @@ body {
   color: var(--color-text);
   font-family: var(--font-sans);
   font-size: 14px;
-  line-height: 1.6;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Smooth page transitions */
+/* ── Editorial typography ── */
+h1, h2, h3, h4, .font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.025em;
+  font-weight: 600;
+}
+
+/* Big editorial display headline */
+.text-display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 0.98;
+}
+
+/* Oversized KPI / stat numerals */
+.stat-numeral {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* Eyebrow / label */
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+/* ── Motion: one purposeful entrance, no fade-on-everything ── */
 main {
-  animation: fadeInUp 0.4s ease-out;
+  animation: editorialIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes editorialIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* ── Scrollbars ── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-border-hover); }
+.sidebar-scroll::-webkit-scrollbar { width: 4px; }
+.sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+.sidebar-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
 
-/* Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-border-hover);
-}
-
-/* Dark sidebar scrollbar */
-.sidebar-scroll::-webkit-scrollbar {
-  width: 4px;
-}
-.sidebar-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-.sidebar-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
-}
-.sidebar-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-/* Focus ring */
+/* ── Focus ── */
 *:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
-/* Dark mode scrollbar */
-.dark ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-}
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.18);
-}
-
-/* Selection color */
+/* ── Selection ── */
 ::selection {
-  background: rgba(176, 138, 62, 0.15);
-  color: var(--color-text);
-}
-.dark ::selection {
-  background: rgba(201, 160, 70, 0.25);
+  background: var(--color-accent);
+  color: #fff;
 }

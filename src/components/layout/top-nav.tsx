@@ -143,7 +143,7 @@ export function TopNav({ title, subtitle, onMenuClick, onCommandPalette }: TopNa
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <h1 className="text-lg font-bold text-text">{title}</h1>
+          <h1 className="font-display text-xl font-semibold tracking-tight text-text">{title}</h1>
           {subtitle && (
             <p className="text-[13px] text-muted">{subtitle}</p>
           )}
