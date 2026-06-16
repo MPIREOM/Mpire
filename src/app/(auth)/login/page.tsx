@@ -42,72 +42,98 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-bg px-4">
-      <div className="w-full max-w-sm">
-        {/* Brand */}
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-accent-light text-lg font-extrabold text-white shadow-md">
+    <div className="flex min-h-screen bg-bg">
+      {/* ── Brand panel ── */}
+      <div className="relative hidden w-1/2 flex-col justify-between bg-[#0b0b0c] p-12 text-white lg:flex">
+        <div className="font-display flex items-center gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-md bg-accent text-[20px] font-bold leading-none text-black">
             M
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-text">
-            MPIRE
+          </span>
+          <span className="text-[17px] font-semibold tracking-[0.18em]">MPIRE</span>
+        </div>
+
+        <div>
+          <p className="eyebrow text-white/40">Command Center</p>
+          <h1 className="text-display mt-5 text-6xl text-white">
+            Run the
+            <br />
+            <span className="text-accent">operation.</span>
           </h1>
-          <p className="mt-1 text-sm text-muted">
-            Sign in to your command center
+          <p className="mt-6 max-w-sm text-[15px] leading-relaxed text-white/55">
+            Outcomes, risks, and team performance — every project and task in one command center.
           </p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label
-              htmlFor="email"
-              className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted"
-            >
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-text placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-muted"
-              placeholder="you@company.com"
-            />
+        <p className="text-xs tracking-wide text-white/25">© MPIRE Group</p>
+      </div>
+
+      {/* ── Form ── */}
+      <div className="flex w-full items-center justify-center px-6 py-12 lg:w-1/2">
+        <div className="w-full max-w-sm">
+          {/* Mobile brand */}
+          <div className="font-display mb-10 flex items-center gap-3 lg:hidden">
+            <span className="flex h-9 w-9 items-center justify-center rounded-md bg-accent text-[20px] font-bold leading-none text-black">
+              M
+            </span>
+            <span className="text-[17px] font-semibold tracking-[0.18em] text-text">MPIRE</span>
           </div>
 
-          <div>
-            <label
-              htmlFor="password"
-              className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted"
+          <p className="eyebrow">Welcome back</p>
+          <h2 className="text-display mt-2 text-4xl text-text">Sign in</h2>
+          <p className="mt-2 text-sm text-muted">Enter your credentials to continue.</p>
+
+          <form onSubmit={handleLogin} className="mt-8 space-y-4">
+            <div>
+              <label
+                htmlFor="email"
+                className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-muted"
+              >
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full rounded-lg border border-border bg-card px-4 py-3 text-sm text-text transition-colors placeholder:text-faint focus:border-accent focus:outline-none"
+                placeholder="you@company.com"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="password"
+                className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-muted"
+              >
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full rounded-lg border border-border bg-card px-4 py-3 text-sm text-text transition-colors placeholder:text-faint focus:border-accent focus:outline-none"
+                placeholder="••••••••"
+              />
+            </div>
+
+            {error && (
+              <p className="rounded-lg border border-red/20 bg-red-bg px-3 py-2.5 text-xs font-medium text-red">
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary-light active:scale-[0.99] disabled:opacity-50"
             >
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-text placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-muted"
-              placeholder="••••••••"
-            />
-          </div>
-
-          {error && (
-            <p className="rounded-lg bg-red-bg px-3 py-2 text-xs font-medium text-red">
-              {error}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-light disabled:opacity-50"
-          >
-            {loading ? 'Signing in...' : 'Sign in'}
-          </button>
-        </form>
+              {loading ? 'Signing in…' : 'Sign in'}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );

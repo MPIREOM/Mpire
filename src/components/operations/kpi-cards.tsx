@@ -200,89 +200,56 @@ export function KPICards({ kpi, onTogglePeriod }: KPICardsProps) {
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-border bg-border lg:grid-cols-4">
       {cards.map((card, i) => {
         const isCompletion = card.format === 'percent';
-        const delay = i * 0.1;
+        const delay = i * 0.07;
 
         return (
           <motion.div
             key={card.label}
-            initial={{ opacity: 0, y: 24, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{
-              delay,
-              duration: 0.45,
-              ease: [0.4, 0, 0.2, 1],
-            }}
-            whileHover={{
-              y: -3,
-              boxShadow: '0 8px 30px -12px rgba(0,0,0,0.12)',
-              transition: { duration: 0.25 },
-            }}
-            whileTap={{ scale: 0.985 }}
-            className="group relative overflow-hidden rounded-xl border border-border bg-card p-5"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="group relative bg-card p-5 transition-colors hover:bg-bg sm:p-6"
           >
-            {/* Subtle shine sweep on hover */}
-            <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/[0.04] to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-
-            <div className="relative">
-              {/* Header: icon + toggle */}
-              <div className="mb-3 flex items-center justify-between">
-                <motion.div
-                  initial={{ scale: 0.5, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{
-                    delay: delay + 0.15,
-                    type: 'spring',
-                    stiffness: 300,
-                    damping: 20,
-                  }}
-                  className={cn('rounded-lg p-2', card.iconBg)}
+            {/* Header: eyebrow label + icon / toggle */}
+            <div className="flex items-center justify-between">
+              <p className="eyebrow truncate">{card.label}</p>
+              {card.label.startsWith('Done') ? (
+                <button
+                  onClick={onTogglePeriod}
+                  className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold text-accent transition-colors hover:bg-accent-muted"
                 >
-                  <card.icon className={cn('h-4 w-4', card.color)} />
-                </motion.div>
-                {card.label.startsWith('Done') && (
-                  <button
-                    onClick={onTogglePeriod}
-                    className="rounded-md px-2 py-0.5 text-[10px] font-semibold text-accent transition-colors hover:bg-accent-muted"
-                  >
-                    {kpi.completionPeriodDays}d
-                  </button>
-                )}
-              </div>
-
-              {/* Value + optional ring */}
-              <div className="flex items-end justify-between gap-2">
-                <div className="min-w-0">
-                  <p className={cn('text-3xl font-bold tracking-tight', card.color)}>
-                    <AnimatedNumber
-                      value={card.value}
-                      suffix={card.format === 'percent' ? '%' : ''}
-                    />
-                  </p>
-                  <p className="mt-0.5 text-[13px] font-medium text-muted">{card.label}</p>
-                </div>
-
-                {isCompletion && (
-                  <ProgressRing
-                    percent={card.value}
-                    color={card.rawColor}
-                    delay={delay + 0.3}
-                  />
-                )}
-              </div>
-
-              {/* Mini progress bar for non-completion cards */}
-              {!isCompletion && (
-                <MiniBar
-                  value={card.value}
-                  max={card.maxForBar}
-                  colorClass={card.barColor}
-                  delay={delay + 0.25}
-                />
+                  {kpi.completionPeriodDays}D
+                </button>
+              ) : (
+                <card.icon className="h-4 w-4 shrink-0 text-faint" />
               )}
             </div>
+
+            {/* Oversized editorial numeral */}
+            <div className="mt-5 flex items-end justify-between gap-2">
+              <p className={cn('stat-numeral text-5xl sm:text-6xl', card.color)}>
+                <AnimatedNumber
+                  value={card.value}
+                  suffix={card.format === 'percent' ? '%' : ''}
+                />
+              </p>
+              {isCompletion && (
+                <ProgressRing percent={card.value} color={card.rawColor} delay={delay + 0.2} />
+              )}
+            </div>
+
+            {/* Mini progress bar for non-completion cards */}
+            {!isCompletion && (
+              <MiniBar
+                value={card.value}
+                max={card.maxForBar}
+                colorClass={card.barColor}
+                delay={delay + 0.15}
+              />
+            )}
           </motion.div>
         );
       })}
