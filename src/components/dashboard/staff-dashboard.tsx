@@ -150,7 +150,7 @@ export function StaffDashboard({
               <p className="eyebrow truncate">{c.label}</p>
               <c.icon className={cn('h-4 w-4 shrink-0', c.color)} />
             </div>
-            <p className={cn('stat-numeral mt-5 text-5xl sm:text-6xl', c.color)}>{c.value}</p>
+            <p className="stat-numeral mt-5 text-5xl text-text sm:text-6xl">{c.value}</p>
           </motion.div>
         ))}
       </div>

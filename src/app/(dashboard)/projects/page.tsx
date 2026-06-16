@@ -192,20 +192,20 @@ export default function ProjectsPage() {
           {/* ── Summary KPI row ── */}
           <div className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-border bg-border sm:grid-cols-4">
             {[
-              { label: 'Total Projects', value: counts.all, color: 'text-text' },
-              { label: 'Active', value: counts.active, color: 'text-green' },
-              { label: 'In Progress Tasks', value: totalInProgress, color: 'text-blue' },
-              { label: 'Avg. Completion', value: `${avgProgress}%`, color: 'text-accent' },
+              { label: 'Total Projects', value: counts.all },
+              { label: 'Active', value: counts.active },
+              { label: 'In Progress Tasks', value: totalInProgress },
+              { label: 'Avg. Completion', value: `${avgProgress}%` },
             ].map((kpi, i) => (
               <motion.div
                 key={kpi.label}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.06, duration: 0.44, ease: [0.16, 1, 0.3, 1] }}
-                className="bg-card px-5 py-5"
+                className="bg-card px-5 py-4"
               >
                 <p className="eyebrow truncate">{kpi.label}</p>
-                <p className={cn('stat-numeral mt-3 text-4xl', kpi.color)}>{kpi.value}</p>
+                <p className="stat-numeral mt-1.5 text-3xl text-text">{kpi.value}</p>
               </motion.div>
             ))}
           </div>

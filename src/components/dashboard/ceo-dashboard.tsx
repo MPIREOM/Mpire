@@ -167,7 +167,7 @@ export function CEODashboard({ tasks, projects, team, projectHealth }: CEODashbo
               </div>
 
               <div className="mt-5 flex items-end justify-between gap-2">
-                <p className={cn('stat-numeral text-5xl sm:text-6xl', card.color)}>
+                <p className="stat-numeral text-5xl text-text sm:text-6xl">
                   <AnimatedValue value={card.value} suffix={card.hasRing ? '%' : ''} />
                 </p>
                 {card.hasRing && (
