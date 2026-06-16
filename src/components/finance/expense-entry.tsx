@@ -9,7 +9,7 @@ import { formatOMR, parseAmount } from '@/lib/currency';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { canViewFixedExpenses, canManageFinance } from '@/lib/roles';
-import { useExpenses, useFinanceClients } from '@/hooks/use-finance-data';
+import { useExpenses, useClientNames } from '@/hooks/use-finance-data';
 import type { User, ExpenseType } from '@/types/database';
 
 const OPERATIONAL_CATEGORIES = ['Models', 'Editor', 'Space Rental', 'Equipment', 'Travel', 'Other'];
@@ -17,9 +17,8 @@ const FIXED_CATEGORIES = ['Salaries', 'Rent', 'Utilities', 'Subscriptions', 'Ins
 
 export function ExpenseEntry({ user }: { user: User }) {
   const { expenses, addExpense, deleteExpense } = useExpenses();
-  const { clients } = useFinanceClients(); // [] for staff (RLS) — dropdown only for managers
+  const { clientNames } = useClientNames(); // names-only view — readable by all roles
   const canFixed = canViewFixedExpenses(user.role);
-  const canAttribute = canManageFinance(user.role);
 
   const [type, setType] = useState<ExpenseType>('operational');
   const [category, setCategory] = useState('Models');
@@ -113,12 +112,12 @@ export function ExpenseEntry({ user }: { user: User }) {
             </div>
           </div>
 
-          {type === 'operational' && canAttribute && clients.length > 0 && (
+          {type === 'operational' && clientNames.length > 0 && (
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Client (optional)</label>
               <select value={clientId} onChange={(e) => setClientId(e.target.value)} className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none">
                 <option value="">— Unattributed —</option>
-                {clients.filter((c) => c.status === 'active').map((c) => (
+                {clientNames.filter((c) => c.status === 'active').map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>

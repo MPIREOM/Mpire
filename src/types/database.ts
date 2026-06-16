@@ -161,6 +161,14 @@ export interface ClientInvoice {
   client?: FinanceClient;
 }
 
+/** Names-only client projection (safe for staff — no revenue). */
+export interface ClientName {
+  id: string;
+  name: string;
+  type: ClientType;
+  status: ClientStatus;
+}
+
 export interface Expense {
   id: string;
   company_id: string;
