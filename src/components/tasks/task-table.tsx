@@ -290,7 +290,7 @@ export function TaskTable({
             onClick={() => setViewMode('my')}
             className={clsx(
               'rounded-md px-3 py-1 text-[13px] font-semibold transition-all active:scale-95',
-              viewMode === 'my' ? 'bg-accent text-white' : 'text-muted hover:text-text'
+              viewMode === 'my' ? 'bg-primary text-primary-foreground' : 'text-muted hover:text-text'
             )}
           >
             My Tasks
@@ -300,7 +300,7 @@ export function TaskTable({
               onClick={() => setViewMode('all')}
               className={clsx(
                 'rounded-md px-3 py-1 text-[13px] font-semibold transition-all active:scale-95',
-                viewMode === 'all' ? 'bg-accent text-white' : 'text-muted hover:text-text'
+                viewMode === 'all' ? 'bg-primary text-primary-foreground' : 'text-muted hover:text-text'
               )}
             >
               All Tasks
@@ -344,7 +344,7 @@ export function TaskTable({
         {canCreate && onCreateTaskWithAssignees && (
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-[13px] font-semibold text-white transition-all hover:bg-accent-light active:scale-95"
+            className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-[13px] font-semibold text-primary-foreground transition-all hover:bg-primary-light active:scale-95"
           >
             <PlusIcon className="h-3.5 w-3.5" />
             Add Task
@@ -433,7 +433,7 @@ export function TaskTable({
                   <span className="rounded-full bg-bg px-1.5 py-0.5 text-[11px] font-bold text-muted">{group.tasks.length}</span>
                 </div>
               )}
-              <div className="rounded-xl border border-border bg-card">
+              <div className="overflow-hidden rounded-card border border-border bg-card">
                 <div className="flex items-center gap-3 border-b border-border px-4 py-1.5">
                   <button
                     onClick={toggleSelectAll}
@@ -554,9 +554,9 @@ export function TaskTable({
       <Dialog open={showCreate && !!onCreateTaskWithAssignees} onClose={() => setShowCreate(false)} className="relative z-50">
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
-          <DialogPanel className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
+          <DialogPanel className="w-full max-w-md rounded-card border border-border bg-card p-6 shadow-xl">
             <div className="flex items-center justify-between">
-              <DialogTitle className="text-[15px] font-bold text-text">New Task</DialogTitle>
+              <DialogTitle className="font-display text-lg font-semibold tracking-tight text-text">New Task</DialogTitle>
               <button type="button" onClick={() => setShowCreate(false)} className="rounded-md p-1 text-muted hover:bg-bg hover:text-text">
                 <XMarkIcon className="h-5 w-5" />
               </button>
@@ -599,7 +599,7 @@ export function TaskTable({
               )}
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={() => setShowCreate(false)} className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted transition-all hover:bg-bg hover:text-text active:scale-95">Cancel</button>
-                <button type="submit" disabled={createSaving} className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-accent-light active:scale-95 disabled:opacity-50">
+                <button type="submit" disabled={createSaving} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary-light active:scale-95 disabled:opacity-50">
                   {createSaving ? 'Creating...' : 'Create Task'}
                 </button>
               </div>
