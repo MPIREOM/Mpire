@@ -137,7 +137,7 @@ export function KPICards({ kpi, onTogglePeriod }: KPICardsProps) {
       label: 'Due Today',
       value: kpi.dueToday,
       format: 'number',
-      color: 'text-yellow',
+      color: 'text-text',
       rawColor: 'var(--color-yellow)',
       icon: CalendarIcon,
       iconBg: 'bg-yellow-bg',
@@ -148,7 +148,7 @@ export function KPICards({ kpi, onTogglePeriod }: KPICardsProps) {
       label: 'Overdue',
       value: kpi.overdue,
       format: 'number',
-      color: kpi.overdue > 0 ? 'text-red' : 'text-green',
+      color: kpi.overdue > 0 ? 'text-red' : 'text-text',
       rawColor: kpi.overdue > 0 ? 'var(--color-red)' : 'var(--color-green)',
       icon: ExclamationTriangleIcon,
       iconBg: kpi.overdue > 0 ? 'bg-red-bg' : 'bg-green-bg',
@@ -159,7 +159,7 @@ export function KPICards({ kpi, onTogglePeriod }: KPICardsProps) {
       label: 'In Progress',
       value: kpi.inProgress,
       format: 'number',
-      color: 'text-blue',
+      color: 'text-text',
       rawColor: 'var(--color-blue)',
       icon: ArrowPathIcon,
       iconBg: 'bg-blue-bg',
@@ -170,12 +170,7 @@ export function KPICards({ kpi, onTogglePeriod }: KPICardsProps) {
       label: `Done (${kpi.completionPeriodDays}d)`,
       value: kpi.completionRate,
       format: 'percent',
-      color:
-        kpi.completionRate >= 70
-          ? 'text-green'
-          : kpi.completionRate >= 40
-            ? 'text-yellow'
-            : 'text-red',
+      color: 'text-text',
       rawColor:
         kpi.completionRate >= 70
           ? 'var(--color-green)'

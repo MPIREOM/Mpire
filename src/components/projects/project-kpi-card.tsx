@@ -150,7 +150,7 @@ export function ProjectKPICard({ metrics, onEdit, onDelete }: ProjectKPICardProp
       <motion.div
         whileTap={{ scale: 0.99 }}
         className="group relative overflow-hidden rounded-card border border-border bg-card transition-colors hover:border-border-hover"
-        style={{ borderLeftWidth: 4, borderLeftColor: priorityColor }}
+        style={{ borderLeftWidth: 3, borderLeftColor: priorityColor }}
       >
         <div className="relative p-2.5 sm:p-4 md:p-5">
           {/* ── 1. Header: name, status ── */}
@@ -208,11 +208,11 @@ export function ProjectKPICard({ metrics, onEdit, onDelete }: ProjectKPICardProp
               </p>
             </div>
             <div className="hidden sm:flex flex-col">
-              <div className="flex items-center gap-1 text-blue">
+              <div className="flex items-center gap-1 text-muted">
                 <ArrowPathIcon className="h-3 w-3" />
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">In Prog</span>
               </div>
-              <p className="text-[20px] font-bold leading-tight tabular-nums text-blue">
+              <p className={cn('text-[20px] font-bold leading-tight tabular-nums', m.inProgressTasks > 0 ? 'text-text' : 'text-muted/40')}>
                 <AnimatedNum value={m.inProgressTasks} />
               </p>
             </div>
@@ -325,7 +325,7 @@ export function ProjectListRow({ metrics, onEdit, onDelete }: ProjectKPICardProp
       <motion.div
         whileHover={{ backgroundColor: 'var(--color-bg)', transition: { duration: 0.15 } }}
         className="flex items-center gap-4 rounded-card border border-border bg-card px-4 py-3 transition-colors sm:px-5"
-        style={{ borderLeftWidth: 4, borderLeftColor: priorityColor }}
+        style={{ borderLeftWidth: 3, borderLeftColor: priorityColor }}
       >
         {/* Project name + health */}
         <div className="min-w-0 flex-1">
