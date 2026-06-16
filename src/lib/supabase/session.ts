@@ -34,17 +34,43 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-    error: getUserError,
-  } = await supabase.auth.getUser();
+  // Guard the auth check with a timeout. If the Supabase project is paused,
+  // slow, or unreachable, `getUser()` can hang until the platform kills the
+  // middleware (504 MIDDLEWARE_INVOCATION_TIMEOUT) — which takes the entire
+  // site down, including the login page. Race it against a timeout and treat
+  // any failure as "logged out" so routes still respond instead of 504-ing.
+  const AUTH_TIMEOUT_MS = 5000;
+  let user: Awaited<ReturnType<typeof supabase.auth.getUser>>['data']['user'] = null;
 
-  // If Supabase itself is unreachable or the API key is invalid, log it and
-  // let the request through so the page can show a meaningful error instead
-  // of an infinite redirect loop to /login.
-  if (getUserError && getUserError.message?.toLowerCase().includes('invalid api key')) {
-    console.error('[middleware] Supabase returned "Invalid API key" — check your environment variables and whether the project is paused.');
-    return NextResponse.next({ request });
+  try {
+    const { data, error: getUserError } = await Promise.race([
+      supabase.auth.getUser(),
+      new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error('supabase-auth-timeout')),
+          AUTH_TIMEOUT_MS
+        )
+      ),
+    ]);
+
+    if (getUserError) {
+      // Invalid API key, paused project, etc. Log and treat as unauthenticated
+      // (the login page itself surfaces a clearer message on sign-in attempts).
+      console.error(
+        '[middleware] Supabase auth.getUser error — check env vars and whether the project is paused:',
+        getUserError.message
+      );
+    } else {
+      user = data.user;
+    }
+  } catch (err) {
+    // Network failure or timeout — degrade gracefully instead of returning a
+    // 504 for every route. Public/login routes render; protected routes fall
+    // through to the redirect-to-login logic below.
+    console.error(
+      '[middleware] Supabase auth check failed or timed out — serving the app in a logged-out state:',
+      err instanceof Error ? err.message : err
+    );
   }
 
   // Redirect unauthenticated users to login
