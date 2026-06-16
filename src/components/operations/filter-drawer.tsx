@@ -117,10 +117,8 @@ export function FilterDrawer({
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border px-5 py-4">
               <div className="flex items-center gap-2.5">
-                <div className="rounded-lg bg-accent-muted p-1.5">
-                  <FunnelIcon className="h-4 w-4 text-accent" />
-                </div>
-                <DialogTitle className="text-base font-bold text-text">
+                <FunnelIcon className="h-4 w-4 text-accent" />
+                <DialogTitle className="font-display text-lg font-semibold tracking-tight text-text">
                   Filters
                 </DialogTitle>
                 {activeCount > 0 && (
