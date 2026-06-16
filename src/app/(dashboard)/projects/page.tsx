@@ -190,7 +190,7 @@ export default function ProjectsPage() {
       ) : (
         <div className="space-y-6">
           {/* ── Summary KPI row ── */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-border bg-border sm:grid-cols-4">
             {[
               { label: 'Total Projects', value: counts.all, color: 'text-text' },
               { label: 'Active', value: counts.active, color: 'text-green' },
@@ -199,13 +199,13 @@ export default function ProjectsPage() {
             ].map((kpi, i) => (
               <motion.div
                 key={kpi.label}
-                initial={{ opacity: 0, y: 16 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.06, duration: 0.44 }}
-                className="rounded-xl border border-border bg-card px-4 py-3"
+                transition={{ delay: i * 0.06, duration: 0.44, ease: [0.16, 1, 0.3, 1] }}
+                className="bg-card px-5 py-5"
               >
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted">{kpi.label}</p>
-                <p className={cn('text-xl font-bold tabular-nums', kpi.color)}>{kpi.value}</p>
+                <p className="eyebrow truncate">{kpi.label}</p>
+                <p className={cn('stat-numeral mt-3 text-4xl', kpi.color)}>{kpi.value}</p>
               </motion.div>
             ))}
           </div>
@@ -287,7 +287,7 @@ export default function ProjectsPage() {
               {canEdit && (
                 <button
                   onClick={() => setShowCreate(true)}
-                  className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-[13px] font-semibold text-white transition-all hover:bg-accent-light active:scale-95"
+                  className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-[13px] font-semibold text-primary-foreground transition-all hover:bg-primary-light active:scale-95"
                 >
                   <PlusIcon className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">Add Project</span>
@@ -437,9 +437,9 @@ export default function ProjectsPage() {
       <Dialog open={showCreate} onClose={() => setShowCreate(false)} className="relative z-50">
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
-          <DialogPanel className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
+          <DialogPanel className="w-full max-w-md rounded-card border border-border bg-card p-6 shadow-lg">
             <div className="flex items-center justify-between">
-              <DialogTitle className="text-lg font-bold text-text">New Project</DialogTitle>
+              <DialogTitle className="font-display text-lg font-semibold tracking-tight text-text">New Project</DialogTitle>
               <button onClick={() => setShowCreate(false)} className="rounded-md p-1 text-muted hover:bg-bg hover:text-text">
                 <XMarkIcon className="h-5 w-5" />
               </button>
@@ -487,7 +487,7 @@ export default function ProjectsPage() {
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={() => setShowCreate(false)} className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted transition-all hover:bg-bg hover:text-text active:scale-95">Cancel</button>
-                <button type="submit" disabled={createSaving} className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-accent-light active:scale-95 disabled:opacity-50">
+                <button type="submit" disabled={createSaving} className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary-light active:scale-95 disabled:opacity-50">
                   {createSaving ? 'Creating...' : 'Create Project'}
                 </button>
               </div>
@@ -500,9 +500,9 @@ export default function ProjectsPage() {
       <Dialog open={!!editTarget} onClose={() => setEditTarget(null)} className="relative z-50">
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
-          <DialogPanel className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
+          <DialogPanel className="w-full max-w-md rounded-card border border-border bg-card p-6 shadow-lg">
             <div className="flex items-center justify-between">
-              <DialogTitle className="text-lg font-bold text-text">Edit Project</DialogTitle>
+              <DialogTitle className="font-display text-lg font-semibold tracking-tight text-text">Edit Project</DialogTitle>
               <button onClick={() => setEditTarget(null)} className="rounded-md p-1 text-muted hover:bg-bg hover:text-text">
                 <XMarkIcon className="h-5 w-5" />
               </button>
@@ -550,7 +550,7 @@ export default function ProjectsPage() {
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={() => setEditTarget(null)} className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted transition-all hover:bg-bg hover:text-text active:scale-95">Cancel</button>
-                <button type="submit" disabled={editSaving} className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-accent-light active:scale-95 disabled:opacity-50">
+                <button type="submit" disabled={editSaving} className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary-light active:scale-95 disabled:opacity-50">
                   {editSaving ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
@@ -563,7 +563,7 @@ export default function ProjectsPage() {
       <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} className="relative z-[60]">
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
-          <DialogPanel className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl">
+          <DialogPanel className="w-full max-w-sm rounded-card border border-border bg-card p-6 shadow-xl">
             <DialogTitle className="text-lg font-bold text-text">Delete Project</DialogTitle>
             <p className="mt-2 text-sm text-muted">
               Are you sure you want to delete <strong className="text-text">&ldquo;{deleteTarget?.name}&rdquo;</strong>? This will permanently remove the project and all its tasks, comments, and activity. This action cannot be undone.

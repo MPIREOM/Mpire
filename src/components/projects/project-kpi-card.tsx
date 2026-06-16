@@ -146,20 +146,12 @@ export function ProjectKPICard({ metrics, onEdit, onDelete }: ProjectKPICardProp
   const progressRaw = getProgressRawColor(m.progressPercent, m.overdueTasks);
 
   return (
-    <Link href={`/projects/${m.project.id}`} className="block outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-xl">
+    <Link href={`/projects/${m.project.id}`} className="block outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-card">
       <motion.div
-        whileHover={{
-          y: -4,
-          boxShadow: '0 12px 40px -12px rgba(0,0,0,0.12)',
-          transition: { duration: 0.25 },
-        }}
         whileTap={{ scale: 0.99 }}
-        className="group relative overflow-hidden rounded-xl border border-border bg-card transition-colors"
+        className="group relative overflow-hidden rounded-card border border-border bg-card transition-colors hover:border-border-hover"
         style={{ borderLeftWidth: 4, borderLeftColor: priorityColor }}
       >
-        {/* Shine sweep on hover */}
-        <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/[0.03] to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-
         <div className="relative p-2.5 sm:p-4 md:p-5">
           {/* ── 1. Header: name, status ── */}
           <div className="mb-1.5 sm:mb-3 flex items-start justify-between gap-1.5 sm:gap-3">
@@ -329,10 +321,10 @@ export function ProjectListRow({ metrics, onEdit, onDelete }: ProjectKPICardProp
   const progressColor = getProgressColor(m.progressPercent, m.overdueTasks);
 
   return (
-    <Link href={`/projects/${m.project.id}`} className="block outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-xl">
+    <Link href={`/projects/${m.project.id}`} className="block outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-card">
       <motion.div
         whileHover={{ backgroundColor: 'var(--color-bg)', transition: { duration: 0.15 } }}
-        className="flex items-center gap-4 rounded-xl border border-border bg-card px-4 py-3 transition-colors sm:px-5"
+        className="flex items-center gap-4 rounded-card border border-border bg-card px-4 py-3 transition-colors sm:px-5"
         style={{ borderLeftWidth: 4, borderLeftColor: priorityColor }}
       >
         {/* Project name + health */}

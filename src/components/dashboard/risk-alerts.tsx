@@ -9,7 +9,6 @@ import {
   NoSymbolIcon,
   FolderIcon,
 } from '@heroicons/react/24/outline';
-import { Badge } from '@/components/ui/badge';
 import type { Task, ProjectHealth } from '@/types/database';
 import { isOverdue, formatDate } from '@/lib/dates';
 
@@ -89,28 +88,22 @@ export function RiskAlerts({ tasks, projectHealth }: RiskAlertsProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2, duration: 0.4 }}
     >
-      <h3 className="mb-4 text-base font-bold text-text">Risk & Alerts</h3>
+      <h3 className="mb-4 font-display text-lg font-semibold tracking-tight text-text">Risk &amp; Alerts</h3>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {alerts.map((group, i) => (
           <motion.div
             key={group.label}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25 + i * 0.05, duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-            whileHover={{ y: -2, transition: { duration: 0.2 } }}
-            className="rounded-xl border border-border bg-card p-5 transition-shadow hover:shadow-md"
+            transition={{ delay: 0.25 + i * 0.05, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="rounded-card border border-border bg-card p-5 transition-colors hover:border-border-hover"
           >
-            <div className="mb-3 flex items-center gap-2">
-              <div className={cn('rounded-lg p-1.5', group.bgColor)}>
-                <group.icon className={cn('h-4 w-4', group.color)} />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-text">{group.label}</p>
-                <p className={cn('text-xl font-bold tabular-nums', group.color)}>
-                  {group.items.length}
-                </p>
-              </div>
-              <Badge variant={group.badgeVariant}>{group.items.length}</Badge>
+            <div className="mb-4 flex items-center gap-3">
+              <group.icon className={cn('h-5 w-5 shrink-0', group.color)} />
+              <p className="flex-1 text-sm font-semibold text-text">{group.label}</p>
+              <span className={cn('stat-numeral text-2xl', group.color)}>
+                {group.items.length}
+              </span>
             </div>
             <div className="space-y-1.5">
               {group.items.slice(0, 4).map((item, idx) => {

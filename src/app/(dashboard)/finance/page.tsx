@@ -191,7 +191,7 @@ export default function FinancePage() {
         {selectedBusinessId && (
           <button
             onClick={() => setShowUpload(true)}
-            className="flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-accent-light active:scale-95"
+            className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary-light active:scale-95"
           >
             <ArrowUpTrayIcon className="h-4 w-4" />
             Upload Excel/CSV
@@ -218,7 +218,7 @@ export default function FinancePage() {
           {selectedBusinessId && (
             <button
               onClick={() => setShowUpload(true)}
-              className="flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-light"
+              className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-[13px] font-semibold text-primary-foreground hover:bg-primary-light"
             >
               <ArrowUpTrayIcon className="h-4 w-4" />
               Upload Excel/CSV
@@ -227,7 +227,7 @@ export default function FinancePage() {
           {!selectedBusinessId && businesses.length === 0 && (
             <button
               onClick={() => setShowNewBusiness(true)}
-              className="flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-light"
+              className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-[13px] font-semibold text-primary-foreground hover:bg-primary-light"
             >
               <PlusIcon className="h-4 w-4" />
               Add Your First Business
@@ -239,9 +239,9 @@ export default function FinancePage() {
           {/* KPI row */}
           <div className={clsx('grid gap-4', selectedBusinessId ? 'grid-cols-2 lg:grid-cols-3' : 'grid-cols-2 lg:grid-cols-4')}>
             {kpiCards.map((c) => (
-              <div key={c.label} className="rounded-xl border border-border bg-card p-5">
-                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">{c.label}</p>
-                <p className={clsx('text-2xl font-bold tabular-nums', c.color)}>
+              <div key={c.label} className="rounded-card border border-border bg-card p-5">
+                <p className="eyebrow truncate">{c.label}</p>
+                <p className={clsx('stat-numeral mt-3 text-3xl', c.color)}>
                   {c.isCount
                     ? c.value
                     : (c.value as number).toLocaleString(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 0 })}
@@ -274,7 +274,7 @@ export default function FinancePage() {
           {/* Monthly trend chart */}
           {summary.monthlyTrend.length > 1 && (
             <div>
-              <h3 className="mb-3 text-base font-bold text-text">
+              <h3 className="mb-3 font-display text-lg font-semibold tracking-tight text-text">
                 Monthly Trend{selectedBusinessId ? '' : ' (All Businesses)'}
               </h3>
               <div className="rounded-xl border border-border bg-card p-4">
@@ -299,7 +299,7 @@ export default function FinancePage() {
           {/* Category breakdown (when a business is selected) */}
           {selectedBusinessId && summary.byCategory.length > 0 && (
             <div>
-              <h3 className="mb-3 text-base font-bold text-text">By Category</h3>
+              <h3 className="mb-3 font-display text-lg font-semibold tracking-tight text-text">By Category</h3>
               <div className="rounded-xl border border-border bg-card">
                 {summary.byCategory.map((c, idx) => (
                   <div
@@ -322,7 +322,7 @@ export default function FinancePage() {
           {/* Per-business breakdown (all businesses view) */}
           {!selectedBusinessId && summary.byBusiness.length > 0 && (
             <div>
-              <h3 className="mb-3 text-base font-bold text-text">By Business</h3>
+              <h3 className="mb-3 font-display text-lg font-semibold tracking-tight text-text">By Business</h3>
               <div className="rounded-xl border border-border bg-card">
                 {summary.byBusiness.map((b, idx) => (
                   <button
@@ -351,7 +351,7 @@ export default function FinancePage() {
           {/* Upload history (when a business is selected) */}
           {selectedBusinessId && businessUploads.length > 0 && (
             <div>
-              <h3 className="mb-3 text-base font-bold text-text">Upload History</h3>
+              <h3 className="mb-3 font-display text-lg font-semibold tracking-tight text-text">Upload History</h3>
               <div className="rounded-xl border border-border bg-card">
                 {businessUploads.map((u, idx) => (
                   <div
@@ -392,9 +392,9 @@ export default function FinancePage() {
       <Dialog open={showNewBusiness} onClose={() => setShowNewBusiness(false)} className="relative z-50">
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
-          <DialogPanel className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-lg">
+          <DialogPanel className="w-full max-w-sm rounded-card border border-border bg-card p-6 shadow-xl">
             <div className="flex items-center justify-between">
-              <DialogTitle className="text-base font-bold text-text">
+              <DialogTitle className="font-display text-lg font-semibold tracking-tight text-text">
                 Add Business
               </DialogTitle>
               <button
@@ -436,7 +436,7 @@ export default function FinancePage() {
                 <button
                   type="submit"
                   disabled={creatingBusiness || !newBusinessName.trim()}
-                  className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-accent-light active:scale-95 disabled:opacity-50"
+                  className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary-light active:scale-95 disabled:opacity-50"
                 >
                   {creatingBusiness ? 'Creating...' : 'Add Business'}
                 </button>

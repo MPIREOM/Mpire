@@ -170,7 +170,7 @@ export default function PeoplePage() {
         <div className="mb-4 flex justify-end">
           <button
             onClick={() => setShowAdd(true)}
-            className="flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-accent-light active:scale-95"
+            className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary-light active:scale-95"
           >
             <PlusIcon className="h-4 w-4" />
             Add Member
@@ -187,7 +187,7 @@ export default function PeoplePage() {
           {team.map((u) => (
             <div
               key={u.id}
-              className="group rounded-xl border border-border bg-card p-5 transition-all hover:shadow-sm active:scale-[0.98]"
+              className="group rounded-card border border-border bg-card p-5 transition-colors hover:border-border-hover active:scale-[0.99]"
             >
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-sm font-bold text-white">
@@ -231,9 +231,9 @@ export default function PeoplePage() {
       <Dialog open={!!editUser} onClose={() => setEditUser(null)} className="relative z-50">
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
-          <DialogPanel className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
+          <DialogPanel className="w-full max-w-md rounded-card border border-border bg-card p-6 shadow-xl">
             <div className="flex items-center justify-between">
-              <DialogTitle className="text-lg font-bold text-text">
+              <DialogTitle className="font-display text-lg font-semibold tracking-tight text-text">
                 Edit {editUser?.full_name}
               </DialogTitle>
               <button onClick={() => setEditUser(null)} className="rounded-md p-1 text-muted hover:bg-bg hover:text-text">
@@ -332,7 +332,7 @@ export default function PeoplePage() {
                 <button
                   type="submit"
                   disabled={editSaving}
-                  className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-accent-light active:scale-95 disabled:opacity-50"
+                  className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary-light active:scale-95 disabled:opacity-50"
                 >
                   {editSaving ? 'Saving...' : 'Save Changes'}
                 </button>
@@ -358,7 +358,7 @@ export default function PeoplePage() {
                   type="button"
                   onClick={handleChangePassword}
                   disabled={passwordSaving || newPassword.length < 6}
-                  className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-accent-light active:scale-95 disabled:opacity-50"
+                  className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary-light active:scale-95 disabled:opacity-50"
                 >
                   {passwordSaving ? 'Updating...' : 'Update'}
                 </button>
@@ -378,9 +378,9 @@ export default function PeoplePage() {
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" />
 
         <div className="fixed inset-0 flex items-center justify-center p-4">
-          <DialogPanel className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
+          <DialogPanel className="w-full max-w-md rounded-card border border-border bg-card p-6 shadow-xl">
             <div className="flex items-center justify-between">
-              <DialogTitle className="text-lg font-bold text-text">
+              <DialogTitle className="font-display text-lg font-semibold tracking-tight text-text">
                 Add Team Member
               </DialogTitle>
               <button
@@ -483,7 +483,7 @@ export default function PeoplePage() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-accent-light active:scale-95 disabled:opacity-50"
+                  className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary-light active:scale-95 disabled:opacity-50"
                 >
                   {saving ? 'Adding...' : 'Add Member'}
                 </button>

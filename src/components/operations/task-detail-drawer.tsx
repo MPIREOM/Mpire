@@ -231,7 +231,7 @@ export function TaskDetailDrawer({
             {/* Header */}
             <div className="flex items-start justify-between border-b border-border px-6 py-5">
               <div className="min-w-0 flex-1">
-                <DialogTitle className="text-lg font-bold leading-tight text-text">
+                <DialogTitle className="font-display text-xl font-semibold leading-tight tracking-tight text-text">
                   {task?.title}
                 </DialogTitle>
                 {task?.project && (
@@ -495,8 +495,8 @@ export function TaskDetailDrawer({
     <Dialog open={confirmDelete} onClose={() => setConfirmDelete(false)} className="relative z-[60]">
       <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <DialogPanel className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl">
-          <DialogTitle className="text-base font-bold text-text">Delete Task</DialogTitle>
+        <DialogPanel className="w-full max-w-sm rounded-card border border-border bg-card p-6 shadow-xl">
+          <DialogTitle className="font-display text-lg font-semibold tracking-tight text-text">Delete Task</DialogTitle>
           <p className="mt-2 text-sm text-muted">
             Are you sure you want to delete &ldquo;{task?.title}&rdquo;? This will also remove all comments and activity. This action cannot be undone.
           </p>

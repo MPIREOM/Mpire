@@ -108,7 +108,7 @@ export function TimeReviewDialog({ task, open, onConfirm, onCancel }: TimeReview
     <Dialog open={open} onClose={onCancel} className="relative z-[60]">
       <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <DialogPanel className="w-full max-w-lg rounded-2xl border border-border bg-card shadow-xl">
+        <DialogPanel className="w-full max-w-lg rounded-card border border-border bg-card shadow-xl">
           {/* Header */}
           <div className="p-6 pb-4">
             <DialogTitle className="flex items-center gap-2 text-[15px] font-bold text-text">

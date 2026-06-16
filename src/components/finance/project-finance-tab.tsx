@@ -14,7 +14,7 @@ export function ProjectFinanceTab() {
       </p>
       <Link
         href="/finance"
-        className="mt-2 flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-light"
+        className="mt-2 flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-[13px] font-semibold text-primary-foreground hover:bg-primary-light"
       >
         Go to Finance
         <ArrowTopRightOnSquareIcon className="h-4 w-4" />

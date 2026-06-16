@@ -43,8 +43,8 @@ export function WeekFocus({ tasks }: WeekFocusProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4, duration: 0.4 }}
     >
-      <h3 className="mb-4 text-base font-bold text-text">This Week Focus</h3>
-      <div className="rounded-xl border border-border bg-card transition-shadow hover:shadow-md">
+      <h3 className="mb-4 font-display text-lg font-semibold tracking-tight text-text">This Week Focus</h3>
+      <div className="overflow-hidden rounded-card border border-border bg-card">
         {focusItems.map(({ task, isBlocking }, idx) => (
           <motion.div
             key={task.id}

@@ -137,23 +137,20 @@ export function StaffDashboard({
   return (
     <div className="space-y-8">
       {/* My KPIs */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-border bg-border sm:grid-cols-4">
         {kpiCards.map((c, i) => (
           <motion.div
             key={c.label}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.08, duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-            whileHover={{ y: -2, transition: { duration: 0.2 } }}
-            className="rounded-xl border border-border bg-card p-5 transition-shadow hover:shadow-md"
+            transition={{ delay: i * 0.07, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="group bg-card p-5 transition-colors hover:bg-bg sm:p-6"
           >
-            <div className="mb-3 flex items-center gap-2">
-              <div className={cn('rounded-lg p-1.5', c.iconBg)}>
-                <c.icon className={cn('h-4 w-4', c.iconColor)} />
-              </div>
+            <div className="flex items-center justify-between">
+              <p className="eyebrow truncate">{c.label}</p>
+              <c.icon className={cn('h-4 w-4 shrink-0', c.color)} />
             </div>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">{c.label}</p>
-            <p className={cn('text-2xl font-bold tabular-nums tracking-tight', c.color)}>{c.value}</p>
+            <p className={cn('stat-numeral mt-5 text-5xl sm:text-6xl', c.color)}>{c.value}</p>
           </motion.div>
         ))}
       </div>
@@ -164,7 +161,7 @@ export function StaffDashboard({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.4 }}
       >
-        <h3 className="mb-4 text-base font-bold text-text">My Work</h3>
+        <h3 className="mb-4 font-display text-lg font-semibold tracking-tight text-text">My Work</h3>
 
         {/* Tabs */}
         <div className="mb-4 flex gap-1 border-b border-border">
@@ -207,7 +204,7 @@ export function StaffDashboard({
             description="Nice work! Nothing to show in this view."
           />
         ) : (
-          <div className="rounded-xl border border-border bg-card">
+          <div className="overflow-hidden rounded-card border border-border bg-card">
             {filtered.map((task, idx) => {
               const overdue = isOverdue(task.due_date, task.status);
               return (
