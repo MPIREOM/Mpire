@@ -1,587 +1,338 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
+import {
+  PlusIcon, XMarkIcon, MagnifyingGlassIcon, PencilSquareIcon, TrashIcon,
+  ChevronUpDownIcon, ArrowRightIcon,
+} from '@heroicons/react/24/outline';
 import { Shell } from '@/components/layout/shell';
 import { useProjects } from '@/hooks/use-projects';
 import { useTasks } from '@/hooks/use-tasks';
 import { useTeam } from '@/hooks/use-team';
 import { useUser } from '@/hooks/use-user';
-import { canManage } from '@/lib/roles';
+import { useFinanceClients, useClientInvoices, useExpenses } from '@/hooks/use-finance-data';
+import { canManage, canManageFinance } from '@/lib/roles';
 import { cn } from '@/lib/utils';
+import { formatOMR } from '@/lib/currency';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
-import { ProjectKPICard, ProjectListRow } from '@/components/projects/project-kpi-card';
+import { AvatarStack } from '@/components/ui/assignee-picker';
 import {
-  computeProjectMetrics,
-  sortProjects,
-  filterProjects,
-  type SortKey,
-  type FilterKey,
+  computeProjectMetrics, sortProjects, filterProjects, getStatusBadgeVariant, getProgressRawColor,
+  type SortKey, type FilterKey, type ProjectMetrics,
 } from '@/lib/project-utils';
 import type { ProjectStatus } from '@/types/database';
-import {
-  Squares2X2Icon,
-  ListBulletIcon,
-  FunnelIcon,
-  ChevronUpDownIcon,
-  FolderPlusIcon,
-  MagnifyingGlassIcon,
-  XMarkIcon,
-  ChartBarIcon,
-  ExclamationTriangleIcon,
-  CheckCircleIcon,
-  PauseCircleIcon,
-  PlusIcon,
-  PencilSquareIcon,
-  TrashIcon,
-} from '@heroicons/react/24/outline';
 
-/* ── Sort options ── */
+const PROJECT_COLORS = ['#6366f1', '#3b82f6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#8b5cf6', '#14b8a6', '#f97316'];
+
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
-  { value: 'priority', label: 'Priority' },
+  { value: 'updated', label: 'Recently Updated' },
   { value: 'overdue', label: 'Most Overdue' },
   { value: 'progress', label: 'Progress' },
   { value: 'name', label: 'Name' },
-  { value: 'updated', label: 'Recently Updated' },
 ];
 
-/* ── Filter pills ── */
-interface FilterPill {
-  key: FilterKey;
-  label: string;
-  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-  count: number;
+const FILTERS: { key: FilterKey; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'active', label: 'Active' },
+  { key: 'at-risk', label: 'At Risk' },
+  { key: 'completed', label: 'Completed' },
+  { key: 'paused', label: 'Paused' },
+];
+
+interface ProjectForm {
+  name: string;
+  status: ProjectStatus;
+  color: string;
+  client_id: string;
 }
-
-/* ── Page ── */
-const PROJECT_COLORS = [
-  '#6366f1', '#3b82f6', '#06b6d4', '#10b981', '#f59e0b',
-  '#ef4444', '#ec4899', '#8b5cf6', '#14b8a6', '#f97316',
-];
+const emptyForm: ProjectForm = { name: '', status: 'active', color: PROJECT_COLORS[0], client_id: '' };
 
 export default function ProjectsPage() {
-  const { projects, isLoading: projectsLoading, createProject, updateProject, deleteProject } = useProjects();
+  const router = useRouter();
+  const { projects, isLoading: projLoading, createProject, updateProject, deleteProject } = useProjects();
   const { tasks, isLoading: tasksLoading } = useTasks();
   const { team } = useTeam();
   const { user } = useUser();
-
-  const isLoading = projectsLoading || tasksLoading;
+  const showFinance = user ? canManageFinance(user.role) : false;
   const canEdit = user ? canManage(user.role) : false;
 
-  const [view, setView] = useState<'grid' | 'list'>('grid');
-  const [sortBy, setSortBy] = useState<SortKey>('priority');
-  const [filter, setFilter] = useState<FilterKey>('all');
+  const { clients } = useFinanceClients();
+  const { invoices } = useClientInvoices();
+  const { expenses } = useExpenses();
+
   const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState<SortKey>('updated');
+  const [filter, setFilter] = useState<FilterKey>('all');
   const [sortOpen, setSortOpen] = useState(false);
 
-  // Create project dialog state
-  const [showCreate, setShowCreate] = useState(false);
-  const [createForm, setCreateForm] = useState({ name: '', status: 'active' as ProjectStatus, color: PROJECT_COLORS[0] });
-  const [createSaving, setCreateSaving] = useState(false);
-
-  // Edit project dialog state
-  const [editTarget, setEditTarget] = useState<{ id: string; name: string; status: ProjectStatus; color: string } | null>(null);
-  const [editForm, setEditForm] = useState({ name: '', status: 'active' as ProjectStatus, color: '' });
-  const [editSaving, setEditSaving] = useState(false);
-
-  // Delete project dialog state
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<ProjectForm>(emptyForm);
+  const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
-  const [deleteSaving, setDeleteSaving] = useState(false);
 
-  async function handleCreateProject(e: React.FormEvent) {
-    e.preventDefault();
-    if (!user || !createForm.name.trim()) return;
-    setCreateSaving(true);
-    try {
-      await createProject({
-        name: createForm.name.trim(),
-        status: createForm.status,
-        color: createForm.color,
-        company_id: user.company_id,
-      });
-      setShowCreate(false);
-      setCreateForm({ name: '', status: 'active', color: PROJECT_COLORS[0] });
-    } finally {
-      setCreateSaving(false);
-    }
-  }
+  const isLoading = projLoading || tasksLoading;
 
-  function openEditDialog(project: { id: string; name: string; status: ProjectStatus; color: string }) {
-    setEditTarget(project);
-    setEditForm({ name: project.name, status: project.status, color: project.color });
-  }
+  // Per-client financials (owner/manager only)
+  const clientFinance = useMemo(() => {
+    const map = new Map<string, { revenue: number; profit: number }>();
+    if (!showFinance) return map;
+    const rev = new Map<string, number>();
+    invoices.forEach((i) => rev.set(i.client_id, (rev.get(i.client_id) ?? 0) + i.amount));
+    const exp = new Map<string, number>();
+    expenses.filter((e) => e.type === 'operational' && e.client_id).forEach((e) => exp.set(e.client_id!, (exp.get(e.client_id!) ?? 0) + e.amount));
+    new Set([...rev.keys(), ...exp.keys()]).forEach((id) =>
+      map.set(id, { revenue: rev.get(id) ?? 0, profit: (rev.get(id) ?? 0) - (exp.get(id) ?? 0) })
+    );
+    return map;
+  }, [invoices, expenses, showFinance]);
 
-  async function handleEditProject(e: React.FormEvent) {
-    e.preventDefault();
-    if (!editTarget || !editForm.name.trim()) return;
-    setEditSaving(true);
-    try {
-      await updateProject(editTarget.id, {
-        name: editForm.name.trim(),
-        status: editForm.status,
-        color: editForm.color,
-      });
-      setEditTarget(null);
-    } finally {
-      setEditSaving(false);
-    }
-  }
+  const clientName = useMemo(() => new Map(clients.map((c) => [c.id, c.name])), [clients]);
 
-  async function handleDeleteProject() {
-    if (!deleteTarget) return;
-    setDeleteSaving(true);
-    try {
-      await deleteProject(deleteTarget.id);
-      setDeleteTarget(null);
-    } finally {
-      setDeleteSaving(false);
-    }
-  }
+  const metrics = useMemo(() => projects.map((p) => computeProjectMetrics(p, tasks, team)), [projects, tasks, team]);
 
-  // Compute metrics for all projects
-  const allMetrics = useMemo(
-    () => projects.map((p) => computeProjectMetrics(p, tasks, team)),
-    [projects, tasks, team]
-  );
-
-  // Summary counts for filter pills
-  const counts = useMemo(() => {
-    const active = allMetrics.filter((m) => m.project.status === 'active').length;
-    const atRisk = allMetrics.filter((m) => m.health === 'red').length;
-    const completed = allMetrics.filter((m) => m.project.status === 'completed').length;
-    const paused = allMetrics.filter((m) => m.project.status === 'paused').length;
-    return { all: allMetrics.length, active, atRisk, completed, paused };
-  }, [allMetrics]);
-
-  const filterPills: FilterPill[] = [
-    { key: 'all', label: 'All', icon: ChartBarIcon, count: counts.all },
-    { key: 'active', label: 'Active', icon: CheckCircleIcon, count: counts.active },
-    { key: 'at-risk', label: 'At Risk', icon: ExclamationTriangleIcon, count: counts.atRisk },
-    { key: 'completed', label: 'Completed', icon: CheckCircleIcon, count: counts.completed },
-    { key: 'paused', label: 'Paused', icon: PauseCircleIcon, count: counts.paused },
-  ];
-
-  // Summary KPIs
-  const totalOverdue = useMemo(() => allMetrics.reduce((s, m) => s + m.overdueTasks, 0), [allMetrics]);
-  const totalInProgress = useMemo(() => allMetrics.reduce((s, m) => s + m.inProgressTasks, 0), [allMetrics]);
-  const avgProgress = useMemo(() => {
-    if (allMetrics.length === 0) return 0;
-    return Math.round(allMetrics.reduce((s, m) => s + m.progressPercent, 0) / allMetrics.length);
-  }, [allMetrics]);
-
-  // Apply filter → search → sort
   const displayed = useMemo(() => {
-    let list = filterProjects(allMetrics, filter);
+    let list = filterProjects(metrics, filter);
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter((m) => m.project.name.toLowerCase().includes(q));
     }
     return sortProjects(list, sortBy);
-  }, [allMetrics, filter, search, sortBy]);
+  }, [metrics, filter, search, sortBy]);
+
+  const summary = useMemo(() => {
+    const active = metrics.filter((m) => m.project.status === 'active').length;
+    const atRisk = metrics.filter((m) => m.health === 'red').length;
+    const openTasks = metrics.reduce((s, m) => s + (m.totalTasks - m.doneTasks), 0);
+    const overdue = metrics.reduce((s, m) => s + m.overdueTasks, 0);
+    return { total: metrics.length, active, atRisk, openTasks, overdue };
+  }, [metrics]);
+
+  function openNew() { setEditingId(null); setForm(emptyForm); setDialogOpen(true); }
+  function openEdit(m: ProjectMetrics) {
+    setEditingId(m.project.id);
+    setForm({ name: m.project.name, status: m.project.status, color: m.project.color, client_id: m.project.client_id ?? '' });
+    setDialogOpen(true);
+  }
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!user || !form.name.trim()) return;
+    setSaving(true);
+    try {
+      if (editingId) {
+        await updateProject(editingId, { name: form.name.trim(), status: form.status, color: form.color, client_id: form.client_id || null });
+      } else {
+        await createProject({ name: form.name.trim(), status: form.status, color: form.color, company_id: user.company_id, client_id: form.client_id || null });
+      }
+      setDialogOpen(false);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const kpis = [
+    { label: 'Total Projects', value: summary.total },
+    { label: 'Active', value: summary.active },
+    { label: 'Open Tasks', value: summary.openTasks },
+    { label: 'Overdue', value: summary.overdue, tone: summary.overdue > 0 ? 'text-red' : 'text-text' },
+  ];
 
   return (
-    <Shell title="Projects" subtitle={`${counts.active} active · ${totalOverdue} overdue`}>
+    <Shell title="Projects" subtitle={`${summary.active} active · ${summary.overdue} overdue`}>
       {isLoading ? (
-        <ProjectsPageSkeleton />
+        <ProjectsSkeleton />
       ) : (
         <div className="space-y-6">
-          {/* ── Summary KPI row ── */}
+          {/* KPI strip */}
           <div className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-border bg-border sm:grid-cols-4">
-            {[
-              { label: 'Total Projects', value: counts.all },
-              { label: 'Active', value: counts.active },
-              { label: 'In Progress Tasks', value: totalInProgress },
-              { label: 'Avg. Completion', value: `${avgProgress}%` },
-            ].map((kpi, i) => (
-              <motion.div
-                key={kpi.label}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.06, duration: 0.44, ease: [0.16, 1, 0.3, 1] }}
-                className="bg-card px-5 py-4"
-              >
-                <p className="eyebrow truncate">{kpi.label}</p>
-                <p className="stat-numeral mt-1.5 text-3xl text-text">{kpi.value}</p>
-              </motion.div>
+            {kpis.map((k) => (
+              <div key={k.label} className="bg-card px-5 py-4">
+                <p className="eyebrow truncate">{k.label}</p>
+                <p className={cn('stat-numeral mt-1.5 text-3xl', k.tone ?? 'text-text')}>{k.value}</p>
+              </div>
             ))}
           </div>
 
-          {/* ── Toolbar: search, filters, view toggle, sort ── */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.44 }}
-            className="sticky top-14 z-20 -mx-4 space-y-3 bg-bg/95 px-4 pb-3 pt-2 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
-          >
-            {/* Search + Actions */}
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search projects..."
-                  className="h-9 w-full rounded-lg border border-border bg-card pl-9 pr-8 text-sm text-text placeholder:text-muted/50 transition-colors focus:border-accent focus:outline-none"
-                />
-                {search && (
-                  <button
-                    onClick={() => setSearch('')}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-text"
-                  >
-                    <XMarkIcon className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
-
-              {/* Sort dropdown */}
-              <div className="relative">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSortOpen((v) => !v)}
-                  className="gap-1.5"
-                >
-                  <ChevronUpDownIcon className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Sort</span>
-                </Button>
-                <AnimatePresence>
-                  {sortOpen && (
-                    <>
-                      <div className="fixed inset-0 z-10" onClick={() => setSortOpen(false)} />
-                      <motion.div
-                        initial={{ opacity: 0, y: 4, scale: 0.97 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 4, scale: 0.97 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute right-0 z-20 mt-1 w-44 overflow-hidden rounded-lg border border-border bg-card py-1 shadow-lg"
-                      >
-                        {SORT_OPTIONS.map((opt) => (
-                          <button
-                            key={opt.value}
-                            onClick={() => {
-                              setSortBy(opt.value);
-                              setSortOpen(false);
-                            }}
-                            className={cn(
-                              'flex w-full items-center px-3 py-2 text-[13px] font-medium transition-all active:scale-[0.98]',
-                              sortBy === opt.value
-                                ? 'bg-accent-muted text-accent'
-                                : 'text-text hover:bg-bg'
-                            )}
-                          >
-                            {opt.label}
-                          </button>
-                        ))}
-                      </motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Add project button */}
-              {canEdit && (
-                <button
-                  onClick={() => setShowCreate(true)}
-                  className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-[13px] font-semibold text-primary-foreground transition-all hover:bg-primary-light active:scale-95"
-                >
-                  <PlusIcon className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Add Project</span>
-                </button>
+          {/* Toolbar */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative min-w-[180px] flex-1">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search projects…"
+                className="h-9 w-full rounded-lg border border-border bg-card pl-9 pr-3 text-sm text-text placeholder:text-faint focus:border-accent focus:outline-none" />
+            </div>
+            <div className="relative">
+              <button onClick={() => setSortOpen((v) => !v)} className="flex h-9 items-center gap-1.5 rounded-lg border border-border bg-card px-3 text-[13px] font-semibold text-text hover:border-border-hover">
+                <ChevronUpDownIcon className="h-4 w-4" /> Sort
+              </button>
+              {sortOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setSortOpen(false)} />
+                  <div className="absolute right-0 z-20 mt-1 w-44 overflow-hidden rounded-lg border border-border bg-card py-1 shadow-xl">
+                    {SORT_OPTIONS.map((o) => (
+                      <button key={o.value} onClick={() => { setSortBy(o.value); setSortOpen(false); }}
+                        className={cn('block w-full px-3 py-2 text-left text-[13px] font-medium', sortBy === o.value ? 'bg-accent-muted text-accent' : 'text-text hover:bg-bg')}>
+                        {o.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
               )}
-
-              {/* View toggle */}
-              <div className="flex rounded-lg border border-border bg-card p-0.5">
-                <button
-                  onClick={() => setView('grid')}
-                  className={cn(
-                    'rounded-md p-1.5 transition-all active:scale-90',
-                    view === 'grid' ? 'bg-accent-muted text-accent' : 'text-muted hover:text-text'
-                  )}
-                >
-                  <Squares2X2Icon className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => setView('list')}
-                  className={cn(
-                    'rounded-md p-1.5 transition-all active:scale-90',
-                    view === 'list' ? 'bg-accent-muted text-accent' : 'text-muted hover:text-text'
-                  )}
-                >
-                  <ListBulletIcon className="h-4 w-4" />
-                </button>
-              </div>
             </div>
+            {canEdit && (
+              <button onClick={openNew} className="flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-[13px] font-semibold text-primary-foreground transition-all hover:bg-primary-light active:scale-95">
+                <PlusIcon className="h-4 w-4" /> Add Project
+              </button>
+            )}
+          </div>
 
-            {/* Filter pills */}
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {filterPills
-                .filter((p) => p.count > 0 || p.key === 'all')
-                .map((pill) => (
-                  <motion.button
-                    key={pill.key}
-                    whileTap={{ scale: 0.96 }}
-                    onClick={() => setFilter(pill.key)}
-                    className={cn(
-                      'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
-                      filter === pill.key
-                        ? 'bg-accent-muted text-accent shadow-sm'
-                        : 'bg-card text-muted hover:bg-bg hover:text-text border border-border'
-                    )}
-                  >
-                    <pill.icon className="h-3.5 w-3.5" />
-                    {pill.label}
-                    <span className={cn(
-                      'rounded-full px-1.5 py-0.5 text-[11px] font-bold',
-                      filter === pill.key ? 'bg-accent/10 text-accent' : 'bg-bg text-muted'
-                    )}>
-                      {pill.count}
-                    </span>
-                  </motion.button>
-                ))}
-            </div>
-          </motion.div>
+          {/* Filter pills */}
+          <div className="flex flex-wrap gap-1.5">
+            {FILTERS.map((f) => (
+              <button key={f.key} onClick={() => setFilter(f.key)}
+                className={cn('rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors', filter === f.key ? 'border-accent bg-accent-muted text-accent' : 'border-border text-muted hover:text-text')}>
+                {f.label}
+              </button>
+            ))}
+          </div>
 
-          {/* ── Content ── */}
+          {/* Table */}
           {displayed.length === 0 ? (
-            search ? (
-              <EmptyState
-                icon={MagnifyingGlassIcon}
-                title="No projects found"
-                description={`No projects match "${search}". Try a different search term.`}
-                actionLabel="Clear search"
-                onAction={() => setSearch('')}
-              />
-            ) : (
-              <EmptyState
-                icon={FolderPlusIcon}
-                title="No projects yet"
-                description="Get started by creating your first project to track tasks, progress, and team activity."
-              />
-            )
-          ) : view === 'grid' ? (
-            <motion.div
-              variants={{
-                hidden: { opacity: 0 },
-                show: {
-                  opacity: 1,
-                  transition: { staggerChildren: 0.06 },
-                },
-              }}
-              initial="hidden"
-              animate="show"
-              className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-5"
-            >
-              {displayed.map((m) => (
-                <motion.div
-                  key={m.project.id}
-                  variants={{
-                    hidden: { opacity: 0, y: 20 },
-                    show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] } },
-                  }}
-                >
-                  <ProjectKPICard
-                    metrics={m}
-                    onEdit={canEdit ? () => openEditDialog({ id: m.project.id, name: m.project.name, status: m.project.status as ProjectStatus, color: m.project.color }) : undefined}
-                    onDelete={canEdit ? () => setDeleteTarget({ id: m.project.id, name: m.project.name }) : undefined}
-                  />
-                </motion.div>
-              ))}
-            </motion.div>
+            <EmptyState title={search ? 'No projects found' : 'No projects yet'} description={search ? `Nothing matches “${search}”.` : 'Create your first project to start tracking work.'} />
           ) : (
-            <motion.div
-              variants={{
-                hidden: { opacity: 0 },
-                show: {
-                  opacity: 1,
-                  transition: { staggerChildren: 0.04 },
-                },
-              }}
-              initial="hidden"
-              animate="show"
-              className="space-y-2"
-            >
-              {/* List header */}
-              <div className="hidden items-center gap-4 px-5 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted sm:flex">
+            <div className="overflow-hidden rounded-card border border-border bg-card">
+              {/* Header */}
+              <div className="hidden items-center gap-4 border-b border-border px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted lg:flex">
                 <span className="flex-1">Project</span>
-                <span className="w-28 text-center">Progress</span>
-                <span className="w-12 text-center">Overdue</span>
-                <span className="hidden w-12 text-center md:block">Week</span>
-                <span className="hidden w-20 lg:block">Team</span>
-                <span className="w-4" />
+                <span className="w-40">Progress</span>
+                <span className="w-16 text-center">Open</span>
+                <span className="w-16 text-center">Overdue</span>
+                <span className="w-24">Team</span>
+                {showFinance && <span className="w-28 text-right">Revenue</span>}
+                {showFinance && <span className="w-28 text-right">Profit</span>}
+                <span className="w-16" />
               </div>
-              {displayed.map((m) => (
-                <motion.div
-                  key={m.project.id}
-                  variants={{
-                    hidden: { opacity: 0, x: -12 },
-                    show: { opacity: 1, x: 0, transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] } },
-                  }}
-                >
-                  <ProjectListRow
-                    metrics={m}
-                    onEdit={canEdit ? () => openEditDialog({ id: m.project.id, name: m.project.name, status: m.project.status as ProjectStatus, color: m.project.color }) : undefined}
-                    onDelete={canEdit ? () => setDeleteTarget({ id: m.project.id, name: m.project.name }) : undefined}
-                  />
-                </motion.div>
-              ))}
-            </motion.div>
+              {displayed.map((m, i) => {
+                const fin = m.project.client_id ? clientFinance.get(m.project.client_id) : undefined;
+                const linkedName = m.project.client_id ? clientName.get(m.project.client_id) : undefined;
+                return (
+                  <div key={m.project.id} onClick={() => router.push(`/projects/${m.project.id}`)}
+                    className={cn('group flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3.5 transition-colors hover:bg-bg lg:flex-nowrap', i !== displayed.length - 1 && 'border-b border-border')}>
+                    {/* Name + status */}
+                    <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                      <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: m.project.color }} />
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate text-sm font-semibold text-text">{m.project.name}</span>
+                          {m.health === 'red' && <Badge variant="danger">At Risk</Badge>}
+                        </div>
+                        <p className="truncate text-xs text-muted">
+                          <Badge variant={getStatusBadgeVariant(m.project.status)}>{m.project.status}</Badge>
+                          {linkedName && <span className="ml-1.5">· {linkedName}</span>}
+                          <span className="ml-1.5">· {m.lastActivityRelative}</span>
+                        </p>
+                      </div>
+                    </div>
+                    {/* Progress */}
+                    <div className="flex w-full items-center gap-2 lg:w-40">
+                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-border/60">
+                        <div className="h-full rounded-full" style={{ width: `${m.progressPercent}%`, backgroundColor: getProgressRawColor(m.progressPercent, m.overdueTasks) }} />
+                      </div>
+                      <span className="w-9 text-right text-xs font-semibold tabular-nums text-muted">{m.progressPercent}%</span>
+                    </div>
+                    {/* Open */}
+                    <span className="w-16 text-center text-[13px] tabular-nums text-text">{m.totalTasks - m.doneTasks}</span>
+                    {/* Overdue */}
+                    <span className={cn('w-16 text-center text-[13px] font-semibold tabular-nums', m.overdueTasks > 0 ? 'text-red' : 'text-faint')}>{m.overdueTasks}</span>
+                    {/* Team */}
+                    <div className="w-24">{m.assignees.length > 0 ? <AvatarStack users={m.assignees} max={3} size="xs" /> : <span className="text-xs text-faint">—</span>}</div>
+                    {/* Finance */}
+                    {showFinance && <span className="w-28 text-right text-[13px] tabular-nums text-text">{fin ? formatOMR(fin.revenue) : <span className="text-faint">—</span>}</span>}
+                    {showFinance && <span className={cn('w-28 text-right text-[13px] font-semibold tabular-nums', fin ? (fin.profit >= 0 ? 'text-text' : 'text-red') : '')}>{fin ? formatOMR(fin.profit) : <span className="text-faint">—</span>}</span>}
+                    {/* Actions */}
+                    <div className="flex w-16 items-center justify-end gap-1">
+                      {canEdit && (
+                        <>
+                          <button onClick={(e) => { e.stopPropagation(); openEdit(m); }} className="rounded-lg p-1.5 text-muted opacity-0 transition-opacity hover:bg-card hover:text-text group-hover:opacity-100" title="Edit"><PencilSquareIcon className="h-4 w-4" /></button>
+                          <button onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: m.project.id, name: m.project.name }); }} className="rounded-lg p-1.5 text-muted opacity-0 transition-opacity hover:bg-red-bg hover:text-red group-hover:opacity-100" title="Delete"><TrashIcon className="h-4 w-4" /></button>
+                        </>
+                      )}
+                      <ArrowRightIcon className="h-4 w-4 shrink-0 text-faint" />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
       )}
-      {/* Create Project Dialog */}
-      <Dialog open={showCreate} onClose={() => setShowCreate(false)} className="relative z-50">
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" />
+
+      {/* Create / Edit dialog */}
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} className="relative z-50">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
-          <DialogPanel className="w-full max-w-md rounded-card border border-border bg-card p-6 shadow-lg">
+          <DialogPanel className="w-full max-w-md rounded-card border border-border bg-card p-6 shadow-xl">
             <div className="flex items-center justify-between">
-              <DialogTitle className="font-display text-lg font-semibold tracking-tight text-text">New Project</DialogTitle>
-              <button onClick={() => setShowCreate(false)} className="rounded-md p-1 text-muted hover:bg-bg hover:text-text">
-                <XMarkIcon className="h-5 w-5" />
-              </button>
+              <DialogTitle className="font-display text-lg font-semibold tracking-tight text-text">{editingId ? 'Edit Project' : 'New Project'}</DialogTitle>
+              <button onClick={() => setDialogOpen(false)} className="rounded-md p-1 text-muted hover:bg-bg hover:text-text"><XMarkIcon className="h-5 w-5" /></button>
             </div>
-            <form onSubmit={handleCreateProject} className="mt-5 space-y-4">
+            <form onSubmit={handleSave} className="mt-5 space-y-4">
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Project Name</label>
-                <input
-                  type="text"
-                  required
-                  value={createForm.name}
-                  onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                  placeholder="e.g. Website Redesign"
-                  className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
-                />
+                <input autoFocus required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Sweetsalt" className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none" />
               </div>
-              <div>
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Status</label>
-                <select
-                  value={createForm.status}
-                  onChange={(e) => setCreateForm({ ...createForm, status: e.target.value as ProjectStatus })}
-                  className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
-                >
-                  <option value="active">Active</option>
-                  <option value="paused">Paused</option>
-                  <option value="completed">Completed</option>
-                </select>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Status</label>
+                  <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as ProjectStatus })} className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none">
+                    <option value="active">Active</option>
+                    <option value="paused">Paused</option>
+                    <option value="completed">Completed</option>
+                    <option value="archived">Archived</option>
+                  </select>
+                </div>
+                {showFinance && (
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Client (optional)</label>
+                    <select value={form.client_id} onChange={(e) => setForm({ ...form, client_id: e.target.value })} className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none">
+                      <option value="">— None —</option>
+                      {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Color</label>
                 <div className="flex flex-wrap gap-2">
                   {PROJECT_COLORS.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setCreateForm({ ...createForm, color: c })}
-                      className={cn(
-                        'h-7 w-7 rounded-lg transition-all active:scale-90',
-                        createForm.color === c ? 'ring-2 ring-accent ring-offset-2 ring-offset-card scale-110' : 'hover:scale-105'
-                      )}
-                      style={{ backgroundColor: c }}
-                    />
+                    <button key={c} type="button" onClick={() => setForm({ ...form, color: c })}
+                      className={cn('h-7 w-7 rounded-lg transition-all active:scale-90', form.color === c ? 'ring-2 ring-accent ring-offset-2 ring-offset-card' : 'hover:scale-105')} style={{ backgroundColor: c }} />
                   ))}
                 </div>
               </div>
               <div className="flex justify-end gap-2 pt-2">
-                <button type="button" onClick={() => setShowCreate(false)} className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted transition-all hover:bg-bg hover:text-text active:scale-95">Cancel</button>
-                <button type="submit" disabled={createSaving} className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary-light active:scale-95 disabled:opacity-50">
-                  {createSaving ? 'Creating...' : 'Create Project'}
-                </button>
+                <button type="button" onClick={() => setDialogOpen(false)} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-muted hover:bg-bg hover:text-text">Cancel</button>
+                <button type="submit" disabled={saving} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-light disabled:opacity-50">{saving ? 'Saving…' : editingId ? 'Save' : 'Create'}</button>
               </div>
             </form>
           </DialogPanel>
         </div>
       </Dialog>
 
-      {/* Edit Project Dialog */}
-      <Dialog open={!!editTarget} onClose={() => setEditTarget(null)} className="relative z-50">
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" />
-        <div className="fixed inset-0 flex items-center justify-center p-4">
-          <DialogPanel className="w-full max-w-md rounded-card border border-border bg-card p-6 shadow-lg">
-            <div className="flex items-center justify-between">
-              <DialogTitle className="font-display text-lg font-semibold tracking-tight text-text">Edit Project</DialogTitle>
-              <button onClick={() => setEditTarget(null)} className="rounded-md p-1 text-muted hover:bg-bg hover:text-text">
-                <XMarkIcon className="h-5 w-5" />
-              </button>
-            </div>
-            <form onSubmit={handleEditProject} className="mt-5 space-y-4">
-              <div>
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Project Name</label>
-                <input
-                  type="text"
-                  required
-                  value={editForm.name}
-                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Status</label>
-                <select
-                  value={editForm.status}
-                  onChange={(e) => setEditForm({ ...editForm, status: e.target.value as ProjectStatus })}
-                  className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
-                >
-                  <option value="active">Active</option>
-                  <option value="paused">Paused</option>
-                  <option value="completed">Completed</option>
-                  <option value="archived">Archived</option>
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Color</label>
-                <div className="flex flex-wrap gap-2">
-                  {PROJECT_COLORS.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setEditForm({ ...editForm, color: c })}
-                      className={cn(
-                        'h-7 w-7 rounded-lg transition-all active:scale-90',
-                        editForm.color === c ? 'ring-2 ring-accent ring-offset-2 ring-offset-card scale-110' : 'hover:scale-105'
-                      )}
-                      style={{ backgroundColor: c }}
-                    />
-                  ))}
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <button type="button" onClick={() => setEditTarget(null)} className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted transition-all hover:bg-bg hover:text-text active:scale-95">Cancel</button>
-                <button type="submit" disabled={editSaving} className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary-light active:scale-95 disabled:opacity-50">
-                  {editSaving ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            </form>
-          </DialogPanel>
-        </div>
-      </Dialog>
-
-      {/* Delete Project Confirmation Dialog */}
+      {/* Delete dialog */}
       <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} className="relative z-[60]">
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
           <DialogPanel className="w-full max-w-sm rounded-card border border-border bg-card p-6 shadow-xl">
-            <DialogTitle className="text-lg font-bold text-text">Delete Project</DialogTitle>
-            <p className="mt-2 text-sm text-muted">
-              Are you sure you want to delete <strong className="text-text">&ldquo;{deleteTarget?.name}&rdquo;</strong>? This will permanently remove the project and all its tasks, comments, and activity. This action cannot be undone.
-            </p>
+            <DialogTitle className="font-display text-lg font-semibold tracking-tight text-text">Delete Project</DialogTitle>
+            <p className="mt-2 text-sm text-muted">Delete <strong className="text-text">{deleteTarget?.name}</strong> and all its tasks, comments and activity? This cannot be undone.</p>
             <div className="mt-5 flex justify-end gap-2">
-              <button
-                onClick={() => setDeleteTarget(null)}
-                className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted transition-all hover:bg-bg hover:text-text active:scale-95"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteProject}
-                disabled={deleteSaving}
-                className="rounded-xl bg-red px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-red/90 active:scale-95 disabled:opacity-50"
-              >
-                {deleteSaving ? 'Deleting...' : 'Delete Project'}
-              </button>
+              <button onClick={() => setDeleteTarget(null)} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-muted hover:bg-bg hover:text-text">Cancel</button>
+              <button onClick={() => { if (deleteTarget) { deleteProject(deleteTarget.id); setDeleteTarget(null); } }} className="rounded-lg bg-red px-4 py-2 text-sm font-semibold text-white hover:bg-red/90">Delete</button>
             </div>
           </DialogPanel>
         </div>
@@ -590,79 +341,20 @@ export default function ProjectsPage() {
   );
 }
 
-/* ── Skeleton loader ── */
-function ProjectsPageSkeleton() {
+function ProjectsSkeleton() {
   return (
     <div className="space-y-6">
-      {/* KPI row skeleton */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-border bg-border sm:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: i * 0.06 }}
-            className="rounded-xl border border-border bg-card px-4 py-3"
-          >
-            <Skeleton className="mb-2 h-3 w-20" />
-            <Skeleton className="h-6 w-12" />
-          </motion.div>
+          <div key={i} className="bg-card px-5 py-4"><Skeleton className="mb-2 h-3 w-20" /><Skeleton className="h-7 w-12" /></div>
         ))}
       </div>
-
-      {/* Toolbar skeleton */}
-      <div className="flex items-center gap-2">
-        <Skeleton className="h-9 flex-1 rounded-lg" />
-        <Skeleton className="h-8 w-16 rounded-lg" />
-        <Skeleton className="h-8 w-20 rounded-lg" />
-      </div>
-
-      {/* Card skeletons — matches 2-col mobile layout */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-5">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 + i * 0.08 }}
-            className="rounded-xl border border-border bg-card p-2.5 sm:p-4 md:p-6"
-          >
-            {/* Header */}
-            <div className="mb-2 sm:mb-4 flex items-start justify-between">
-              <div className="space-y-1 sm:space-y-2">
-                <Skeleton className="h-3.5 w-20 sm:h-5 sm:w-40" />
-                <Skeleton className="hidden sm:block h-3 w-24" />
-              </div>
-              <Skeleton className="hidden sm:block h-5 w-16 rounded-md" />
-            </div>
-            {/* KPI row */}
-            <div className="mb-2 sm:mb-5 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-              {Array.from({ length: 2 }).map((_, j) => (
-                <div key={j}>
-                  <Skeleton className="mb-0.5 h-2 w-8 sm:mb-1 sm:h-2.5 sm:w-12" />
-                  <Skeleton className="h-4 w-6 sm:h-5 sm:w-8" />
-                </div>
-              ))}
-              {/* Extra KPI cols on desktop */}
-              {Array.from({ length: 2 }).map((_, j) => (
-                <div key={`d-${j}`} className="hidden sm:block">
-                  <Skeleton className="mb-1 h-2.5 w-12" />
-                  <Skeleton className="h-5 w-8" />
-                </div>
-              ))}
-            </div>
-            {/* Progress bar */}
-            <Skeleton className="mb-2 sm:mb-4 h-1 sm:h-2 w-full rounded-full" />
-            {/* Footer */}
-            <div className="flex items-center justify-between border-t border-border pt-1.5 sm:pt-4">
-              <Skeleton className="h-3 w-12 sm:h-4 sm:w-16" />
-              <div className="hidden sm:flex -space-x-1.5">
-                {Array.from({ length: 3 }).map((_, k) => (
-                  <Skeleton key={k} className="h-6 w-6 rounded-lg" />
-                ))}
-              </div>
-            </div>
-          </motion.div>
+      <Skeleton className="h-9 w-full rounded-lg" />
+      <div className="overflow-hidden rounded-card border border-border bg-card">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-4 border-b border-border px-5 py-4 last:border-0">
+            <Skeleton className="h-4 flex-1" /><Skeleton className="h-1.5 w-40 rounded-full" /><Skeleton className="h-6 w-6 rounded-full" />
+          </div>
         ))}
       </div>
     </div>

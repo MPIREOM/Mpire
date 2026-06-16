@@ -43,6 +43,7 @@ export interface Project {
   id: string;
   company_id: string;
   business_unit_id: string | null;
+  client_id: string | null;
   name: string;
   status: ProjectStatus;
   color: string;
