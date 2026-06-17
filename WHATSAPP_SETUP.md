@@ -35,17 +35,24 @@ English (US)** so they match the defaults (`WHATSAPP_TEMPLATE_LANG=en_US`).
 
 > ⚠️ The variable order matters — it must match the code in
 > `src/lib/notifications.ts` (`buildTemplateParams`). Copy the bodies exactly.
+>
+> Meta also enforces two rules on the body: it **cannot start or end with a
+> variable**, and it needs enough static text relative to the number of
+> variables (otherwise: *"too many variables for its length"*). The bodies below
+> satisfy both.
 
 ### Template 1 — `task_assigned`
 - **Name:** `task_assigned`
 - **Category:** Utility
 - **Body:**
   ```
-  👤 You've been assigned a task
+  👤 You've been assigned a new task.
 
   Task: {{1}}
   Project: {{2}}
   Assigned by: {{3}}
+
+  Please open the app to view the details.
   ```
 - **Sample values:** `{{1}}` = `Design homepage`, `{{2}}` = `Website`, `{{3}}` = `Sara`
 
@@ -54,12 +61,14 @@ English (US)** so they match the defaults (`WHATSAPP_TEMPLATE_LANG=en_US`).
 - **Category:** Utility
 - **Body:**
   ```
-  💬 New comment
+  💬 A new comment was added to your task.
 
   Task: {{1}}
   Project: {{2}}
   From: {{3}}
   Comment: {{4}}
+
+  Open the app to read and reply.
   ```
 - **Sample values:** `{{1}}` = `Design homepage`, `{{2}}` = `Website`, `{{3}}` = `Sara`, `{{4}}` = `Looks great, ship it`
 
@@ -84,8 +93,8 @@ English (US)** so they match the defaults (`WHATSAPP_TEMPLATE_LANG=en_US`).
 Submit each for review. Approval is usually minutes to a few hours. The code
 won't send successfully until the template's status is **Approved**.
 
-> If you can't use these exact names, set `WHATSAPP_TEMPLATE_TASK_CREATED`,
-> `WHATSAPP_TEMPLATE_TASK_ASSIGNED`, and `WHATSAPP_TEMPLATE_COMMENT_ADDED` to
+> If you can't use these exact names, set `WHATSAPP_TEMPLATE_TASK_ASSIGNED`,
+> `WHATSAPP_TEMPLATE_COMMENT_ADDED`, and `WHATSAPP_TEMPLATE_FINANCE_REPORT` to
 > your chosen names. If you submit in a different language, set
 > `WHATSAPP_TEMPLATE_LANG` to its code (e.g. `en`, `ar`).
 
