@@ -96,3 +96,28 @@ export function buildTemplateParams(payload: TaskNotificationPayload): TemplateP
       };
   }
 }
+
+/**
+ * Build the approved-template payload for the monthly finance report.
+ *
+ * Uses a template with a DOCUMENT header (the PDF) and a short body summarising
+ * revenue and expenses. The PDF must already be uploaded via uploadWhatsAppMedia.
+ *
+ * Template body placeholders (see WHATSAPP_SETUP.md):
+ *   {{1}} month   {{2}} revenue collected   {{3}} total expenses   {{4}} net profit
+ */
+export function buildFinanceReportTemplate(args: {
+  monthLabel: string;
+  revenueCollected: string;
+  totalExpenses: string;
+  netProfit: string;
+  mediaId: string;
+  filename: string;
+}): TemplateParams {
+  return {
+    name: process.env.WHATSAPP_TEMPLATE_FINANCE_REPORT || 'monthly_finance_report',
+    languageCode: process.env.WHATSAPP_TEMPLATE_LANG || 'en_US',
+    bodyParams: [args.monthLabel, args.revenueCollected, args.totalExpenses, args.netProfit],
+    headerDocument: { mediaId: args.mediaId, filename: args.filename },
+  };
+}

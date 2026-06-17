@@ -55,6 +55,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Task-creation notifications are intentionally disabled — we only notify
+    // on assignment and comments. Ignore the event without sending anything.
+    if (event === 'task_created') {
+      return NextResponse.json({ sent: 0, skipped: 'task_created notifications disabled' });
+    }
+
     // Authenticate the caller
     const supabase = await createServerSupabase();
     const {

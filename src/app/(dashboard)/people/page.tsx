@@ -36,7 +36,7 @@ export default function PeoplePage() {
 
   // Edit user state (owner only)
   const [editUser, setEditUser] = useState<User | null>(null);
-  const [editForm, setEditForm] = useState({ role: 'staff' as Role, allowed_project_ids: [] as string[], phone_number: '' });
+  const [editForm, setEditForm] = useState({ role: 'staff' as Role, allowed_project_ids: [] as string[], phone_number: '', receives_finance_report: false });
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState('');
 
@@ -54,6 +54,7 @@ export default function PeoplePage() {
       role: u.role,
       allowed_project_ids: u.allowed_project_ids ?? [],
       phone_number: u.phone_number ?? '',
+      receives_finance_report: u.receives_finance_report ?? false,
     });
     setEditError('');
     setNewPassword('');
@@ -100,6 +101,7 @@ export default function PeoplePage() {
           role: editForm.role,
           allowed_project_ids: editForm.allowed_project_ids,
           phone_number: editForm.phone_number,
+          receives_finance_report: editForm.receives_finance_report,
         }),
       });
       const data = await res.json();
@@ -211,6 +213,9 @@ export default function PeoplePage() {
                       WhatsApp active
                     </p>
                   )}
+                  {u.receives_finance_report && (
+                    <p className="mt-0.5 text-[11px] text-accent">📊 Monthly finance report</p>
+                  )}
                 </div>
                 {ownerMode && u.id !== user.id && (
                   <button
@@ -315,6 +320,24 @@ export default function PeoplePage() {
                   className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-muted"
                 />
                 <p className="mt-1 text-[11px] text-muted">Include country code (e.g. +1 for US, +91 for India). Leave blank to disable.</p>
+              </div>
+
+              {/* Monthly finance report opt-in */}
+              <div className="border-t border-border pt-4">
+                <label className="flex cursor-pointer items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={editForm.receives_finance_report}
+                    onChange={(e) => setEditForm({ ...editForm, receives_finance_report: e.target.checked })}
+                    className="mt-0.5 h-4 w-4 rounded border-border text-accent focus:ring-accent-muted"
+                  />
+                  <span>
+                    <span className="block text-sm font-semibold text-text">Monthly finance report</span>
+                    <span className="block text-[11px] text-muted">
+                      Send this person the monthly finance summary + PDF on WhatsApp. Requires a phone number above.
+                    </span>
+                  </span>
+                </label>
               </div>
 
               {editError && (

@@ -104,6 +104,11 @@ export interface TemplateParams {
   languageCode: string;
   /** Positional body variables, in {{1}}, {{2}}, ... order. */
   bodyParams: string[];
+  /**
+   * Optional document for templates whose HEADER is of type DOCUMENT (e.g. a
+   * PDF attachment). Provide a media ID from uploadWhatsAppMedia().
+   */
+  headerDocument?: { mediaId: string; filename: string };
 }
 
 /**
@@ -142,18 +147,32 @@ export async function sendWhatsAppTemplate(
   try {
     const url = `https://graph.facebook.com/${API_VERSION}/${config.phoneNumberId}/messages`;
 
-    const components =
-      template.bodyParams.length > 0
-        ? [
-            {
-              type: 'body',
-              parameters: template.bodyParams.map((text) => ({
-                type: 'text',
-                text: sanitizeParam(text),
-              })),
+    const components: Record<string, unknown>[] = [];
+
+    if (template.headerDocument) {
+      components.push({
+        type: 'header',
+        parameters: [
+          {
+            type: 'document',
+            document: {
+              id: template.headerDocument.mediaId,
+              filename: template.headerDocument.filename,
             },
-          ]
-        : [];
+          },
+        ],
+      });
+    }
+
+    if (template.bodyParams.length > 0) {
+      components.push({
+        type: 'body',
+        parameters: template.bodyParams.map((text) => ({
+          type: 'text',
+          text: sanitizeParam(text),
+        })),
+      });
+    }
 
     const res = await fetch(url, {
       method: 'POST',
@@ -187,6 +206,67 @@ export async function sendWhatsAppTemplate(
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : 'Unknown error';
     console.error('[WhatsApp] Template send failed:', errMsg);
+    return { success: false, error: errMsg };
+  }
+}
+
+export interface MediaUploadResult {
+  success: boolean;
+  mediaId?: string;
+  error?: string;
+}
+
+/**
+ * Upload a document (e.g. a generated PDF) to WhatsApp and get a media ID.
+ *
+ * The returned ID can be reused across multiple sends (to different recipients
+ * on the same phone number) and is valid for ~30 days. Use it as the
+ * headerDocument.mediaId of a template that has a DOCUMENT header.
+ *
+ * @param bytes    - File contents
+ * @param filename - Display filename, e.g. "Finance-Report-2026-05.pdf"
+ * @param mimeType - MIME type, e.g. "application/pdf"
+ */
+export async function uploadWhatsAppMedia(
+  bytes: Uint8Array,
+  filename: string,
+  mimeType = 'application/pdf'
+): Promise<MediaUploadResult> {
+  const config = getConfig();
+
+  if (!config) {
+    console.warn('[WhatsApp] Not configured — skipping media upload');
+    return { success: false, error: 'WhatsApp not configured' };
+  }
+
+  try {
+    const url = `https://graph.facebook.com/${API_VERSION}/${config.phoneNumberId}/media`;
+
+    const form = new FormData();
+    form.append('messaging_product', 'whatsapp');
+    form.append('type', mimeType);
+    // Copy into a fresh ArrayBuffer-backed view so Blob gets a clean buffer.
+    const buffer = new Uint8Array(bytes);
+    form.append('file', new Blob([buffer], { type: mimeType }), filename);
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${config.token}` },
+      body: form,
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      const errMsg = data?.error?.message || JSON.stringify(data);
+      console.error('[WhatsApp] Media upload error:', errMsg);
+      return { success: false, error: errMsg };
+    }
+
+    return { success: true, mediaId: data?.id };
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : 'Unknown error';
+    console.error('[WhatsApp] Media upload failed:', errMsg);
     return { success: false, error: errMsg };
   }
 }

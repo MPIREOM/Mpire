@@ -26,6 +26,7 @@ export interface User {
   allowed_project_ids: string[] | null; // null = all projects visible
   last_seen_at: string | null;
   phone_number: string | null;
+  receives_finance_report: boolean; // opt-in for the monthly WhatsApp finance report
   created_at: string;
 }
 

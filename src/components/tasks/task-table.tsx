@@ -247,17 +247,9 @@ export function TaskTable({
       );
       toast.success('Task created');
 
-      // Fire WhatsApp notifications (non-blocking)
+      // Fire WhatsApp notifications (non-blocking).
+      // Note: we intentionally do NOT notify on task creation — only on assignment.
       const proj = projects.find((p) => p.id === createForm.project_id);
-      fireNotification({
-        event: 'task_created',
-        taskId: '', // ID not available from hook, notification route handles lookup
-        taskTitle: createForm.title.trim(),
-        projectName: proj?.name,
-        actorId: currentUser.id,
-        actorName: currentUser.full_name,
-        assigneeIds: createForm.assignee_ids,
-      });
       if (createForm.assignee_ids.length > 0) {
         fireNotification({
           event: 'task_assigned',
