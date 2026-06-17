@@ -20,6 +20,7 @@ import { FinanceDashboard } from '@/components/finance/finance-dashboard';
 import { MonthlyTracker } from '@/components/finance/monthly-tracker';
 import { ExpenseEntry } from '@/components/finance/expense-entry';
 import { ClientsManager } from '@/components/finance/clients-manager';
+import { SendFinanceReport } from '@/components/finance/send-finance-report';
 
 type TabKey = 'dashboard' | 'monthly' | 'expenses' | 'clients';
 
@@ -79,7 +80,12 @@ export default function FinancePage() {
         ))}
       </div>
 
-      {active === 'dashboard' && <FinanceDashboard user={user} />}
+      {active === 'dashboard' && (
+        <div className="space-y-6">
+          {canManageFinance(user.role) && <SendFinanceReport />}
+          <FinanceDashboard user={user} />
+        </div>
+      )}
       {active === 'monthly' && <MonthlyTracker user={user} />}
       {active === 'expenses' && <ExpenseEntry user={user} />}
       {active === 'clients' && <ClientsManager user={user} />}

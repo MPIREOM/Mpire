@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createServerSupabase } from '@/lib/supabase/server';
-import { sendWhatsAppMessage } from '@/lib/whatsapp';
-import { buildNotificationMessage, type NotificationEvent } from '@/lib/notifications';
+import { sendWhatsAppTemplate } from '@/lib/whatsapp';
+import {
+  buildNotificationMessage,
+  buildTemplateParams,
+  type NotificationEvent,
+} from '@/lib/notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,6 +53,12 @@ export async function POST(request: NextRequest) {
         { error: 'Missing required fields: event, task_id, task_title, actor_id, actor_name' },
         { status: 400 }
       );
+    }
+
+    // Task-creation notifications are intentionally disabled — we only notify
+    // on assignment and comments. Ignore the event without sending anything.
+    if (event === 'task_created') {
+      return NextResponse.json({ sent: 0, skipped: 'task_created notifications disabled' });
     }
 
     // Authenticate the caller
@@ -133,19 +143,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ sent: 0, reason: 'no opted-in recipients' });
     }
 
-    const message = buildNotificationMessage({
+    const payload = {
       event,
       taskTitle: task_title,
       projectName: project_name,
       actorName: actor_name,
       commentBody: comment_body,
-    });
+    };
+
+    // Human-readable copy stored in notification_log for auditing.
+    const message = buildNotificationMessage(payload);
+    // Approved-template payload actually sent to WhatsApp (required for
+    // business-initiated messages outside the 24-hour window).
+    const template = buildTemplateParams(payload);
 
     // Send to each recipient in parallel
     const results = await Promise.allSettled(
       recipients.map(async (recipient) => {
         const phone = recipient.phone_number as string;
-        const result = await sendWhatsAppMessage(phone, message);
+        const result = await sendWhatsAppTemplate(phone, template);
 
         // Log the notification
         await admin.from('notification_log').insert({

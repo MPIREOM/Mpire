@@ -142,7 +142,8 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const { user_id, role, allowed_project_ids, phone_number } = await request.json();
+    const { user_id, role, allowed_project_ids, phone_number, receives_finance_report } =
+      await request.json();
 
     if (!user_id) {
       return NextResponse.json(
@@ -236,6 +237,9 @@ export async function PUT(request: NextRequest) {
       updates.phone_number = typeof phone_number === 'string' && phone_number.trim()
         ? phone_number.trim()
         : null;
+    }
+    if (receives_finance_report !== undefined) {
+      updates.receives_finance_report = !!receives_finance_report;
     }
 
     const { error: updateError } = await adminClient
