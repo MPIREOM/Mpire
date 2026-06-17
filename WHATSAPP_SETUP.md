@@ -100,8 +100,6 @@ and to `.env.local` for local dev:
 WHATSAPP_API_TOKEN=EAAG...your-token
 WHATSAPP_PHONE_NUMBER_ID=123456789012345
 WHATSAPP_TEMPLATE_LANG=en_US
-# Secret protecting the monthly finance-report cron (generate with: openssl rand -hex 32)
-CRON_SECRET=your-random-cron-secret
 # Only if your template names differ from the defaults:
 # WHATSAPP_TEMPLATE_TASK_ASSIGNED=task_assigned
 # WHATSAPP_TEMPLATE_COMMENT_ADDED=comment_added
@@ -123,34 +121,34 @@ e.g. `+15551234567`). Set it from **People** (admins/owners) or **Settings** (se
 
 ---
 
-## 5. Monthly finance report
+## 5. Finance report (manual send)
 
-The app sends each opted-in person the **previous month's** finance report on the
-**1st of every month** (06:00 UTC) — a short WhatsApp summary (revenue collected,
-total expenses, net profit) with the **full breakdown as a PDF attachment**.
+The finance report is sent **manually** by an owner/manager from inside the app —
+a short WhatsApp summary (revenue collected, total expenses, net profit) with the
+**full breakdown as a PDF attachment**. There is no automatic schedule.
 
 ### One-time setup
 1. **Run the DB migration** `supabase/migration-finance-reports.sql` (adds the
    `users.receives_finance_report` opt-in column).
 2. **Approve the `monthly_finance_report` template** (Template 3 above) — it must
    have a **Document header**.
-3. Set **`CRON_SECRET`** in your env vars (Vercel auto-sends it to the cron).
-4. The schedule lives in `vercel.json` (`0 6 1 * *`) and deploys automatically.
 
 ### Choosing recipients
 On the **People** page, open a user (owner only) and tick **"Monthly finance
 report"**. They must also have a phone number set. Only ticked users receive it —
 this is independent of role.
 
-### Verify it now (without waiting for the 1st)
-Trigger the cron manually for a chosen month and check the result:
-```
-curl -H "Authorization: Bearer $CRON_SECRET" \
-  "https://<your-app>/api/cron/monthly-finance-report?month=2026-05"
-```
-The JSON response reports `sent` / `failed` counts per company. Opted-in users
-should receive the WhatsApp message + PDF. Rows are written to `notification_log`
-with `event_type = 'monthly_finance_report'`.
+### Sending the report
+Go to **Finance → Dashboard** (owner/manager). At the top there's a **Send
+finance report** control: pick the month (defaults to last month) and click send.
+Opted-in recipients get the WhatsApp message + PDF, and a toast confirms how many
+were sent. Each send is recorded in `notification_log` with
+`event_type = 'monthly_finance_report'` (failures store the Meta error in
+`error_message`).
+
+> The endpoint behind the button is `POST /api/finance/send-report` (owner/manager
+> only, scoped to your own company). Body: `{ "month": "YYYY-MM" }` — optional,
+> defaults to the previous month.
 
 ---
 
