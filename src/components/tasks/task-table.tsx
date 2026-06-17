@@ -247,6 +247,15 @@ export function TaskTable({
       );
       toast.success('Task created');
 
+      // The default "My" view only shows tasks assigned to you, so a task
+      // assigned to someone else (or left unassigned) would seem to vanish.
+      // Switch to "All" view in that case so the creator sees what they made.
+      const assignedToMe = createForm.assignee_ids.includes(currentUser.id);
+      if (!assignedToMe) {
+        setViewMode('all');
+        setTab('all');
+      }
+
       // Fire WhatsApp notifications (non-blocking).
       // Note: we intentionally do NOT notify on task creation — only on assignment.
       const proj = projects.find((p) => p.id === createForm.project_id);
