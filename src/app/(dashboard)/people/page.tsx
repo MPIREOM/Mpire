@@ -166,6 +166,17 @@ export default function PeoplePage() {
     }
   }
 
+  // Access check — team directory is owner-only.
+  if (user && !ownerMode) {
+    return (
+      <Shell title="People" subtitle="Team directory">
+        <div className="flex h-64 items-center justify-center text-muted">
+          Only owners can view the team directory.
+        </div>
+      </Shell>
+    );
+  }
+
   return (
     <Shell title="People" subtitle="Team directory">
       {showManage && (

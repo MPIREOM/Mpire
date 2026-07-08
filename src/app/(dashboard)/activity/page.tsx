@@ -7,7 +7,7 @@ import { Shell } from '@/components/layout/shell';
 import { Avatar } from '@/components/ui/avatar';
 import { useUser } from '@/hooks/use-user';
 import { useTeam } from '@/hooks/use-team';
-import { canManage } from '@/lib/roles';
+import { isOwner } from '@/lib/roles';
 import { createClient } from '@/lib/supabase/client';
 import { getPageLabel } from '@/components/live/presence-bar';
 import { ClockIcon, CalendarDaysIcon, UserGroupIcon } from '@heroicons/react/24/outline';
@@ -141,12 +141,12 @@ export default function ActivityPage() {
     return stats;
   }, [filtered]);
 
-  // Access check
-  if (user && !canManage(user.role)) {
+  // Access check — activity backlog is owner-only.
+  if (user && !isOwner(user.role)) {
     return (
       <Shell title="Activity" subtitle="User activity backlog">
         <div className="flex h-64 items-center justify-center text-muted">
-          Only owners and managers can view the activity backlog.
+          Only owners can view the activity backlog.
         </div>
       </Shell>
     );
