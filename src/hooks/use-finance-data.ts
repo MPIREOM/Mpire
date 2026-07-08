@@ -7,6 +7,26 @@ import type { FinanceClient, ClientInvoice, Expense, ClientName, RecurringExpens
 
 const supabase = createClient();
 
+const INVOICE_BUCKET = 'expense-invoices';
+
+/** Uploads an expense invoice to storage. Path: {company_id}/{uuid}/{filename}. */
+export async function uploadExpenseInvoice(file: File, companyId: string): Promise<{ path: string; name: string }> {
+  const safeName = file.name.replace(/[^\w.\-() ]+/g, '_');
+  const path = `${companyId}/${crypto.randomUUID()}/${safeName}`;
+  const { error } = await supabase.storage.from(INVOICE_BUCKET).upload(path, file, {
+    contentType: file.type || undefined,
+  });
+  if (error) throw error;
+  return { path, name: file.name };
+}
+
+/** Short-lived signed URL to view/download an attached invoice. */
+export async function getInvoiceUrl(path: string): Promise<string> {
+  const { data, error } = await supabase.storage.from(INVOICE_BUCKET).createSignedUrl(path, 60 * 10);
+  if (error) throw error;
+  return data.signedUrl;
+}
+
 function useRealtime(table: string, mutate: () => void, key: string) {
   useEffect(() => {
     const channel = supabase
@@ -133,8 +153,13 @@ export function useExpenses() {
     mutate();
   }
   async function deleteExpense(id: string) {
+    const invoicePath = (data ?? []).find((e) => e.id === id)?.invoice_path;
     const { error } = await supabase.from('expenses').delete().eq('id', id);
     if (error) throw error;
+    if (invoicePath) {
+      // Best effort — the expense row is already gone.
+      await supabase.storage.from(INVOICE_BUCKET).remove([invoicePath]).catch(() => {});
+    }
     mutate();
   }
 
@@ -193,6 +218,7 @@ export function useRecurringExpenses() {
     const rows = pending.map((t) => ({
       company_id: t.company_id,
       type: t.type,
+      scope: t.scope,
       category: t.category,
       description: t.description,
       amount: t.amount,

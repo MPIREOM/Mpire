@@ -5,8 +5,9 @@
  * numbers in the WhatsApp/PDF report match what owners see in the app.
  */
 
-import { format, isSameMonth, parseISO } from 'date-fns';
+import { format, isSameMonth, parseISO, subMonths } from 'date-fns';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { SCOPE_LABELS, SCOPE_ORDER } from '@/lib/expense-scope';
 import type { FinanceClient, ClientInvoice, Expense } from '@/types/database';
 
 export interface FinanceReport {
@@ -20,10 +21,16 @@ export interface FinanceReport {
   fixed: number;
   totalExpenses: number;
   net: number;
+  netMargin: number | null; // net / expected revenue
+  collectionRate: number | null; // collected / expected
+  momRevenueChange: number | null; // expected revenue vs previous month
   activeRetainers: number;
   activeCampaigns: number;
   perClient: { name: string; expected: number; collected: number }[];
   opByCategory: { category: string; amount: number }[];
+  opByScope: { label: string; amount: number }[];
+  clientProfitability: { name: string; revenue: number; direct: number; margin: number }[];
+  trend: { label: string; revenue: number; collected: number; expenses: number; net: number }[]; // 6 months ending at report month
 }
 
 function monthRevenue(clients: FinanceClient[], invoices: ClientInvoice[], month: Date) {
@@ -114,6 +121,55 @@ export async function buildFinanceReport(
     .map(([category, amount]) => ({ category, amount }))
     .sort((a, b) => b.amount - a.amount);
 
+  // Operational expenses split by scope (general / client-based / asset purchases)
+  const scopeMap = new Map<string, number>();
+  expenses
+    .filter((e) => e.type === 'operational' && isSameMonth(parseISO(e.expense_date), month))
+    .forEach((e) => {
+      const scope = e.scope ?? 'general';
+      scopeMap.set(scope, (scopeMap.get(scope) ?? 0) + e.amount);
+    });
+  const opByScope = SCOPE_ORDER
+    .map((scope) => ({ label: SCOPE_LABELS[scope], amount: scopeMap.get(scope) ?? 0 }))
+    .filter((r) => r.amount > 0);
+
+  // Client profitability: revenue vs directly-attributed expenses
+  const clientProfitability = clients
+    .filter((c) => c.status === 'active')
+    .map((c) => {
+      let revenue = 0;
+      if (c.type === 'retainer') {
+        const inv = monthInvoices.find((i) => i.client_id === c.id);
+        revenue = inv ? inv.amount : c.monthly_amount;
+      } else {
+        revenue = monthInvoices.filter((i) => i.client_id === c.id).reduce((s, i) => s + i.amount, 0);
+      }
+      const direct = expenses
+        .filter((e) => e.client_id === c.id && isSameMonth(parseISO(e.expense_date), month))
+        .reduce((s, e) => s + e.amount, 0);
+      return { name: c.name, revenue, direct, margin: revenue - direct };
+    })
+    .filter((r) => r.revenue > 0 || r.direct > 0)
+    .sort((a, b) => b.margin - a.margin);
+
+  // 6-month trend ending at the report month
+  const trend = Array.from({ length: 6 }, (_, idx) => {
+    const m = subMonths(month, 5 - idx);
+    const r = monthRevenue(clients, invoices, m);
+    const e = monthExpenses(expenses, m);
+    return {
+      label: format(m, 'MMM yyyy'),
+      revenue: r.expected,
+      collected: r.collected,
+      expenses: e.operational + e.fixed,
+      net: r.expected - e.operational - e.fixed,
+    };
+  });
+
+  // Month-over-month revenue change (expected)
+  const prevRev = monthRevenue(clients, invoices, subMonths(month, 1));
+  const momRevenueChange = prevRev.expected > 0 ? (rev.expected - prevRev.expected) / prevRev.expected : null;
+
   return {
     companyId,
     month,
@@ -125,9 +181,15 @@ export async function buildFinanceReport(
     fixed: exp.fixed,
     totalExpenses: exp.operational + exp.fixed,
     net,
+    netMargin: rev.expected > 0 ? net / rev.expected : null,
+    collectionRate: rev.expected > 0 ? rev.collected / rev.expected : null,
+    momRevenueChange,
     activeRetainers,
     activeCampaigns,
     perClient,
     opByCategory,
+    opByScope,
+    clientProfitability,
+    trend,
   };
 }

@@ -134,6 +134,8 @@ export type ClientType = 'retainer' | 'campaign';
 export type ClientStatus = 'active' | 'inactive';
 export type PaidStatus = 'unpaid' | 'partial' | 'paid';
 export type ExpenseType = 'fixed' | 'operational';
+/** What the spend is for: general portfolio, a specific client, or an asset purchase. */
+export type ExpenseScope = 'general' | 'client_based' | 'asset_purchase';
 
 export interface FinanceClient {
   id: string;
@@ -175,12 +177,15 @@ export interface Expense {
   id: string;
   company_id: string;
   type: ExpenseType;
+  scope: ExpenseScope;
   category: string;
   description: string | null;
   amount: number;
   expense_date: string; // YYYY-MM-DD
   client_id: string | null;
   recurring_id: string | null;
+  invoice_path: string | null; // storage path in the expense-invoices bucket
+  invoice_name: string | null; // original file name for display
   created_by: string | null;
   created_at: string;
   client?: FinanceClient;
@@ -191,6 +196,7 @@ export interface RecurringExpense {
   id: string;
   company_id: string;
   type: ExpenseType;
+  scope: ExpenseScope;
   category: string;
   description: string | null;
   amount: number;

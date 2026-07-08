@@ -73,16 +73,59 @@ export async function renderFinanceReportPdf(
     y -= 22;
   };
 
+  const GREEN = rgb(0.15, 0.55, 0.25);
+  const RED = rgb(0.8, 0.2, 0.2);
+  const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
+
   kpi('Revenue expected', formatOMR(report.revenueExpected));
   kpi('Revenue collected', formatOMR(report.revenueCollected));
-  kpi('Outstanding', formatOMR(report.outstanding), report.outstanding > 0 ? rgb(0.8, 0.2, 0.2) : INK);
+  kpi('Pending (not yet collected)', formatOMR(report.outstanding), report.outstanding > 0 ? RED : INK);
+  kpi(
+    'Collection rate',
+    report.collectionRate === null ? '—' : pct(report.collectionRate),
+    report.collectionRate === null ? INK : report.collectionRate >= 0.9 ? GREEN : report.collectionRate < 0.5 ? RED : INK
+  );
+  kpi(
+    'Revenue vs previous month',
+    report.momRevenueChange === null ? '—' : `${report.momRevenueChange >= 0 ? '+' : ''}${pct(report.momRevenueChange)}`,
+    report.momRevenueChange === null ? INK : report.momRevenueChange >= 0 ? GREEN : RED
+  );
   kpi('Operational expenses', formatOMR(report.operational));
   kpi('Fixed expenses', formatOMR(report.fixed));
   kpi('Total expenses', formatOMR(report.totalExpenses));
-  kpi('Net profit', formatOMR(report.net), report.net >= 0 ? rgb(0.15, 0.55, 0.25) : rgb(0.8, 0.2, 0.2));
+  kpi(
+    'Net profit',
+    report.netMargin === null ? formatOMR(report.net) : `${formatOMR(report.net)}  (${pct(report.netMargin)} margin)`,
+    report.net >= 0 ? GREEN : RED
+  );
   kpi('Active clients', `${report.activeRetainers + report.activeCampaigns} (${report.activeRetainers} retainer, ${report.activeCampaigns} campaign)`);
 
   y -= 10;
+
+  // 6-month trend
+  if (report.trend.length > 0) {
+    ensureSpace(60);
+    hr(page, y);
+    y -= 22;
+    text('6-month trend', MARGIN, 13, bold);
+    y -= 20;
+    text('Month', MARGIN, 10, font, MUTED);
+    textRight('Revenue', PAGE_W - MARGIN - 330, 10, font, MUTED);
+    textRight('Collected', PAGE_W - MARGIN - 220, 10, font, MUTED);
+    textRight('Expenses', PAGE_W - MARGIN - 110, 10, font, MUTED);
+    textRight('Net', PAGE_W - MARGIN, 10, font, MUTED);
+    y -= 16;
+    for (const t of report.trend) {
+      ensureSpace(18);
+      text(t.label, MARGIN, 11);
+      textRight(formatOMR(t.revenue), PAGE_W - MARGIN - 330, 11);
+      textRight(formatOMR(t.collected), PAGE_W - MARGIN - 220, 11);
+      textRight(formatOMR(t.expenses), PAGE_W - MARGIN - 110, 11);
+      textRight(formatOMR(t.net), PAGE_W - MARGIN, 11, font, t.net >= 0 ? GREEN : RED);
+      y -= 18;
+    }
+    y -= 10;
+  }
 
   // Per-client breakdown
   if (report.perClient.length > 0) {
@@ -90,17 +133,69 @@ export async function renderFinanceReportPdf(
     hr(page, y);
     y -= 22;
     text('Revenue by client', MARGIN, 13, bold);
-    y -= 20;
+    y -= 16;
+    text('Pending = balance still due (e.g. advance received, remainder at month/campaign end)', MARGIN, 9, font, MUTED);
+    y -= 18;
     text('Client', MARGIN, 10, font, MUTED);
-    textRight('Expected', PAGE_W - MARGIN - 110, 10, font, MUTED);
-    textRight('Collected', PAGE_W - MARGIN, 10, font, MUTED);
+    textRight('Expected', PAGE_W - MARGIN - 220, 10, font, MUTED);
+    textRight('Collected', PAGE_W - MARGIN - 110, 10, font, MUTED);
+    textRight('Pending', PAGE_W - MARGIN, 10, font, MUTED);
     y -= 16;
     for (const c of report.perClient) {
       ensureSpace(18);
-      const name = c.name.length > 40 ? c.name.slice(0, 38) + '…' : c.name;
+      const name = c.name.length > 30 ? c.name.slice(0, 28) + '…' : c.name;
+      const pending = Math.max(0, c.expected - c.collected);
       text(name, MARGIN, 11);
-      textRight(formatOMR(c.expected), PAGE_W - MARGIN - 110, 11);
-      textRight(formatOMR(c.collected), PAGE_W - MARGIN, 11);
+      textRight(formatOMR(c.expected), PAGE_W - MARGIN - 220, 11);
+      textRight(formatOMR(c.collected), PAGE_W - MARGIN - 110, 11);
+      textRight(formatOMR(pending), PAGE_W - MARGIN, 11, font, pending > 0 ? RED : GREEN);
+      y -= 18;
+    }
+  }
+
+  // Client profitability (revenue vs directly-attributed expenses)
+  if (report.clientProfitability.length > 0) {
+    y -= 10;
+    ensureSpace(60);
+    hr(page, y);
+    y -= 22;
+    text('Client profitability', MARGIN, 13, bold);
+    y -= 16;
+    text('Revenue vs expenses attributed directly to each client', MARGIN, 9, font, MUTED);
+    y -= 18;
+    text('Client', MARGIN, 10, font, MUTED);
+    textRight('Revenue', PAGE_W - MARGIN - 220, 10, font, MUTED);
+    textRight('Direct costs', PAGE_W - MARGIN - 110, 10, font, MUTED);
+    textRight('Margin', PAGE_W - MARGIN, 10, font, MUTED);
+    y -= 16;
+    for (const c of report.clientProfitability) {
+      ensureSpace(18);
+      const name = c.name.length > 30 ? c.name.slice(0, 28) + '…' : c.name;
+      text(name, MARGIN, 11);
+      textRight(formatOMR(c.revenue), PAGE_W - MARGIN - 220, 11);
+      textRight(formatOMR(c.direct), PAGE_W - MARGIN - 110, 11);
+      textRight(formatOMR(c.margin), PAGE_W - MARGIN, 11, font, c.margin >= 0 ? GREEN : RED);
+      y -= 18;
+    }
+  }
+
+  // Operational spend by type (general / client-based / asset purchases)
+  if (report.opByScope.length > 0) {
+    y -= 10;
+    ensureSpace(40);
+    hr(page, y);
+    y -= 22;
+    text('Operational spend by type', MARGIN, 13, bold);
+    y -= 20;
+    const scopeTotal = report.opByScope.reduce((s, r) => s + r.amount, 0);
+    for (const r of report.opByScope) {
+      ensureSpace(18);
+      text(r.label, MARGIN, 11);
+      textRight(
+        `${formatOMR(r.amount)}  (${scopeTotal > 0 ? pct(r.amount / scopeTotal) : '—'})`,
+        PAGE_W - MARGIN,
+        11
+      );
       y -= 18;
     }
   }
