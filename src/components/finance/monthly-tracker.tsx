@@ -3,14 +3,14 @@
 import { useMemo, useState } from 'react';
 import { format, startOfMonth, addMonths, subMonths, isSameMonth, parseISO } from 'date-fns';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
-import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, XMarkIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, XMarkIcon, CheckIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { formatOMR, parseAmount } from '@/lib/currency';
 import { Badge } from '@/components/ui/badge';
 import { canViewFixedExpenses } from '@/lib/roles';
-import { useFinanceClients, useClientInvoices, useExpenses } from '@/hooks/use-finance-data';
-import type { User, ClientInvoice, FinanceClient } from '@/types/database';
+import { useFinanceClients, useClientInvoices, useExpenses, useInvoicePayments } from '@/hooks/use-finance-data';
+import type { User, ClientInvoice, FinanceClient, InvoicePayment } from '@/types/database';
 
 interface TrackerRow {
   client: FinanceClient;
@@ -26,6 +26,7 @@ interface TrackerRow {
 export function MonthlyTracker({ user }: { user: User }) {
   const { clients } = useFinanceClients();
   const { invoices, addInvoice, updateInvoice } = useClientInvoices();
+  const { payments, addPayment, deletePayment, deletePaymentsForInvoices } = useInvoicePayments();
   const { expenses } = useExpenses();
   const canFixed = canViewFixedExpenses(user.role);
 
@@ -36,8 +37,9 @@ export function MonthlyTracker({ user }: { user: User }) {
   const [addOpen, setAddOpen] = useState(false);
   const [addForm, setAddForm] = useState({ client_id: '', label: '', amount: '' });
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [payRow, setPayRow] = useState<TrackerRow | null>(null);
+  const [payClientId, setPayClientId] = useState<string | null>(null);
   const [payAmount, setPayAmount] = useState('');
+  const [payDate, setPayDate] = useState(today);
 
   const data = useMemo(() => {
     const monthInvoices = invoices.filter((i) => isSameMonth(parseISO(i.month), month));
@@ -75,25 +77,35 @@ export function MonthlyTracker({ user }: { user: User }) {
     return { rows, expected, collected, outstanding: expected - collected, operational, fixed, unattributedOp, net: expected - operational - fixed };
   }, [clients, invoices, expenses, month, canFixed]);
 
-  function openPayment(row: TrackerRow) {
-    setPayRow(row);
-    setPayAmount('');
+  // Payments belonging to a row's invoices, newest first (hook orders by paid_on desc).
+  function rowPayments(row: TrackerRow): InvoicePayment[] {
+    const ids = new Set(row.invs.map((i) => i.id));
+    return payments.filter((p) => ids.has(p.invoice_id));
   }
 
-  // Records a payment (full or partial) for the row's month. The amount is
-  // capped at the balance due and distributed across the month's invoices.
-  async function recordPayment(row: TrackerRow, received: number) {
+  function openPayment(row: TrackerRow) {
+    setPayClientId(row.client.id);
+    setPayAmount('');
+    setPayDate(today);
+  }
+
+  // Records a dated payment (full or partial) for the row's month. The amount
+  // is capped at the balance due and distributed across the month's invoices;
+  // each allocation is written to the invoice_payments ledger.
+  async function recordPayment(row: TrackerRow, received: number, paidOn: string) {
     const balance = Math.max(0, row.revenue - row.collected);
     const capped = Math.min(received, balance);
     if (capped <= 0) { toast.error('Enter a payment amount'); return; }
+    if (!paidOn) { toast.error('Pick the payment date'); return; }
     setBusyId(row.client.id);
     try {
       if (row.isVirtualRetainer) {
         const amt = row.client.monthly_amount;
-        await addInvoice({
+        const inv = await addInvoice({
           company_id: user.company_id, client_id: row.client.id, month: monthKey, label: 'Retainer',
-          amount: amt, paid_status: capped >= amt ? 'paid' : 'partial', paid_amount: capped, paid_date: today, created_by: user.id,
+          amount: amt, paid_status: capped >= amt ? 'paid' : 'partial', paid_amount: capped, paid_date: paidOn, created_by: user.id,
         });
+        await addPayment({ company_id: user.company_id, invoice_id: inv.id, amount: capped, paid_on: paidOn, created_by: user.id });
       } else {
         let remaining = capped;
         for (const inv of row.invs) {
@@ -106,12 +118,34 @@ export function MonthlyTracker({ user }: { user: User }) {
           await updateInvoice(inv.id, {
             paid_amount: newPaid,
             paid_status: newPaid >= inv.amount ? 'paid' : 'partial',
-            paid_date: today,
+            paid_date: paidOn,
           });
+          await addPayment({ company_id: user.company_id, invoice_id: inv.id, amount: add, paid_on: paidOn, created_by: user.id });
         }
       }
       toast.success(`Recorded ${formatOMR(capped)}${capped >= balance ? ' — paid in full' : ' — partial payment'}`);
-      setPayRow(null);
+      setPayClientId(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Update failed');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  // Deletes one payment from the ledger and rolls its amount back off the invoice.
+  async function removePayment(row: TrackerRow, p: InvoicePayment) {
+    setBusyId(row.client.id);
+    try {
+      await deletePayment(p.id);
+      const inv = row.invs.find((i) => i.id === p.invoice_id);
+      if (inv) {
+        const newPaid = Math.max(0, inv.paid_amount - p.amount);
+        await updateInvoice(inv.id, {
+          paid_amount: newPaid,
+          paid_status: newPaid <= 0 ? 'unpaid' : newPaid >= inv.amount ? 'paid' : 'partial',
+          paid_date: newPaid <= 0 ? null : inv.paid_date,
+        });
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Update failed');
     } finally {
@@ -122,16 +156,21 @@ export function MonthlyTracker({ user }: { user: User }) {
   async function resetUnpaid(row: TrackerRow) {
     setBusyId(row.client.id);
     try {
+      await deletePaymentsForInvoices(row.invs.map((i) => i.id));
       await Promise.all(row.invs.map((i: ClientInvoice) =>
         updateInvoice(i.id, { paid_status: 'unpaid', paid_amount: 0, paid_date: null })
       ));
-      setPayRow(null);
+      setPayClientId(null);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Update failed');
     } finally {
       setBusyId(null);
     }
   }
+
+  // Live row for the payment dialog — re-derived after each mutation so the
+  // history and balance stay current while the dialog is open.
+  const payRow = payClientId ? data.rows.find((r) => r.client.id === payClientId) ?? null : null;
 
   async function handleAddRevenue(e: React.FormEvent) {
     e.preventDefault();
@@ -199,9 +238,17 @@ export function MonthlyTracker({ user }: { user: User }) {
           </div>
           {data.rows.map((r, i) => (
             <div key={r.client.id} className={cn('flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 sm:flex-nowrap', i !== data.rows.length - 1 && 'border-b border-border')}>
-              <div className="flex min-w-0 flex-1 items-center gap-2">
-                <span className="truncate text-sm font-medium text-text">{r.client.name}</span>
-                <Badge variant={r.client.type === 'retainer' ? 'accent' : 'info'}>{r.client.type}</Badge>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="truncate text-sm font-medium text-text">{r.client.name}</span>
+                  <Badge variant={r.client.type === 'retainer' ? 'accent' : 'info'}>{r.client.type}</Badge>
+                </div>
+                {(() => {
+                  const last = rowPayments(r)[0];
+                  return last ? (
+                    <p className="mt-0.5 text-[11px] text-faint">Last payment {format(parseISO(last.paid_on), 'MMM d, yyyy')} · {formatOMR(last.amount)}</p>
+                  ) : null;
+                })()}
               </div>
               <span className="w-28 text-right text-[13px] tabular-nums text-text sm:w-28">{formatOMR(r.revenue)}</span>
               <span className="w-28 text-right text-[13px] tabular-nums text-muted">{formatOMR(r.op)}</span>
@@ -234,18 +281,19 @@ export function MonthlyTracker({ user }: { user: User }) {
         </div>
       )}
 
-      {/* Record payment dialog — supports advances / partial payments */}
-      <Dialog open={!!payRow} onClose={() => setPayRow(null)} className="relative z-50">
+      {/* Record payment dialog — dated advances / partial payments with history */}
+      <Dialog open={!!payRow} onClose={() => setPayClientId(null)} className="relative z-50">
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
-          <DialogPanel className="w-full max-w-sm rounded-card border border-border bg-card p-6 shadow-xl">
+          <DialogPanel className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-card border border-border bg-card p-6 shadow-xl">
             {payRow && (() => {
               const balance = Math.max(0, payRow.revenue - payRow.collected);
+              const history = rowPayments(payRow);
               return (
                 <>
                   <div className="flex items-center justify-between">
                     <DialogTitle className="font-display text-lg font-semibold tracking-tight text-text">Record Payment</DialogTitle>
-                    <button onClick={() => setPayRow(null)} className="rounded-md p-1 text-muted hover:bg-bg hover:text-text"><XMarkIcon className="h-5 w-5" /></button>
+                    <button onClick={() => setPayClientId(null)} className="rounded-md p-1 text-muted hover:bg-bg hover:text-text"><XMarkIcon className="h-5 w-5" /></button>
                   </div>
                   <p className="mt-1 text-[13px] text-muted">{payRow.client.name} · {format(month, 'MMMM yyyy')}</p>
 
@@ -255,22 +303,68 @@ export function MonthlyTracker({ user }: { user: User }) {
                     <div className="flex justify-between font-semibold"><span className="text-muted">Balance due</span><span className={cn('tabular-nums', balance > 0 ? 'text-red' : 'text-green')}>{formatOMR(balance)}</span></div>
                   </div>
 
+                  {/* Revenue entries with the date they were added */}
+                  {payRow.invs.length > 0 && (
+                    <div className="mt-4">
+                      <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted">Revenue Entries</p>
+                      <div className="divide-y divide-border rounded-lg border border-border">
+                        {payRow.invs.map((inv) => (
+                          <div key={inv.id} className="flex items-center justify-between gap-2 px-3 py-2 text-[13px]">
+                            <div className="min-w-0">
+                              <p className="truncate text-text">{inv.label || 'Invoice'}</p>
+                              <p className="text-[11px] text-faint">Added {format(parseISO(inv.created_at), 'MMM d, yyyy')}</p>
+                            </div>
+                            <span className="shrink-0 tabular-nums text-text">{formatOMR(inv.amount)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Dated payment history */}
+                  {history.length > 0 && (
+                    <div className="mt-4">
+                      <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted">Payments Received</p>
+                      <div className="divide-y divide-border rounded-lg border border-border">
+                        {history.map((p) => (
+                          <div key={p.id} className="flex items-center justify-between gap-2 px-3 py-2 text-[13px]">
+                            <span className="text-muted">{format(parseISO(p.paid_on), 'MMM d, yyyy')}</span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="tabular-nums font-medium text-green">{formatOMR(p.amount)}</span>
+                              <button type="button" onClick={() => removePayment(payRow, p)} disabled={busyId === payRow.client.id}
+                                className="rounded-md p-1 text-muted hover:bg-red-bg hover:text-red disabled:opacity-50" title="Delete payment">
+                                <TrashIcon className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {balance > 0 ? (
                     <form
-                      onSubmit={(e) => { e.preventDefault(); recordPayment(payRow, parseAmount(payAmount)); }}
+                      onSubmit={(e) => { e.preventDefault(); recordPayment(payRow, parseAmount(payAmount), payDate); }}
                       className="mt-4 space-y-4"
                     >
-                      <div>
-                        <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Payment Received (OMR)</label>
-                        <div className="flex gap-2">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Amount (OMR)</label>
                           <input value={payAmount} onChange={(e) => setPayAmount(e.target.value)} inputMode="decimal" placeholder="0.000" autoFocus
                             className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none" />
-                          <button type="button" onClick={() => setPayAmount(String(balance))}
-                            className="shrink-0 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-muted hover:border-accent hover:text-accent">
-                            Full balance
-                          </button>
                         </div>
-                        <p className="mt-1 text-[11px] text-faint">Advance or partial amounts are fine — the rest stays pending.</p>
+                        <div>
+                          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Payment Date</label>
+                          <input type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)}
+                            className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none" />
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <button type="button" onClick={() => setPayAmount(String(balance))}
+                          className="rounded-md border border-border px-2 py-1 text-[11px] font-semibold text-muted hover:border-accent hover:text-accent">
+                          Full balance · {formatOMR(balance)}
+                        </button>
+                        <p className="text-[11px] text-faint">Partial amounts are fine.</p>
                       </div>
                       <div className="flex items-center justify-between gap-2 pt-1">
                         {payRow.collected > 0 && !payRow.isVirtualRetainer ? (
@@ -280,7 +374,7 @@ export function MonthlyTracker({ user }: { user: User }) {
                           </button>
                         ) : <span />}
                         <div className="flex gap-2">
-                          <button type="button" onClick={() => setPayRow(null)} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-muted hover:bg-bg hover:text-text">Cancel</button>
+                          <button type="button" onClick={() => setPayClientId(null)} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-muted hover:bg-bg hover:text-text">Cancel</button>
                           <button type="submit" disabled={busyId === payRow.client.id}
                             className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-light disabled:opacity-50">
                             {busyId === payRow.client.id ? 'Saving…' : 'Record'}

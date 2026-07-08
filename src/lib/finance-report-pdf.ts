@@ -153,6 +153,37 @@ export async function renderFinanceReportPdf(
     }
   }
 
+  // Payments received during the month, with dates (cash view)
+  if (report.paymentsReceived.length > 0) {
+    y -= 10;
+    ensureSpace(60);
+    hr(page, y);
+    y -= 22;
+    text('Payments received', MARGIN, 13, bold);
+    y -= 16;
+    text('Every payment collected during the month, with its date', MARGIN, 9, font, MUTED);
+    y -= 18;
+    text('Date', MARGIN, 10, font, MUTED);
+    text('Client', MARGIN + 120, 10, font, MUTED);
+    textRight('Amount', PAGE_W - MARGIN, 10, font, MUTED);
+    y -= 16;
+    for (const p of report.paymentsReceived) {
+      ensureSpace(18);
+      const name = p.client.length > 34 ? p.client.slice(0, 32) + '…' : p.client;
+      text(p.date, MARGIN, 11);
+      text(name, MARGIN + 120, 11);
+      textRight(formatOMR(p.amount), PAGE_W - MARGIN, 11, font, GREEN);
+      y -= 18;
+    }
+    ensureSpace(18);
+    text('Total received this month', MARGIN, 11, bold);
+    textRight(
+      formatOMR(report.paymentsReceived.reduce((s, p) => s + p.amount, 0)),
+      PAGE_W - MARGIN, 11, bold, GREEN
+    );
+    y -= 18;
+  }
+
   // Client profitability (revenue vs directly-attributed expenses)
   if (report.clientProfitability.length > 0) {
     y -= 10;

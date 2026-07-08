@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { formatOMR, formatOMRCompact } from '@/lib/currency';
 import { canViewFixedExpenses } from '@/lib/roles';
 import { SCOPE_LABELS, SCOPE_ORDER } from '@/lib/expense-scope';
-import { useFinanceClients, useClientInvoices, useExpenses } from '@/hooks/use-finance-data';
+import { useFinanceClients, useClientInvoices, useExpenses, useInvoicePayments } from '@/hooks/use-finance-data';
 import type { User, FinanceClient, ClientInvoice, Expense } from '@/types/database';
 
 function monthRevenue(clients: FinanceClient[], invoices: ClientInvoice[], month: Date) {
@@ -45,6 +45,7 @@ const signedPct = (v: number) => `${v >= 0 ? '+' : ''}${(v * 100).toFixed(1)}%`;
 export function FinanceDashboard({ user }: { user: User }) {
   const { clients } = useFinanceClients();
   const { invoices } = useClientInvoices();
+  const { payments } = useInvoicePayments();
   const { expenses } = useExpenses();
   const showFixed = canViewFixedExpenses(user.role);
 
@@ -109,11 +110,16 @@ export function FinanceDashboard({ user }: { user: User }) {
           expected = invs.reduce((s, i) => s + i.amount, 0);
           collected = invs.reduce((s, i) => s + i.paid_amount, 0);
         }
-        return { id: c.id, name: c.name, expected, collected, pending: Math.max(0, expected - collected) };
+        const invIds = new Set(monthInvoices.filter((i) => i.client_id === c.id).map((i) => i.id));
+        const clientPayments = payments.filter((p) => invIds.has(p.invoice_id));
+        const lastPaid = clientPayments.reduce<string | null>(
+          (m, p) => (m === null || p.paid_on > m ? p.paid_on : m), null
+        );
+        return { id: c.id, name: c.name, expected, collected, pending: Math.max(0, expected - collected), lastPaid };
       })
       .filter((r) => r.expected > 0)
       .sort((a, b) => b.pending - a.pending);
-  }, [clients, invoices, now]);
+  }, [clients, invoices, payments, now]);
 
   // Operational expense categories (this month)
   const opByCategory = useMemo(() => {
@@ -264,6 +270,9 @@ export function FinanceDashboard({ user }: { user: User }) {
                     <div className="h-full rounded-full bg-green"
                       style={{ width: `${Math.min(100, (r.collected / r.expected) * 100)}%` }} />
                   </div>
+                  {r.lastPaid && (
+                    <p className="mt-0.5 text-[10px] text-faint">Last payment {format(parseISO(r.lastPaid), 'MMM d, yyyy')}</p>
+                  )}
                 </div>
               ))}
             </div>
