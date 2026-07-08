@@ -119,7 +119,7 @@ export function ClientsManager({ user }: { user: User }) {
       <Dialog open={open} onClose={() => setOpen(false)} className="relative z-50">
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
-          <DialogPanel className="w-full max-w-md rounded-card border border-border bg-card p-6 shadow-xl">
+          <DialogPanel className="max-h-[85dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-card border border-border bg-card p-5 shadow-xl sm:p-6">
             <div className="flex items-center justify-between">
               <DialogTitle className="font-display text-lg font-semibold tracking-tight text-text">{editing ? 'Edit Client' : 'Add Client'}</DialogTitle>
               <button onClick={() => setOpen(false)} className="rounded-md p-1 text-muted hover:bg-bg hover:text-text"><XMarkIcon className="h-5 w-5" /></button>
@@ -170,7 +170,7 @@ export function ClientsManager({ user }: { user: User }) {
       <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} className="relative z-[60]">
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
-          <DialogPanel className="w-full max-w-sm rounded-card border border-border bg-card p-6 shadow-xl">
+          <DialogPanel className="max-h-[85dvh] w-full max-w-sm overflow-y-auto overscroll-contain rounded-card border border-border bg-card p-5 shadow-xl sm:p-6">
             <DialogTitle className="font-display text-lg font-semibold tracking-tight text-text">Remove Client</DialogTitle>
             <p className="mt-2 text-sm text-muted">Remove <strong className="text-text">{deleteTarget?.name}</strong>? Their invoices and linked expenses will also be removed. This cannot be undone.</p>
             <div className="mt-5 flex justify-end gap-2">

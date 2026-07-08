@@ -269,7 +269,7 @@ export function UploadDialog({ open, onClose, businessId, onUploaded }: UploadDi
     >
       <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" />
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <DialogPanel className="w-full max-w-lg rounded-card border border-border bg-card p-6 shadow-xl">
+        <DialogPanel className="max-h-[85dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-card border border-border bg-card p-5 shadow-xl sm:p-6">
           <div className="flex items-center justify-between mb-5">
             <DialogTitle className="font-display text-lg font-semibold tracking-tight text-text">
               {step === 'upload' && 'Upload Finance Data'}
