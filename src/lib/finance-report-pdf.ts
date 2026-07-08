@@ -79,7 +79,7 @@ export async function renderFinanceReportPdf(
 
   kpi('Revenue expected', formatOMR(report.revenueExpected));
   kpi('Revenue collected', formatOMR(report.revenueCollected));
-  kpi('Outstanding', formatOMR(report.outstanding), report.outstanding > 0 ? RED : INK);
+  kpi('Pending (not yet collected)', formatOMR(report.outstanding), report.outstanding > 0 ? RED : INK);
   kpi(
     'Collection rate',
     report.collectionRate === null ? '—' : pct(report.collectionRate),
@@ -110,14 +110,16 @@ export async function renderFinanceReportPdf(
     text('6-month trend', MARGIN, 13, bold);
     y -= 20;
     text('Month', MARGIN, 10, font, MUTED);
-    textRight('Revenue', PAGE_W - MARGIN - 220, 10, font, MUTED);
+    textRight('Revenue', PAGE_W - MARGIN - 330, 10, font, MUTED);
+    textRight('Collected', PAGE_W - MARGIN - 220, 10, font, MUTED);
     textRight('Expenses', PAGE_W - MARGIN - 110, 10, font, MUTED);
     textRight('Net', PAGE_W - MARGIN, 10, font, MUTED);
     y -= 16;
     for (const t of report.trend) {
       ensureSpace(18);
       text(t.label, MARGIN, 11);
-      textRight(formatOMR(t.revenue), PAGE_W - MARGIN - 220, 11);
+      textRight(formatOMR(t.revenue), PAGE_W - MARGIN - 330, 11);
+      textRight(formatOMR(t.collected), PAGE_W - MARGIN - 220, 11);
       textRight(formatOMR(t.expenses), PAGE_W - MARGIN - 110, 11);
       textRight(formatOMR(t.net), PAGE_W - MARGIN, 11, font, t.net >= 0 ? GREEN : RED);
       y -= 18;
@@ -131,17 +133,22 @@ export async function renderFinanceReportPdf(
     hr(page, y);
     y -= 22;
     text('Revenue by client', MARGIN, 13, bold);
-    y -= 20;
+    y -= 16;
+    text('Pending = balance still due (e.g. advance received, remainder at month/campaign end)', MARGIN, 9, font, MUTED);
+    y -= 18;
     text('Client', MARGIN, 10, font, MUTED);
-    textRight('Expected', PAGE_W - MARGIN - 110, 10, font, MUTED);
-    textRight('Collected', PAGE_W - MARGIN, 10, font, MUTED);
+    textRight('Expected', PAGE_W - MARGIN - 220, 10, font, MUTED);
+    textRight('Collected', PAGE_W - MARGIN - 110, 10, font, MUTED);
+    textRight('Pending', PAGE_W - MARGIN, 10, font, MUTED);
     y -= 16;
     for (const c of report.perClient) {
       ensureSpace(18);
-      const name = c.name.length > 40 ? c.name.slice(0, 38) + '…' : c.name;
+      const name = c.name.length > 30 ? c.name.slice(0, 28) + '…' : c.name;
+      const pending = Math.max(0, c.expected - c.collected);
       text(name, MARGIN, 11);
-      textRight(formatOMR(c.expected), PAGE_W - MARGIN - 110, 11);
-      textRight(formatOMR(c.collected), PAGE_W - MARGIN, 11);
+      textRight(formatOMR(c.expected), PAGE_W - MARGIN - 220, 11);
+      textRight(formatOMR(c.collected), PAGE_W - MARGIN - 110, 11);
+      textRight(formatOMR(pending), PAGE_W - MARGIN, 11, font, pending > 0 ? RED : GREEN);
       y -= 18;
     }
   }

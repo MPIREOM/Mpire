@@ -30,7 +30,7 @@ export interface FinanceReport {
   opByCategory: { category: string; amount: number }[];
   opByScope: { label: string; amount: number }[];
   clientProfitability: { name: string; revenue: number; direct: number; margin: number }[];
-  trend: { label: string; revenue: number; expenses: number; net: number }[]; // 6 months ending at report month
+  trend: { label: string; revenue: number; collected: number; expenses: number; net: number }[]; // 6 months ending at report month
 }
 
 function monthRevenue(clients: FinanceClient[], invoices: ClientInvoice[], month: Date) {
@@ -160,6 +160,7 @@ export async function buildFinanceReport(
     return {
       label: format(m, 'MMM yyyy'),
       revenue: r.expected,
+      collected: r.collected,
       expenses: e.operational + e.fixed,
       net: r.expected - e.operational - e.fixed,
     };

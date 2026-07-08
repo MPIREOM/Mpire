@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import {
-  ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  ComposedChart, BarChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 import { format, startOfMonth, subMonths, isSameMonth, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -79,6 +79,42 @@ export function FinanceDashboard({ user }: { user: User }) {
     });
   }, [clients, invoices, expenses, now, showFixed]);
 
+  // 6-month collected vs pending revenue (advances now, remainder later)
+  const collectionTrend = useMemo(() => {
+    return Array.from({ length: 6 }, (_, idx) => {
+      const m = subMonths(now, 5 - idx);
+      const rev = monthRevenue(clients, invoices, m);
+      return {
+        month: format(m, 'MMM'),
+        Collected: rev.collected,
+        Pending: Math.max(0, rev.expected - rev.collected),
+      };
+    });
+  }, [clients, invoices, now]);
+
+  // Per-client payment status for this month: advance received vs remainder due
+  const clientCollection = useMemo(() => {
+    const monthInvoices = invoices.filter((i) => isSameMonth(parseISO(i.month), now));
+    return clients
+      .filter((c) => c.status === 'active')
+      .map((c) => {
+        let expected = 0;
+        let collected = 0;
+        if (c.type === 'retainer') {
+          const inv = monthInvoices.find((i) => i.client_id === c.id);
+          expected = inv ? inv.amount : c.monthly_amount;
+          collected = inv ? inv.paid_amount : 0;
+        } else {
+          const invs = monthInvoices.filter((i) => i.client_id === c.id);
+          expected = invs.reduce((s, i) => s + i.amount, 0);
+          collected = invs.reduce((s, i) => s + i.paid_amount, 0);
+        }
+        return { id: c.id, name: c.name, expected, collected, pending: Math.max(0, expected - collected) };
+      })
+      .filter((r) => r.expected > 0)
+      .sort((a, b) => b.pending - a.pending);
+  }, [clients, invoices, now]);
+
   // Operational expense categories (this month)
   const opByCategory = useMemo(() => {
     const map = new Map<string, number>();
@@ -128,7 +164,7 @@ export function FinanceDashboard({ user }: { user: User }) {
 
   const cards: { label: string; value: string; sub?: string; tone?: string }[] = [
     { label: 'Revenue (this month)', value: formatOMR(kpis.expected), sub: `${formatOMR(kpis.collected)} collected` },
-    { label: 'Outstanding', value: formatOMR(kpis.outstanding), sub: 'unpaid this month', tone: kpis.outstanding > 0 ? 'text-red' : 'text-text' },
+    { label: 'Pending Revenue', value: formatOMR(kpis.outstanding), sub: 'not yet collected this month', tone: kpis.outstanding > 0 ? 'text-red' : 'text-text' },
     { label: 'Collection Rate', value: kpis.collectionRate === null ? '—' : pct(kpis.collectionRate), sub: 'of expected revenue collected', tone: kpis.collectionRate === null ? 'text-text' : kpis.collectionRate >= 0.9 ? 'text-green' : kpis.collectionRate < 0.5 ? 'text-red' : 'text-text' },
     { label: 'Revenue MoM', value: kpis.momChange === null ? '—' : signedPct(kpis.momChange), sub: `vs ${format(subMonths(now, 1), 'MMMM')}`, tone: kpis.momChange === null ? 'text-text' : kpis.momChange >= 0 ? 'text-green' : 'text-red' },
     { label: 'Operational Expenses', value: formatOMR(kpis.operational), sub: 'this month' },
@@ -179,6 +215,60 @@ export function FinanceDashboard({ user }: { user: User }) {
             )}
           </ComposedChart>
         </ResponsiveContainer>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Collected vs pending revenue */}
+        <div className="rounded-card border border-border bg-card p-5">
+          <h3 className="font-display text-lg font-semibold tracking-tight text-text">Collected vs Pending Revenue</h3>
+          <p className="mb-4 text-[13px] text-muted">Last 6 months · advances received vs balance due</p>
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={collectionTrend}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--color-muted)' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: 'var(--color-muted)' }} axisLine={false} tickLine={false} width={48}
+                tickFormatter={(v) => formatOMRCompact(Number(v)).replace('OMR', '').trim()} />
+              <Tooltip
+                contentStyle={{ fontSize: 12, borderRadius: 10, border: '1px solid var(--color-border)', background: 'var(--color-card)' }}
+                formatter={(value) => formatOMR(Number(value))}
+              />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+              <Bar dataKey="Collected" stackId="rev" fill="var(--color-green)" />
+              <Bar dataKey="Pending" stackId="rev" fill="var(--color-yellow)" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Payment status by client */}
+        {clientCollection.length > 0 && (
+          <div className="rounded-card border border-border bg-card">
+            <div className="border-b border-border px-5 py-3">
+              <h3 className="font-display text-lg font-semibold tracking-tight text-text">Payment Status by Client</h3>
+              <p className="text-[13px] text-muted">This month · collected vs balance due</p>
+            </div>
+            <div className="space-y-4 p-5">
+              {clientCollection.map((r) => (
+                <div key={r.id}>
+                  <div className="mb-1 flex items-center justify-between gap-3">
+                    <span className="min-w-0 truncate text-[13px] font-medium text-text">{r.name}</span>
+                    {r.pending > 0 ? (
+                      <span className="shrink-0 text-xs text-muted">
+                        <span className="stat-numeral text-text">{formatOMR(r.collected)}</span> of {formatOMR(r.expected)}
+                        <span className="ml-1.5 font-semibold text-yellow">{formatOMR(r.pending)} due</span>
+                      </span>
+                    ) : (
+                      <span className="shrink-0 text-xs font-semibold text-green">Paid in full · {formatOMR(r.expected)}</span>
+                    )}
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-bg">
+                    <div className="h-full rounded-full bg-green"
+                      style={{ width: `${Math.min(100, (r.collected / r.expected) * 100)}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
