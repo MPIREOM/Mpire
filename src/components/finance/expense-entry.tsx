@@ -17,9 +17,9 @@ const OPERATIONAL_CATEGORIES = ['Models', 'Editor', 'Space Rental', 'Equipment',
 const FIXED_CATEGORIES = ['Salaries', 'Rent', 'Utilities', 'Subscriptions', 'Insurance', 'Other'];
 
 const SCOPES: { value: ExpenseScope; label: string; hint: string }[] = [
-  { value: 'general', label: 'General', hint: 'Portfolio-wide spend' },
-  { value: 'client_based', label: 'Client', hint: 'For a specific client' },
-  { value: 'asset_purchase', label: 'Asset', hint: 'Equipment & purchases' },
+  { value: 'general', label: 'General Portfolio', hint: 'Day-to-day spend not tied to one client' },
+  { value: 'client_based', label: 'Client Expense', hint: 'Spend for a specific client — pick the client below' },
+  { value: 'asset_purchase', label: 'Asset Purchase', hint: 'Equipment or other assets the business keeps' },
 ];
 
 export function ExpenseEntry({ user }: { user: User }) {
@@ -146,32 +146,45 @@ export function ExpenseEntry({ user }: { user: User }) {
 
           {type === 'operational' && (
             <div>
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Expense For</label>
-              <div className="grid grid-cols-3 gap-2">
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Expense Categorization</label>
+              <div className="space-y-2">
                 {SCOPES.map((s) => (
-                  <button key={s.value} type="button" title={s.hint}
+                  <button key={s.value} type="button"
                     onClick={() => { setScope(s.value); if (s.value !== 'client_based') setClientId(''); }}
-                    className={cn('rounded-lg border px-2 py-2 text-[13px] font-semibold transition-colors', scope === s.value ? 'border-accent bg-accent-muted text-accent' : 'border-border text-muted hover:text-text')}>
-                    {s.label}
+                    className={cn('block w-full rounded-lg border px-3 py-2.5 text-left transition-colors', scope === s.value ? 'border-accent bg-accent-muted' : 'border-border hover:border-border-hover')}>
+                    <span className={cn('block text-[13px] font-semibold', scope === s.value ? 'text-accent' : 'text-text')}>{s.label}</span>
+                    <span className="mt-0.5 block text-[11px] text-muted">{s.hint}</span>
                   </button>
                 ))}
               </div>
-              <p className="mt-1 text-[11px] text-faint">{SCOPES.find((s) => s.value === scope)?.hint}</p>
             </div>
           )}
 
-          {type === 'operational' && scope === 'client_based' && (
+          {type === 'operational' && (
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Client</label>
               {clientNames.filter((c) => c.status === 'active').length === 0 ? (
                 <p className="rounded-lg border border-dashed border-border px-3 py-2 text-[13px] text-muted">No active clients yet — add one in the Clients tab first.</p>
               ) : (
-                <select value={clientId} onChange={(e) => setClientId(e.target.value)} className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none">
-                  <option value="">Select client…</option>
+                <select
+                  value={clientId}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setClientId(v);
+                    // Picking a client makes it a client expense; clearing it falls back to general.
+                    if (v) setScope('client_based');
+                    else if (scope === 'client_based') setScope('general');
+                  }}
+                  className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none"
+                >
+                  <option value="">— No specific client —</option>
                   {clientNames.filter((c) => c.status === 'active').map((c) => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
+              )}
+              {scope === 'client_based' && !clientId && (
+                <p className="mt-1 text-[11px] font-medium text-yellow">Pick which client this expense is for.</p>
               )}
             </div>
           )}
