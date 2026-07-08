@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/hooks/use-user';
-import { canManage, canAccessFinance, canAccessSettings } from '@/lib/roles';
+import { canManage, canAccessFinance, canAccessSettings, isOwner } from '@/lib/roles';
 import { Avatar } from '@/components/ui/avatar';
 import {
   ChevronLeftIcon,
@@ -40,6 +40,7 @@ interface NavItem {
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   href: string;
   requiresManage?: boolean;
+  requiresOwner?: boolean;
   requiresFinance?: boolean;
   requiresSettings?: boolean;
   badge?: number;
@@ -50,9 +51,9 @@ const navigation: NavItem[] = [
   { name: 'Projects', icon: FolderIcon, href: '/projects', requiresManage: true },
   { name: 'Tasks', icon: CheckCircleIcon, href: '/tasks' },
   { name: 'Timesheet', icon: ClockIcon, href: '/timesheet' },
-  { name: 'People', icon: UsersIcon, href: '/people', requiresManage: true },
+  { name: 'People', icon: UsersIcon, href: '/people', requiresOwner: true },
   { name: 'Finance', icon: BanknotesIcon, href: '/finance', requiresFinance: true },
-  { name: 'Activity', icon: RectangleStackIcon, href: '/activity', requiresManage: true },
+  { name: 'Activity', icon: RectangleStackIcon, href: '/activity', requiresOwner: true },
 ];
 
 const bottomNavigation: NavItem[] = [
@@ -81,6 +82,7 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse, pinned, on
 
   function canAccess(item: NavItem) {
     if (item.requiresManage && !canManage(role)) return false;
+    if (item.requiresOwner && !isOwner(role)) return false;
     if (item.requiresFinance && !canAccessFinance(role)) return false;
     if (item.requiresSettings && !canAccessSettings(role)) return false;
     return true;

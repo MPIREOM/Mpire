@@ -64,9 +64,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!caller || !['owner', 'manager'].includes(caller.role)) {
+    if (!caller || caller.role !== 'owner') {
       return NextResponse.json(
-        { error: 'Only owners and managers can add team members' },
+        { error: 'Only owners can add team members' },
         { status: 403 }
       );
     }
