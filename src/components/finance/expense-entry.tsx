@@ -1,20 +1,26 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { format, parseISO } from 'date-fns';
-import { PlusIcon, TrashIcon, LockClosedIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, TrashIcon, LockClosedIcon, PaperClipIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { formatOMR, parseAmount } from '@/lib/currency';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { canViewFixedExpenses, canManageFinance } from '@/lib/roles';
-import { useExpenses, useClientNames } from '@/hooks/use-finance-data';
+import { useExpenses, useClientNames, uploadExpenseInvoice, getInvoiceUrl } from '@/hooks/use-finance-data';
 import { RecurringExpenses } from '@/components/finance/recurring-expenses';
-import type { User, ExpenseType } from '@/types/database';
+import type { User, ExpenseType, ExpenseScope } from '@/types/database';
 
 const OPERATIONAL_CATEGORIES = ['Models', 'Editor', 'Space Rental', 'Equipment', 'Travel', 'Other'];
 const FIXED_CATEGORIES = ['Salaries', 'Rent', 'Utilities', 'Subscriptions', 'Insurance', 'Other'];
+
+const SCOPES: { value: ExpenseScope; label: string; hint: string }[] = [
+  { value: 'general', label: 'General', hint: 'Portfolio-wide spend' },
+  { value: 'client_based', label: 'Client', hint: 'For a specific client' },
+  { value: 'asset_purchase', label: 'Asset', hint: 'Equipment & purchases' },
+];
 
 export function ExpenseEntry({ user }: { user: User }) {
   const { expenses, addExpense, deleteExpense } = useExpenses();
@@ -22,11 +28,14 @@ export function ExpenseEntry({ user }: { user: User }) {
   const canFixed = canViewFixedExpenses(user.role);
 
   const [type, setType] = useState<ExpenseType>('operational');
+  const [scope, setScope] = useState<ExpenseScope>('general');
   const [category, setCategory] = useState('Models');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [clientId, setClientId] = useState('');
   const [description, setDescription] = useState('');
+  const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState<'all' | 'operational' | 'fixed'>('all');
 
@@ -40,28 +49,48 @@ export function ExpenseEntry({ user }: { user: User }) {
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     const amt = parseAmount(amount);
+    const effectiveScope: ExpenseScope = type === 'operational' ? scope : 'general';
     if (!category.trim()) { toast.error('Pick a category'); return; }
     if (amt <= 0) { toast.error('Enter an amount'); return; }
+    if (effectiveScope === 'client_based' && !clientId) { toast.error('Pick the client this expense is for'); return; }
     setSaving(true);
     try {
+      let invoice: { path: string; name: string } | null = null;
+      if (invoiceFile) {
+        invoice = await uploadExpenseInvoice(invoiceFile, user.company_id);
+      }
       await addExpense({
         company_id: user.company_id,
         type,
+        scope: effectiveScope,
         category: category.trim(),
         description: description.trim() || null,
         amount: amt,
         expense_date: date,
-        client_id: type === 'operational' && clientId ? clientId : null,
+        client_id: effectiveScope === 'client_based' && clientId ? clientId : null,
+        invoice_path: invoice?.path ?? null,
+        invoice_name: invoice?.name ?? null,
         created_by: user.id,
       });
       toast.success('Expense added');
       setAmount('');
       setDescription('');
       setClientId('');
+      setInvoiceFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to add expense');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function openInvoice(path: string) {
+    try {
+      const url = await getInvoiceUrl(path);
+      window.open(url, '_blank', 'noopener');
+    } catch {
+      toast.error('Could not open invoice');
     }
   }
 
@@ -115,21 +144,66 @@ export function ExpenseEntry({ user }: { user: User }) {
             </div>
           </div>
 
-          {type === 'operational' && clientNames.length > 0 && (
+          {type === 'operational' && (
             <div>
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Client (optional)</label>
-              <select value={clientId} onChange={(e) => setClientId(e.target.value)} className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none">
-                <option value="">— Unattributed —</option>
-                {clientNames.filter((c) => c.status === 'active').map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Expense For</label>
+              <div className="grid grid-cols-3 gap-2">
+                {SCOPES.map((s) => (
+                  <button key={s.value} type="button" title={s.hint}
+                    onClick={() => { setScope(s.value); if (s.value !== 'client_based') setClientId(''); }}
+                    className={cn('rounded-lg border px-2 py-2 text-[13px] font-semibold transition-colors', scope === s.value ? 'border-accent bg-accent-muted text-accent' : 'border-border text-muted hover:text-text')}>
+                    {s.label}
+                  </button>
                 ))}
-              </select>
+              </div>
+              <p className="mt-1 text-[11px] text-faint">{SCOPES.find((s) => s.value === scope)?.hint}</p>
+            </div>
+          )}
+
+          {type === 'operational' && scope === 'client_based' && (
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Client</label>
+              {clientNames.filter((c) => c.status === 'active').length === 0 ? (
+                <p className="rounded-lg border border-dashed border-border px-3 py-2 text-[13px] text-muted">No active clients yet — add one in the Clients tab first.</p>
+              ) : (
+                <select value={clientId} onChange={(e) => setClientId(e.target.value)} className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none">
+                  <option value="">Select client…</option>
+                  {clientNames.filter((c) => c.status === 'active').map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              )}
             </div>
           )}
 
           <div>
             <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Note (optional)</label>
             <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What was this for?" className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none" />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Invoice (optional)</label>
+            <input ref={fileInputRef} type="file" accept="application/pdf,image/png,image/jpeg,image/webp,image/heic" className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0] ?? null;
+                if (f && f.size > 10 * 1024 * 1024) { toast.error('Invoice must be under 10 MB'); e.target.value = ''; return; }
+                setInvoiceFile(f);
+              }} />
+            {invoiceFile ? (
+              <div className="flex items-center gap-2 rounded-lg border border-border bg-bg px-3 py-2">
+                <PaperClipIcon className="h-4 w-4 shrink-0 text-muted" />
+                <span className="min-w-0 flex-1 truncate text-[13px] text-text">{invoiceFile.name}</span>
+                <button type="button" onClick={() => { setInvoiceFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                  className="rounded-md p-1 text-muted hover:bg-red-bg hover:text-red" title="Remove file">
+                  <XMarkIcon className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <button type="button" onClick={() => fileInputRef.current?.click()}
+                className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border px-3 py-2 text-[13px] font-medium text-muted transition-colors hover:border-border-hover hover:text-text">
+                <PaperClipIcon className="h-4 w-4" /> Attach invoice (PDF or photo)
+              </button>
+            )}
           </div>
 
           <button type="submit" disabled={saving} className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary-light active:scale-[0.99] disabled:opacity-50">
@@ -166,12 +240,19 @@ export function ExpenseEntry({ user }: { user: User }) {
                     <p className="truncate text-sm font-medium text-text">
                       {ex.category}
                       {ex.client && <span className="text-muted"> · {ex.client.name}</span>}
+                      {ex.scope === 'asset_purchase' && <span className="text-muted"> · Asset</span>}
                     </p>
                     <p className="truncate text-xs text-muted">
                       {ex.description ? `${ex.description} · ` : ''}{format(parseISO(ex.expense_date), 'MMM d, yyyy')}
                       {ex.creator && ` · ${ex.creator.full_name}`}
                     </p>
                   </div>
+                  {ex.invoice_path && (
+                    <button onClick={() => openInvoice(ex.invoice_path!)} title={ex.invoice_name ? `Invoice: ${ex.invoice_name}` : 'View invoice'}
+                      className="rounded-lg p-1.5 text-muted hover:bg-bg hover:text-accent">
+                      <PaperClipIcon className="h-4 w-4" />
+                    </button>
+                  )}
                   <span className="stat-numeral shrink-0 text-base text-text">{formatOMR(ex.amount)}</span>
                   {canDelete && (
                     <button onClick={() => deleteExpense(ex.id).then(() => toast.success('Deleted')).catch(() => toast.error('Failed'))} className="rounded-lg p-1.5 text-muted hover:bg-red-bg hover:text-red" title="Delete">
