@@ -10,7 +10,18 @@ import { formatOMR, parseAmount } from '@/lib/currency';
 import { Badge } from '@/components/ui/badge';
 import { canViewFixedExpenses } from '@/lib/roles';
 import { useFinanceClients, useClientInvoices, useExpenses } from '@/hooks/use-finance-data';
-import type { User, ClientInvoice } from '@/types/database';
+import type { User, ClientInvoice, FinanceClient } from '@/types/database';
+
+interface TrackerRow {
+  client: FinanceClient;
+  invs: ClientInvoice[];
+  isVirtualRetainer: boolean;
+  revenue: number;
+  collected: number;
+  allPaid: boolean;
+  op: number;
+  profit: number;
+}
 
 export function MonthlyTracker({ user }: { user: User }) {
   const { clients } = useFinanceClients();
@@ -25,6 +36,8 @@ export function MonthlyTracker({ user }: { user: User }) {
   const [addOpen, setAddOpen] = useState(false);
   const [addForm, setAddForm] = useState({ client_id: '', label: '', amount: '' });
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [payRow, setPayRow] = useState<TrackerRow | null>(null);
+  const [payAmount, setPayAmount] = useState('');
 
   const data = useMemo(() => {
     const monthInvoices = invoices.filter((i) => isSameMonth(parseISO(i.month), month));
@@ -62,20 +75,57 @@ export function MonthlyTracker({ user }: { user: User }) {
     return { rows, expected, collected, outstanding: expected - collected, operational, fixed, unattributedOp, net: expected - operational - fixed };
   }, [clients, invoices, expenses, month, canFixed]);
 
-  async function togglePaid(row: typeof data.rows[number]) {
+  function openPayment(row: TrackerRow) {
+    setPayRow(row);
+    setPayAmount('');
+  }
+
+  // Records a payment (full or partial) for the row's month. The amount is
+  // capped at the balance due and distributed across the month's invoices.
+  async function recordPayment(row: TrackerRow, received: number) {
+    const balance = Math.max(0, row.revenue - row.collected);
+    const capped = Math.min(received, balance);
+    if (capped <= 0) { toast.error('Enter a payment amount'); return; }
     setBusyId(row.client.id);
     try {
       if (row.isVirtualRetainer) {
+        const amt = row.client.monthly_amount;
         await addInvoice({
           company_id: user.company_id, client_id: row.client.id, month: monthKey, label: 'Retainer',
-          amount: row.client.monthly_amount, paid_status: 'paid', paid_amount: row.client.monthly_amount, paid_date: today, created_by: user.id,
+          amount: amt, paid_status: capped >= amt ? 'paid' : 'partial', paid_amount: capped, paid_date: today, created_by: user.id,
         });
       } else {
-        const markPaid = !row.allPaid;
-        await Promise.all(row.invs.map((i: ClientInvoice) =>
-          updateInvoice(i.id, { paid_status: markPaid ? 'paid' : 'unpaid', paid_amount: markPaid ? i.amount : 0, paid_date: markPaid ? today : null })
-        ));
+        let remaining = capped;
+        for (const inv of row.invs) {
+          if (remaining <= 0) break;
+          const capacity = inv.amount - inv.paid_amount;
+          if (capacity <= 0) continue;
+          const add = Math.min(capacity, remaining);
+          remaining -= add;
+          const newPaid = inv.paid_amount + add;
+          await updateInvoice(inv.id, {
+            paid_amount: newPaid,
+            paid_status: newPaid >= inv.amount ? 'paid' : 'partial',
+            paid_date: today,
+          });
+        }
       }
+      toast.success(`Recorded ${formatOMR(capped)}${capped >= balance ? ' — paid in full' : ' — partial payment'}`);
+      setPayRow(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Update failed');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function resetUnpaid(row: TrackerRow) {
+    setBusyId(row.client.id);
+    try {
+      await Promise.all(row.invs.map((i: ClientInvoice) =>
+        updateInvoice(i.id, { paid_status: 'unpaid', paid_amount: 0, paid_date: null })
+      ));
+      setPayRow(null);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Update failed');
     } finally {
@@ -158,14 +208,19 @@ export function MonthlyTracker({ user }: { user: User }) {
               <span className={cn('w-28 text-right text-[13px] font-semibold tabular-nums', r.profit >= 0 ? 'text-text' : 'text-red')}>{formatOMR(r.profit)}</span>
               <div className="w-24 text-center">
                 <button
-                  onClick={() => togglePaid(r)}
+                  onClick={() => openPayment(r)}
                   disabled={busyId === r.client.id}
+                  title={r.collected > 0 && !r.allPaid ? `${formatOMR(r.collected)} of ${formatOMR(r.revenue)} collected` : undefined}
                   className={cn(
                     'inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-bold uppercase tracking-wide transition-colors disabled:opacity-50',
-                    r.allPaid ? 'border-green/30 text-green' : 'border-border text-muted hover:border-accent hover:text-accent'
+                    r.allPaid
+                      ? 'border-green/30 text-green'
+                      : r.collected > 0
+                        ? 'border-yellow/40 text-yellow hover:border-accent hover:text-accent'
+                        : 'border-border text-muted hover:border-accent hover:text-accent'
                   )}
                 >
-                  {r.allPaid ? <><CheckIcon className="h-3 w-3" /> Paid</> : 'Unpaid'}
+                  {r.allPaid ? <><CheckIcon className="h-3 w-3" /> Paid</> : r.collected > 0 ? 'Partial' : 'Unpaid'}
                 </button>
               </div>
             </div>
@@ -178,6 +233,76 @@ export function MonthlyTracker({ user }: { user: User }) {
           )}
         </div>
       )}
+
+      {/* Record payment dialog — supports advances / partial payments */}
+      <Dialog open={!!payRow} onClose={() => setPayRow(null)} className="relative z-50">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <DialogPanel className="w-full max-w-sm rounded-card border border-border bg-card p-6 shadow-xl">
+            {payRow && (() => {
+              const balance = Math.max(0, payRow.revenue - payRow.collected);
+              return (
+                <>
+                  <div className="flex items-center justify-between">
+                    <DialogTitle className="font-display text-lg font-semibold tracking-tight text-text">Record Payment</DialogTitle>
+                    <button onClick={() => setPayRow(null)} className="rounded-md p-1 text-muted hover:bg-bg hover:text-text"><XMarkIcon className="h-5 w-5" /></button>
+                  </div>
+                  <p className="mt-1 text-[13px] text-muted">{payRow.client.name} · {format(month, 'MMMM yyyy')}</p>
+
+                  <div className="mt-4 space-y-2 rounded-lg border border-border bg-bg/50 p-3 text-[13px]">
+                    <div className="flex justify-between"><span className="text-muted">Expected</span><span className="tabular-nums text-text">{formatOMR(payRow.revenue)}</span></div>
+                    <div className="flex justify-between"><span className="text-muted">Collected so far</span><span className="tabular-nums text-green">{formatOMR(payRow.collected)}</span></div>
+                    <div className="flex justify-between font-semibold"><span className="text-muted">Balance due</span><span className={cn('tabular-nums', balance > 0 ? 'text-red' : 'text-green')}>{formatOMR(balance)}</span></div>
+                  </div>
+
+                  {balance > 0 ? (
+                    <form
+                      onSubmit={(e) => { e.preventDefault(); recordPayment(payRow, parseAmount(payAmount)); }}
+                      className="mt-4 space-y-4"
+                    >
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Payment Received (OMR)</label>
+                        <div className="flex gap-2">
+                          <input value={payAmount} onChange={(e) => setPayAmount(e.target.value)} inputMode="decimal" placeholder="0.000" autoFocus
+                            className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none" />
+                          <button type="button" onClick={() => setPayAmount(String(balance))}
+                            className="shrink-0 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-muted hover:border-accent hover:text-accent">
+                            Full balance
+                          </button>
+                        </div>
+                        <p className="mt-1 text-[11px] text-faint">Advance or partial amounts are fine — the rest stays pending.</p>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 pt-1">
+                        {payRow.collected > 0 && !payRow.isVirtualRetainer ? (
+                          <button type="button" onClick={() => resetUnpaid(payRow)} disabled={busyId === payRow.client.id}
+                            className="text-xs font-semibold text-red hover:underline disabled:opacity-50">
+                            Reset to unpaid
+                          </button>
+                        ) : <span />}
+                        <div className="flex gap-2">
+                          <button type="button" onClick={() => setPayRow(null)} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-muted hover:bg-bg hover:text-text">Cancel</button>
+                          <button type="submit" disabled={busyId === payRow.client.id}
+                            className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-light disabled:opacity-50">
+                            {busyId === payRow.client.id ? 'Saving…' : 'Record'}
+                          </button>
+                        </div>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="mt-4 flex items-center justify-between gap-2">
+                      <p className="flex items-center gap-1.5 text-[13px] text-green"><CheckIcon className="h-4 w-4" /> Paid in full</p>
+                      <button type="button" onClick={() => resetUnpaid(payRow)} disabled={busyId === payRow.client.id}
+                        className="text-xs font-semibold text-red hover:underline disabled:opacity-50">
+                        Reset to unpaid
+                      </button>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </DialogPanel>
+        </div>
+      </Dialog>
 
       {/* Add revenue dialog */}
       <Dialog open={addOpen} onClose={() => setAddOpen(false)} className="relative z-50">
