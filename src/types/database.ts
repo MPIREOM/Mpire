@@ -165,6 +165,18 @@ export interface ClientInvoice {
   client?: FinanceClient;
 }
 
+/** One dated payment received against an invoice (advance, partial, settlement). */
+export interface InvoicePayment {
+  id: string;
+  company_id: string;
+  invoice_id: string;
+  amount: number;
+  paid_on: string; // YYYY-MM-DD
+  note: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
 /** Names-only client projection (safe for staff — no revenue). */
 export interface ClientName {
   id: string;

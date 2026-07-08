@@ -8,7 +8,7 @@
 import { format, isSameMonth, parseISO, subMonths } from 'date-fns';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { SCOPE_LABELS, SCOPE_ORDER } from '@/lib/expense-scope';
-import type { FinanceClient, ClientInvoice, Expense } from '@/types/database';
+import type { FinanceClient, ClientInvoice, Expense, InvoicePayment } from '@/types/database';
 
 export interface FinanceReport {
   companyId: string;
@@ -30,6 +30,8 @@ export interface FinanceReport {
   opByCategory: { category: string; amount: number }[];
   opByScope: { label: string; amount: number }[];
   clientProfitability: { name: string; revenue: number; direct: number; margin: number }[];
+  /** Every payment collected during the month, with its date (cash view). */
+  paymentsReceived: { date: string; client: string; amount: number }[];
   trend: { label: string; revenue: number; collected: number; expenses: number; net: number }[]; // 6 months ending at report month
 }
 
@@ -68,15 +70,17 @@ export async function buildFinanceReport(
   companyId: string,
   month: Date
 ): Promise<FinanceReport> {
-  const [clientsRes, invoicesRes, expensesRes] = await Promise.all([
+  const [clientsRes, invoicesRes, expensesRes, paymentsRes] = await Promise.all([
     admin.from('finance_clients').select('*').eq('company_id', companyId),
     admin.from('client_invoices').select('*').eq('company_id', companyId),
     admin.from('expenses').select('*').eq('company_id', companyId),
+    admin.from('invoice_payments').select('*').eq('company_id', companyId),
   ]);
 
   const clients = (clientsRes.data ?? []) as FinanceClient[];
   const invoices = (invoicesRes.data ?? []) as ClientInvoice[];
   const expenses = (expensesRes.data ?? []) as Expense[];
+  const payments = (paymentsRes.data ?? []) as InvoicePayment[];
 
   const rev = monthRevenue(clients, invoices, month);
   const exp = monthExpenses(expenses, month);
@@ -152,6 +156,20 @@ export async function buildFinanceReport(
     .filter((r) => r.revenue > 0 || r.direct > 0)
     .sort((a, b) => b.margin - a.margin);
 
+  // Every payment collected during the month, dated (cash view)
+  const paymentsReceived = payments
+    .filter((p) => isSameMonth(parseISO(p.paid_on), month))
+    .sort((a, b) => a.paid_on.localeCompare(b.paid_on))
+    .map((p) => {
+      const inv = invoices.find((i) => i.id === p.invoice_id);
+      const client = inv ? clients.find((c) => c.id === inv.client_id) : undefined;
+      return {
+        date: format(parseISO(p.paid_on), 'MMM d, yyyy'),
+        client: client?.name ?? inv?.label ?? 'Unknown',
+        amount: p.amount,
+      };
+    });
+
   // 6-month trend ending at the report month
   const trend = Array.from({ length: 6 }, (_, idx) => {
     const m = subMonths(month, 5 - idx);
@@ -190,6 +208,7 @@ export async function buildFinanceReport(
     opByCategory,
     opByScope,
     clientProfitability,
+    paymentsReceived,
     trend,
   };
 }

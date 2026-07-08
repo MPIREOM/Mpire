@@ -3,7 +3,7 @@
 import useSWR from 'swr';
 import { useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import type { FinanceClient, ClientInvoice, Expense, ClientName, RecurringExpense, User } from '@/types/database';
+import type { FinanceClient, ClientInvoice, Expense, ClientName, RecurringExpense, InvoicePayment, User } from '@/types/database';
 
 const supabase = createClient();
 
@@ -124,6 +124,43 @@ export function useClientInvoices() {
   }
 
   return { invoices: data ?? [], isLoading, error, mutate, addInvoice, updateInvoice, deleteInvoice };
+}
+
+/* ── Invoice payments (dated ledger of money received) ── */
+export function useInvoicePayments() {
+  const { data, error, isLoading, mutate } = useSWR<InvoicePayment[]>(
+    'invoice-payments',
+    async () => {
+      const { data, error } = await supabase
+        .from('invoice_payments')
+        .select('*')
+        .order('paid_on', { ascending: false })
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as InvoicePayment[];
+    },
+    { revalidateOnFocus: false, dedupingInterval: 15000 }
+  );
+  useRealtime('invoice_payments', mutate, 'payments');
+
+  async function addPayment(payload: Partial<InvoicePayment>) {
+    const { error } = await supabase.from('invoice_payments').insert(payload);
+    if (error) throw error;
+    mutate();
+  }
+  async function deletePayment(id: string) {
+    const { error } = await supabase.from('invoice_payments').delete().eq('id', id);
+    if (error) throw error;
+    mutate();
+  }
+  async function deletePaymentsForInvoices(invoiceIds: string[]) {
+    if (invoiceIds.length === 0) return;
+    const { error } = await supabase.from('invoice_payments').delete().in('invoice_id', invoiceIds);
+    if (error) throw error;
+    mutate();
+  }
+
+  return { payments: data ?? [], isLoading, error, mutate, addPayment, deletePayment, deletePaymentsForInvoices };
 }
 
 /* ── Expenses ── */
