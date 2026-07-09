@@ -192,7 +192,7 @@ export function FinanceDashboard({ user }: { user: User }) {
         {cards.map((c) => (
           <div key={c.label} className="bg-card p-5 sm:p-6">
             <p className="eyebrow truncate">{c.label}</p>
-            <p className={cn('stat-numeral mt-3 text-3xl', c.tone ?? 'text-text')}>{c.value}</p>
+            <p className={cn('stat-numeral mt-3 break-all text-xl sm:text-2xl lg:text-3xl', c.tone ?? 'text-text')}>{c.value}</p>
             {c.sub && <p className="mt-2 text-xs text-faint">{c.sub}</p>}
           </div>
         ))}

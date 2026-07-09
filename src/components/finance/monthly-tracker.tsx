@@ -217,7 +217,7 @@ export function MonthlyTracker({ user }: { user: User }) {
         {totals.map((t) => (
           <div key={t.label} className="bg-card p-4">
             <p className="eyebrow truncate">{t.label}</p>
-            <p className={cn('stat-numeral mt-1.5 text-xl', t.tone ?? 'text-text')}>{t.value}</p>
+            <p className={cn('stat-numeral mt-1.5 break-all text-lg sm:text-xl', t.tone ?? 'text-text')}>{t.value}</p>
           </div>
         ))}
       </div>
@@ -237,7 +237,7 @@ export function MonthlyTracker({ user }: { user: User }) {
             <span className="w-24 text-center">Status</span>
           </div>
           {data.rows.map((r, i) => (
-            <div key={r.client.id} className={cn('flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 sm:flex-nowrap', i !== data.rows.length - 1 && 'border-b border-border')}>
+            <div key={r.client.id} className={cn('flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 sm:flex-nowrap', i !== data.rows.length - 1 && 'border-b border-border')}>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="truncate text-sm font-medium text-text">{r.client.name}</span>
@@ -250,9 +250,22 @@ export function MonthlyTracker({ user }: { user: User }) {
                   ) : null;
                 })()}
               </div>
-              <span className="w-28 text-right text-[13px] tabular-nums text-text sm:w-28">{formatOMR(r.revenue)}</span>
-              <span className="w-28 text-right text-[13px] tabular-nums text-muted">{formatOMR(r.op)}</span>
-              <span className={cn('w-28 text-right text-[13px] font-semibold tabular-nums', r.profit >= 0 ? 'text-text' : 'text-red')}>{formatOMR(r.profit)}</span>
+              {/* On phones the metrics get their own labelled row; ≥sm the wrapper
+                  dissolves (contents) and they sit inline like table columns. */}
+              <div className="order-last grid w-full grid-cols-3 gap-2 sm:order-none sm:contents">
+                <div className="min-w-0 sm:w-28 sm:text-right">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-faint sm:hidden">Revenue</p>
+                  <p className="text-[13px] tabular-nums text-text">{formatOMR(r.revenue)}</p>
+                </div>
+                <div className="min-w-0 sm:w-28 sm:text-right">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-faint sm:hidden">Op. Exp.</p>
+                  <p className="text-[13px] tabular-nums text-muted">{formatOMR(r.op)}</p>
+                </div>
+                <div className="min-w-0 sm:w-28 sm:text-right">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-faint sm:hidden">Profit</p>
+                  <p className={cn('text-[13px] font-semibold tabular-nums', r.profit >= 0 ? 'text-text' : 'text-red')}>{formatOMR(r.profit)}</p>
+                </div>
+              </div>
               <div className="w-24 text-center">
                 <button
                   onClick={() => openPayment(r)}
@@ -285,7 +298,7 @@ export function MonthlyTracker({ user }: { user: User }) {
       <Dialog open={!!payRow} onClose={() => setPayClientId(null)} className="relative z-50">
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
-          <DialogPanel className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-card border border-border bg-card p-6 shadow-xl">
+          <DialogPanel className="max-h-[85dvh] w-full max-w-sm overflow-y-auto overscroll-contain rounded-card border border-border bg-card p-5 shadow-xl sm:p-6">
             {payRow && (() => {
               const balance = Math.max(0, payRow.revenue - payRow.collected);
               const history = rowPayments(payRow);
@@ -348,15 +361,15 @@ export function MonthlyTracker({ user }: { user: User }) {
                       className="mt-4 space-y-4"
                     >
                       <div className="grid grid-cols-2 gap-3">
-                        <div>
+                        <div className="min-w-0">
                           <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Amount (OMR)</label>
-                          <input value={payAmount} onChange={(e) => setPayAmount(e.target.value)} inputMode="decimal" placeholder="0.000" autoFocus
-                            className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none" />
+                          <input value={payAmount} onChange={(e) => setPayAmount(e.target.value)} inputMode="decimal" placeholder="0.000"
+                            className="w-full min-w-0 rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none" />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Payment Date</label>
                           <input type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)}
-                            className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none" />
+                            className="w-full min-w-0 appearance-none rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none" />
                         </div>
                       </div>
                       <div className="flex items-center justify-between">
@@ -402,7 +415,7 @@ export function MonthlyTracker({ user }: { user: User }) {
       <Dialog open={addOpen} onClose={() => setAddOpen(false)} className="relative z-50">
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
-          <DialogPanel className="w-full max-w-sm rounded-card border border-border bg-card p-6 shadow-xl">
+          <DialogPanel className="max-h-[85dvh] w-full max-w-sm overflow-y-auto overscroll-contain rounded-card border border-border bg-card p-5 shadow-xl sm:p-6">
             <div className="flex items-center justify-between">
               <DialogTitle className="font-display text-lg font-semibold tracking-tight text-text">Add Revenue · {format(month, 'MMM yyyy')}</DialogTitle>
               <button onClick={() => setAddOpen(false)} className="rounded-md p-1 text-muted hover:bg-bg hover:text-text"><XMarkIcon className="h-5 w-5" /></button>
