@@ -30,6 +30,7 @@ export function ExpenseEntry({ user }: { user: User }) {
   const [type, setType] = useState<ExpenseType>('operational');
   const [scope, setScope] = useState<ExpenseScope>('general');
   const [category, setCategory] = useState('Models');
+  const [customCategory, setCustomCategory] = useState('');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [clientId, setClientId] = useState('');
@@ -50,7 +51,8 @@ export function ExpenseEntry({ user }: { user: User }) {
     e.preventDefault();
     const amt = parseAmount(amount);
     const effectiveScope: ExpenseScope = type === 'operational' ? scope : 'general';
-    if (!category.trim()) { toast.error('Pick a category'); return; }
+    const effectiveCategory = category === 'Other' ? customCategory.trim() || 'Other' : category;
+    if (!effectiveCategory.trim()) { toast.error('Pick a category'); return; }
     if (amt <= 0) { toast.error('Enter an amount'); return; }
     if (effectiveScope === 'client_based' && !clientId) { toast.error('Pick the client this expense is for'); return; }
     setSaving(true);
@@ -63,7 +65,7 @@ export function ExpenseEntry({ user }: { user: User }) {
         company_id: user.company_id,
         type,
         scope: effectiveScope,
-        category: category.trim(),
+        category: effectiveCategory,
         description: description.trim() || null,
         amount: amt,
         expense_date: date,
@@ -109,7 +111,7 @@ export function ExpenseEntry({ user }: { user: User }) {
               <div className="grid grid-cols-2 gap-2">
                 {(['operational', 'fixed'] as ExpenseType[]).map((t) => (
                   <button key={t} type="button"
-                    onClick={() => { setType(t); setCategory(t === 'fixed' ? FIXED_CATEGORIES[0] : OPERATIONAL_CATEGORIES[0]); }}
+                    onClick={() => { setType(t); setCategory(t === 'fixed' ? FIXED_CATEGORIES[0] : OPERATIONAL_CATEGORIES[0]); setCustomCategory(''); }}
                     className={cn('rounded-lg border px-3 py-2 text-[13px] font-semibold capitalize transition-colors', type === t ? 'border-accent bg-accent-muted text-accent' : 'border-border text-muted hover:text-text')}>
                     {t}
                   </button>
@@ -129,7 +131,7 @@ export function ExpenseEntry({ user }: { user: User }) {
               ))}
             </div>
             {category === 'Other' && (
-              <input value={category === 'Other' ? '' : category} onChange={(e) => setCategory(e.target.value || 'Other')} placeholder="Custom category" className="mt-2 w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none" />
+              <input value={customCategory} onChange={(e) => setCustomCategory(e.target.value)} placeholder="Custom category" className="mt-2 w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none" />
             )}
           </div>
 
