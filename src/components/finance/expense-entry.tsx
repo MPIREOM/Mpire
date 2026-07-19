@@ -2,16 +2,17 @@
 
 import { useState, useMemo, useRef } from 'react';
 import { format, parseISO } from 'date-fns';
-import { PlusIcon, TrashIcon, LockClosedIcon, PaperClipIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
+import { PlusIcon, TrashIcon, LockClosedIcon, PaperClipIcon, XMarkIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { formatOMR, parseAmount } from '@/lib/currency';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
-import { canViewFixedExpenses, canManageFinance } from '@/lib/roles';
+import { canViewFixedExpenses, canManageFinance, canEditExpenses } from '@/lib/roles';
 import { useExpenses, useClientNames, uploadExpenseInvoice, getInvoiceUrl } from '@/hooks/use-finance-data';
 import { RecurringExpenses } from '@/components/finance/recurring-expenses';
-import type { User, ExpenseType, ExpenseScope } from '@/types/database';
+import type { User, Expense, ExpenseType, ExpenseScope, ClientName } from '@/types/database';
 
 const OPERATIONAL_CATEGORIES = ['Models', 'Editor', 'Space Rental', 'Equipment', 'Travel', 'Other'];
 const FIXED_CATEGORIES = ['Salaries', 'Rent', 'Utilities', 'Subscriptions', 'Insurance', 'Other'];
@@ -23,7 +24,7 @@ const SCOPES: { value: ExpenseScope; label: string; hint: string }[] = [
 ];
 
 export function ExpenseEntry({ user }: { user: User }) {
-  const { expenses, addExpense, deleteExpense } = useExpenses();
+  const { expenses, addExpense, updateExpense, deleteExpense } = useExpenses();
   const { clientNames } = useClientNames(); // names-only view — readable by all roles
   const canFixed = canViewFixedExpenses(user.role);
 
@@ -39,6 +40,7 @@ export function ExpenseEntry({ user }: { user: User }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState<'all' | 'operational' | 'fixed'>('all');
+  const [editTarget, setEditTarget] = useState<Expense | null>(null);
 
   const categories = type === 'fixed' ? FIXED_CATEGORIES : OPERATIONAL_CATEGORIES;
 
@@ -269,6 +271,11 @@ export function ExpenseEntry({ user }: { user: User }) {
                     </button>
                   )}
                   <span className="stat-numeral shrink-0 text-base text-text">{formatOMR(ex.amount)}</span>
+                  {canEditExpenses(user.role) && (
+                    <button onClick={() => setEditTarget(ex)} className="rounded-lg p-1.5 text-muted hover:bg-bg hover:text-text" title="Edit">
+                      <PencilSquareIcon className="h-4 w-4" />
+                    </button>
+                  )}
                   {canDelete && (
                     <button onClick={() => deleteExpense(ex.id).then(() => toast.success('Deleted')).catch(() => toast.error('Failed'))} className="rounded-lg p-1.5 text-muted hover:bg-red-bg hover:text-red" title="Delete">
                       <TrashIcon className="h-4 w-4" />
@@ -281,6 +288,173 @@ export function ExpenseEntry({ user }: { user: User }) {
         )}
       </div>
       </div>
+
+      {editTarget && (
+        <EditExpenseDialog
+          expense={editTarget}
+          clientNames={clientNames}
+          onClose={() => setEditTarget(null)}
+          onSave={(updates) => updateExpense(editTarget.id, updates)}
+        />
+      )}
     </div>
+  );
+}
+
+/* ── Edit dialog (super admin) ── */
+function EditExpenseDialog({ expense, clientNames, onClose, onSave }: {
+  expense: Expense;
+  clientNames: ClientName[];
+  onClose: () => void;
+  onSave: (updates: Partial<Expense>) => Promise<void>;
+}) {
+  const isPreset = (expense.type === 'fixed' ? FIXED_CATEGORIES : OPERATIONAL_CATEGORIES).includes(expense.category);
+  const [type, setType] = useState<ExpenseType>(expense.type);
+  const [scope, setScope] = useState<ExpenseScope>(expense.scope);
+  const [category, setCategory] = useState(isPreset ? expense.category : 'Other');
+  const [customCategory, setCustomCategory] = useState(isPreset ? '' : expense.category);
+  const [amount, setAmount] = useState(String(expense.amount));
+  const [date, setDate] = useState(expense.expense_date);
+  const [clientId, setClientId] = useState(expense.client_id ?? '');
+  const [description, setDescription] = useState(expense.description ?? '');
+  const [saving, setSaving] = useState(false);
+
+  const categories = type === 'fixed' ? FIXED_CATEGORIES : OPERATIONAL_CATEGORIES;
+  // Keep the currently linked client selectable even if it has since gone inactive.
+  const activeClients = clientNames.filter((c) => c.status === 'active' || c.id === expense.client_id);
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    const amt = parseAmount(amount);
+    const effectiveScope: ExpenseScope = type === 'operational' ? scope : 'general';
+    const effectiveCategory = category === 'Other' ? customCategory.trim() || 'Other' : category;
+    if (amt <= 0) { toast.error('Enter an amount'); return; }
+    if (effectiveScope === 'client_based' && !clientId) { toast.error('Pick the client this expense is for'); return; }
+    setSaving(true);
+    try {
+      await onSave({
+        type,
+        scope: effectiveScope,
+        category: effectiveCategory,
+        description: description.trim() || null,
+        amount: amt,
+        expense_date: date,
+        client_id: effectiveScope === 'client_based' && clientId ? clientId : null,
+      });
+      toast.success('Expense updated');
+      onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update expense');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open onClose={onClose} className="relative z-50">
+      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
+      <div className="fixed inset-0 flex items-center justify-center p-4">
+        <DialogPanel className="max-h-[85dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-card border border-border bg-card p-5 shadow-xl sm:p-6">
+          <div className="flex items-center justify-between">
+            <DialogTitle className="font-display text-lg font-semibold tracking-tight text-text">Edit Expense</DialogTitle>
+            <button onClick={onClose} className="rounded-md p-1 text-muted hover:bg-bg hover:text-text"><XMarkIcon className="h-5 w-5" /></button>
+          </div>
+          <form onSubmit={handleSave} className="mt-5 space-y-4">
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Type</label>
+              <div className="grid grid-cols-2 gap-2">
+                {(['operational', 'fixed'] as ExpenseType[]).map((t) => (
+                  <button key={t} type="button"
+                    onClick={() => { setType(t); setCategory(t === 'fixed' ? FIXED_CATEGORIES[0] : OPERATIONAL_CATEGORIES[0]); setCustomCategory(''); }}
+                    className={cn('rounded-lg border px-3 py-2 text-[13px] font-semibold capitalize transition-colors', type === t ? 'border-accent bg-accent-muted text-accent' : 'border-border text-muted hover:text-text')}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Category</label>
+              <div className="flex flex-wrap gap-1.5">
+                {categories.map((c) => (
+                  <button key={c} type="button" onClick={() => setCategory(c)}
+                    className={cn('rounded-md border px-2.5 py-1 text-xs font-semibold transition-colors', category === c ? 'border-accent bg-accent-muted text-accent' : 'border-border text-muted hover:text-text')}>
+                    {c}
+                  </button>
+                ))}
+              </div>
+              {category === 'Other' && (
+                <input value={customCategory} onChange={(e) => setCustomCategory(e.target.value)} placeholder="Custom category" className="mt-2 w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none" />
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Amount (OMR)</label>
+                <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" placeholder="0.000" className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Date</label>
+                <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none" />
+              </div>
+            </div>
+
+            {type === 'operational' && (
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Expense Categorization</label>
+                <div className="space-y-2">
+                  {SCOPES.map((s) => (
+                    <button key={s.value} type="button"
+                      onClick={() => { setScope(s.value); if (s.value !== 'client_based') setClientId(''); }}
+                      className={cn('block w-full rounded-lg border px-3 py-2.5 text-left transition-colors', scope === s.value ? 'border-accent bg-accent-muted' : 'border-border hover:border-border-hover')}>
+                      <span className={cn('block text-[13px] font-semibold', scope === s.value ? 'text-accent' : 'text-text')}>{s.label}</span>
+                      <span className="mt-0.5 block text-[11px] text-muted">{s.hint}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {type === 'operational' && (
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Client</label>
+                {activeClients.length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-border px-3 py-2 text-[13px] text-muted">No active clients yet — add one in the Clients tab first.</p>
+                ) : (
+                  <select
+                    value={clientId}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setClientId(v);
+                      if (v) setScope('client_based');
+                      else if (scope === 'client_based') setScope('general');
+                    }}
+                    className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none"
+                  >
+                    <option value="">— No specific client —</option>
+                    {activeClients.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                )}
+                {scope === 'client_based' && !clientId && (
+                  <p className="mt-1 text-[11px] font-medium text-yellow">Pick which client this expense is for.</p>
+                )}
+              </div>
+            )}
+
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Note (optional)</label>
+              <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What was this for?" className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:border-accent focus:outline-none" />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button type="button" onClick={onClose} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-muted hover:bg-bg hover:text-text">Cancel</button>
+              <button type="submit" disabled={saving} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-light disabled:opacity-50">{saving ? 'Saving…' : 'Save'}</button>
+            </div>
+          </form>
+        </DialogPanel>
+      </div>
+    </Dialog>
   );
 }

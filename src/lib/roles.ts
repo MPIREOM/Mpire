@@ -44,6 +44,11 @@ export function canEnterExpenses(role: Role): boolean {
   return role === 'owner' || role === 'manager' || role === 'staff';
 }
 
+// Edit logged expenses (incl. category) — super admin (owner) only.
+export function canEditExpenses(role: Role): boolean {
+  return role === 'owner';
+}
+
 // View fixed expenses / salaries — owner & managers only.
 export function canViewFixedExpenses(role: Role): boolean {
   return role === 'owner' || role === 'manager';
