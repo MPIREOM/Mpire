@@ -40,7 +40,7 @@ export function useProjects() {
   }, [mutate]);
 
   const createProject = useCallback(
-    async (project: { name: string; status: string; color: string; company_id: string; client_id?: string | null }) => {
+    async (project: { name: string; status: string; color: string; company_id: string; client_id?: string | null; start_date?: string | null; end_date?: string | null }) => {
       const { error } = await supabase.from('projects').insert(project);
       if (error) throw error;
       mutate();
@@ -49,7 +49,7 @@ export function useProjects() {
   );
 
   const updateProject = useCallback(
-    async (projectId: string, updates: { name?: string; status?: string; color?: string; client_id?: string | null }) => {
+    async (projectId: string, updates: { name?: string; status?: string; color?: string; client_id?: string | null; start_date?: string | null; end_date?: string | null }) => {
       const { error } = await supabase.from('projects').update(updates).eq('id', projectId);
       if (error) throw error;
       mutate();

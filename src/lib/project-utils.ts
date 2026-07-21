@@ -1,7 +1,10 @@
 import type { Task, Project, User } from '@/types/database';
 import { isOverdue, isDueToday, isDueThisWeek } from '@/lib/dates';
 import { getTaskAssignees } from '@/lib/task-helpers';
-import { formatDistanceToNow, parseISO } from 'date-fns';
+import {
+  formatDistanceToNow, parseISO, format, startOfMonth, endOfMonth,
+  isFirstDayOfMonth, isLastDayOfMonth, isSameMonth, isSameYear,
+} from 'date-fns';
 
 /* ── Derived project metrics from tasks ── */
 
@@ -107,6 +110,31 @@ export function computeProjectMetrics(
   };
 }
 
+/* ── Project scheduling (month / period assignment) ── */
+
+export function projectOverlapsMonth(project: Project, month: Date): boolean {
+  if (!project.start_date) return false;
+  if (parseISO(project.start_date) > endOfMonth(month)) return false;
+  // No end date = ongoing: the project runs from its start until further notice
+  return project.end_date ? parseISO(project.end_date) >= startOfMonth(month) : true;
+}
+
+export function formatProjectPeriod(project: Project): string | null {
+  if (!project.start_date) return null;
+  const start = parseISO(project.start_date);
+  const end = project.end_date ? parseISO(project.end_date) : null;
+  const monthAligned = isFirstDayOfMonth(start) && (!end || isLastDayOfMonth(end));
+  if (monthAligned) {
+    if (!end) return `${format(start, 'MMM yyyy')} — ongoing`;
+    if (isSameMonth(start, end)) return format(start, 'MMM yyyy');
+    if (isSameYear(start, end)) return `${format(start, 'MMM')} – ${format(end, 'MMM yyyy')}`;
+    return `${format(start, 'MMM yyyy')} – ${format(end, 'MMM yyyy')}`;
+  }
+  if (!end) return `${format(start, 'd MMM yyyy')} — ongoing`;
+  if (isSameYear(start, end)) return `${format(start, 'd MMM')} – ${format(end, 'd MMM yyyy')}`;
+  return `${format(start, 'd MMM yyyy')} – ${format(end, 'd MMM yyyy')}`;
+}
+
 /* ── Colors and variants ── */
 
 export function getHealthBadgeVariant(health: 'green' | 'yellow' | 'red') {
@@ -157,7 +185,7 @@ export function getProgressRawColor(percent: number, overdue: number) {
   return 'var(--color-red)';
 }
 
-export type SortKey = 'priority' | 'progress' | 'overdue' | 'name' | 'updated';
+export type SortKey = 'priority' | 'progress' | 'overdue' | 'name' | 'updated' | 'schedule';
 export type FilterKey = 'all' | 'active' | 'at-risk' | 'completed' | 'paused';
 
 export function sortProjects(metrics: ProjectMetrics[], sortBy: SortKey): ProjectMetrics[] {
@@ -173,6 +201,12 @@ export function sortProjects(metrics: ProjectMetrics[], sortBy: SortKey): Projec
       return arr.sort((a, b) => b.overdueTasks - a.overdueTasks);
     case 'name':
       return arr.sort((a, b) => a.project.name.localeCompare(b.project.name));
+    case 'schedule':
+      return arr.sort((a, b) => {
+        if (!a.project.start_date) return 1;
+        if (!b.project.start_date) return -1;
+        return a.project.start_date.localeCompare(b.project.start_date);
+      });
     case 'updated':
       return arr.sort((a, b) => {
         if (!a.lastActivityAt) return 1;

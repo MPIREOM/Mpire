@@ -39,10 +39,13 @@ create table if not exists public.projects (
   name text not null,
   status text not null default 'active' check (status in ('active', 'paused', 'completed', 'archived')),
   color text not null default '#6b7280',
+  start_date date default null,
+  end_date date default null,
   created_at timestamptz not null default now()
 );
 create index idx_projects_company on public.projects(company_id);
 create index idx_projects_status on public.projects(status);
+create index idx_projects_schedule on public.projects(start_date, end_date);
 
 -- 5. Tasks
 create table if not exists public.tasks (
