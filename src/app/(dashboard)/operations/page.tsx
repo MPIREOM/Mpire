@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { Shell } from '@/components/layout/shell';
 import { CEODashboard } from '@/components/dashboard/ceo-dashboard';
 import { StaffDashboard } from '@/components/dashboard/staff-dashboard';
+import { StudioHero } from '@/components/dashboard/studio-hero';
 import { PageSkeleton } from '@/components/ui/skeleton-loader';
 import { useUser } from '@/hooks/use-user';
 import { useTasks } from '@/hooks/use-tasks';
@@ -70,24 +71,27 @@ export default function OperationsPage() {
       title={ceoMode ? 'Command Center' : 'My Overview'}
       subtitle={ceoMode ? 'Outcomes, risks, and team performance' : 'Your tasks and progress'}
     >
-      {ceoMode ? (
-        <CEODashboard
-          tasks={tasks}
-          projects={projects}
-          team={team}
-          projectHealth={projectHealth}
-        />
-      ) : (
-        <StaffDashboard
-          tasks={tasks}
-          currentUser={user}
-          projects={projects}
-          onUpdateTask={updateTask}
-          onSetAssignees={setTaskAssignees}
-          onDeleteTask={deleteTask}
-          onCompleteTask={completeTask}
-        />
-      )}
+      <div className="space-y-8">
+        <StudioHero user={user} projects={projects} />
+        {ceoMode ? (
+          <CEODashboard
+            tasks={tasks}
+            projects={projects}
+            team={team}
+            projectHealth={projectHealth}
+          />
+        ) : (
+          <StaffDashboard
+            tasks={tasks}
+            currentUser={user}
+            projects={projects}
+            onUpdateTask={updateTask}
+            onSetAssignees={setTaskAssignees}
+            onDeleteTask={deleteTask}
+            onCompleteTask={completeTask}
+          />
+        )}
+      </div>
     </Shell>
   );
 }

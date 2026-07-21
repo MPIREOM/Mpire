@@ -1,11 +1,13 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import {
   PlusIcon, XMarkIcon, MagnifyingGlassIcon, PencilSquareIcon, TrashIcon,
   ChevronUpDownIcon, ChevronLeftIcon, ChevronRightIcon, ArrowRightIcon, CalendarDaysIcon,
+  Squares2X2Icon, ListBulletIcon, PaintBrushIcon,
 } from '@heroicons/react/24/outline';
 import { format, addMonths, startOfMonth, endOfMonth, isSameMonth, parseISO, isFirstDayOfMonth, isLastDayOfMonth } from 'date-fns';
 import { Shell } from '@/components/layout/shell';
@@ -117,6 +119,15 @@ export default function ProjectsPage() {
 
   const [scope, setScope] = useState<'month' | 'all'>('month');
   const [month, setMonth] = useState(() => startOfMonth(new Date()));
+  const [view, setView] = useState<'gallery' | 'list'>('gallery');
+
+  useEffect(() => {
+    if (localStorage.getItem('projects-view') === 'list') setView('list');
+  }, []);
+  function changeView(v: 'gallery' | 'list') {
+    setView(v);
+    localStorage.setItem('projects-view', v);
+  }
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<SortKey>('updated');
   const [filter, setFilter] = useState<FilterKey>('all');
@@ -231,48 +242,53 @@ export default function ProjectsPage() {
         <ProjectsSkeleton />
       ) : (
         <div className="space-y-6">
-          {/* Month navigator */}
-          <div className="overflow-hidden rounded-card border border-border bg-card">
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-3 px-5 py-4">
+          {/* Editorial masthead — the month as a magazine issue */}
+          <div className="grain overflow-hidden rounded-card border border-border bg-card">
+            <span className="pointer-events-none absolute -right-4 -top-12 select-none font-display text-[9rem] font-semibold leading-none text-accent/[0.07]">
+              {scope === 'month' ? format(month, 'MM') : '∞'}
+            </span>
+            <div className="relative flex flex-wrap items-end justify-between gap-x-6 gap-y-4 px-5 pb-4 pt-5 sm:px-6">
               {scope === 'month' ? (
-                <>
-                  <div className="flex items-center gap-1.5">
-                    <button onClick={() => setMonth((m) => startOfMonth(addMonths(m, -1)))} aria-label="Previous month"
-                      className="rounded-lg border border-border p-1.5 text-muted transition-colors hover:border-border-hover hover:text-text">
-                      <ChevronLeftIcon className="h-4 w-4" />
-                    </button>
-                    <h2 className="text-display w-44 text-center text-2xl text-text sm:w-48">{format(month, 'MMMM yyyy')}</h2>
-                    <button onClick={() => setMonth((m) => startOfMonth(addMonths(m, 1)))} aria-label="Next month"
-                      className="rounded-lg border border-border p-1.5 text-muted transition-colors hover:border-border-hover hover:text-text">
-                      <ChevronRightIcon className="h-4 w-4" />
-                    </button>
+                <div className="min-w-0">
+                  <p className="eyebrow">Issue {format(month, 'MM')} · {format(month, 'yyyy')}</p>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <h2 className="text-display text-4xl text-text sm:text-5xl">{format(month, 'MMMM')}</h2>
+                    <div className="flex items-center gap-1.5">
+                      <button onClick={() => setMonth((m) => startOfMonth(addMonths(m, -1)))} aria-label="Previous month"
+                        className="rounded-lg border border-border p-1.5 text-muted transition-colors hover:border-border-hover hover:text-text">
+                        <ChevronLeftIcon className="h-4 w-4" />
+                      </button>
+                      <button onClick={() => setMonth((m) => startOfMonth(addMonths(m, 1)))} aria-label="Next month"
+                        className="rounded-lg border border-border p-1.5 text-muted transition-colors hover:border-border-hover hover:text-text">
+                        <ChevronRightIcon className="h-4 w-4" />
+                      </button>
+                      {!isSameMonth(month, new Date()) && (
+                        <button onClick={() => setMonth(startOfMonth(new Date()))} className="ml-1 text-xs font-semibold text-accent hover:text-accent-light">
+                          Back to today
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  {!isSameMonth(month, new Date()) && (
-                    <button onClick={() => setMonth(startOfMonth(new Date()))} className="text-xs font-semibold text-accent hover:text-accent-light">
-                      Back to today
-                    </button>
-                  )}
-                  <div className="ml-auto flex items-baseline gap-2">
-                    <span className="stat-numeral text-3xl text-text">{inMonth.length}</span>
-                    <span className="eyebrow">project{inMonth.length === 1 ? '' : 's'} this month</span>
-                  </div>
-                </>
+                </div>
               ) : (
-                <>
-                  <h2 className="text-display text-2xl text-text">All Projects</h2>
-                  <div className="ml-auto flex items-baseline gap-2">
-                    <span className="stat-numeral text-3xl text-text">{metrics.length}</span>
-                    <span className="eyebrow">total</span>
-                  </div>
-                </>
+                <div>
+                  <p className="eyebrow">The full collection</p>
+                  <h2 className="text-display mt-1 text-4xl text-text sm:text-5xl">All Projects</h2>
+                </div>
               )}
-              <div className="flex rounded-lg border border-border p-0.5">
-                {(['month', 'all'] as const).map((s) => (
-                  <button key={s} onClick={() => setScope(s)}
-                    className={cn('rounded-md px-3 py-1 text-xs font-semibold transition-colors', scope === s ? 'bg-primary text-primary-foreground' : 'text-muted hover:text-text')}>
-                    {s === 'month' ? 'Month' : 'All'}
-                  </button>
-                ))}
+              <div className="flex items-end gap-5">
+                <div className="text-right">
+                  <p className="stat-numeral text-4xl text-text sm:text-5xl">{scope === 'month' ? inMonth.length : metrics.length}</p>
+                  <p className="eyebrow mt-1">{scope === 'month' ? 'on the wall' : 'in total'}</p>
+                </div>
+                <div className="mb-1 flex rounded-lg border border-border p-0.5">
+                  {(['month', 'all'] as const).map((s) => (
+                    <button key={s} onClick={() => setScope(s)}
+                      className={cn('rounded-md px-3 py-1 text-xs font-semibold transition-colors', scope === s ? 'bg-primary text-primary-foreground' : 'text-muted hover:text-text')}>
+                      {s === 'month' ? 'Month' : 'All'}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -333,6 +349,16 @@ export default function ProjectsPage() {
               <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search projects…"
                 className="h-9 w-full rounded-lg border border-border bg-card pl-9 pr-3 text-sm text-text placeholder:text-faint focus:border-accent focus:outline-none" />
             </div>
+            <div className="flex h-9 items-center rounded-lg border border-border bg-card p-0.5">
+              <button onClick={() => changeView('gallery')} title="Gallery view" aria-label="Gallery view"
+                className={cn('flex h-full items-center rounded-md px-2.5 transition-colors', view === 'gallery' ? 'bg-primary text-primary-foreground' : 'text-muted hover:text-text')}>
+                <Squares2X2Icon className="h-4 w-4" />
+              </button>
+              <button onClick={() => changeView('list')} title="List view" aria-label="List view"
+                className={cn('flex h-full items-center rounded-md px-2.5 transition-colors', view === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted hover:text-text')}>
+                <ListBulletIcon className="h-4 w-4" />
+              </button>
+            </div>
             <div className="relative">
               <button onClick={() => setSortOpen((v) => !v)} className="flex h-9 items-center gap-1.5 rounded-lg border border-border bg-card px-3 text-[13px] font-semibold text-text hover:border-border-hover">
                 <ChevronUpDownIcon className="h-4 w-4" /> Sort
@@ -378,15 +404,21 @@ export default function ProjectsPage() {
                 <EmptyState title="No projects found" description="Nothing matches your search or filters." />
               ) : scope === 'month' ? (
                 <EmptyState
-                  icon={CalendarDaysIcon}
-                  title={`No projects in ${format(month, 'MMMM yyyy')}`}
-                  description={canEdit ? 'Add a project to this month, or schedule one of your unscheduled projects below.' : 'Nothing is scheduled for this month.'}
+                  icon={PaintBrushIcon}
+                  title="A blank canvas"
+                  description={canEdit ? `Nothing on the wall for ${format(month, 'MMMM yyyy')} yet. Add a project, or hang one of the unscheduled pieces below.` : `Nothing is scheduled for ${format(month, 'MMMM yyyy')}.`}
                   actionLabel={canEdit ? 'Add Project' : undefined}
                   onAction={canEdit ? openNew : undefined}
                 />
               ) : (
-                <EmptyState title="No projects yet" description="Create your first project to start tracking work." actionLabel={canEdit ? 'Add Project' : undefined} onAction={canEdit ? openNew : undefined} />
+                <EmptyState icon={PaintBrushIcon} title="The studio is empty" description="Create your first project to start tracking work." actionLabel={canEdit ? 'Add Project' : undefined} onAction={canEdit ? openNew : undefined} />
               )
+            ) : view === 'gallery' ? (
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {displayed.map((m, i) => (
+                  <ProjectCard key={m.project.id} m={m} index={i} {...rowProps} />
+                ))}
+              </div>
             ) : (
               <div className="overflow-hidden rounded-card border border-border bg-card">
                 <ListHeader />
@@ -402,14 +434,22 @@ export default function ProjectsPage() {
             <div className="space-y-2">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <p className="eyebrow">Unscheduled · {displayedUnscheduled.length}</p>
-                <p className="text-xs text-faint">Assign a month so these appear in your monthly view</p>
+                <p className="text-xs text-faint">Waiting to be hung — assign a month to put these on the wall</p>
               </div>
-              <div className="overflow-hidden rounded-card border border-border bg-card">
-                <ListHeader />
-                {displayedUnscheduled.map((m, i) => (
-                  <ProjectRow key={m.project.id} m={m} isLast={i === displayedUnscheduled.length - 1} showScheduleCta {...rowProps} />
-                ))}
-              </div>
+              {view === 'gallery' ? (
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {displayedUnscheduled.map((m, i) => (
+                    <ProjectCard key={m.project.id} m={m} index={i} showScheduleCta {...rowProps} />
+                  ))}
+                </div>
+              ) : (
+                <div className="overflow-hidden rounded-card border border-border bg-card">
+                  <ListHeader />
+                  {displayedUnscheduled.map((m, i) => (
+                    <ProjectRow key={m.project.id} m={m} isLast={i === displayedUnscheduled.length - 1} showScheduleCta {...rowProps} />
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -543,6 +583,107 @@ function ListHeader() {
       <span className="w-24">Team</span>
       <span className="w-16" />
     </div>
+  );
+}
+
+interface ProjectCardProps {
+  m: ProjectMetrics;
+  index: number;
+  showScheduleCta?: boolean;
+  router: ReturnType<typeof useRouter>;
+  canEdit: boolean;
+  canDelete: boolean;
+  clientName: Map<string, string>;
+  openEdit: (m: ProjectMetrics, focusSchedule?: boolean) => void;
+  onDelete: (m: ProjectMetrics) => void;
+}
+
+/* Moodboard poster card — the project's color becomes its cover */
+function ProjectCard({ m, index, showScheduleCta, router, canEdit, canDelete, clientName, openEdit, onDelete }: ProjectCardProps) {
+  const linkedName = m.project.client_id ? clientName.get(m.project.client_id) : undefined;
+  const period = formatProjectPeriod(m.project);
+  const openTasks = m.totalTasks - m.doneTasks;
+  const color = m.project.color;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: Math.min(index, 8) * 0.05, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+    >
+      <div
+        onClick={() => router.push(`/projects/${m.project.id}`)}
+        className={cn(
+          'group cursor-pointer overflow-hidden rounded-card border border-border bg-card transition-all duration-300',
+          'hover:-translate-y-1 hover:border-border-hover hover:shadow-xl',
+          index % 2 === 0 ? 'hover:rotate-[-0.5deg]' : 'hover:rotate-[0.5deg]'
+        )}
+      >
+        {/* Cover — a color field with grain, like a print pinned to the wall */}
+        <div
+          className="grain relative h-28"
+          style={{ background: `linear-gradient(135deg, ${color} 0%, color-mix(in srgb, ${color} 55%, #000) 100%)` }}
+        >
+          <span className="absolute left-1/2 top-2 h-4 w-14 -translate-x-1/2 rotate-[-3deg] rounded-[2px] bg-white/30" />
+          <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/40 to-transparent" />
+          <div className="absolute left-3 right-3 top-3 flex items-start justify-between gap-2">
+            <span className="rounded-md bg-black/25 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-white/90 backdrop-blur-sm">
+              {m.project.status}
+            </span>
+            {m.health === 'red' && (
+              <span className="rounded-md bg-red/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-white">
+                At Risk
+              </span>
+            )}
+          </div>
+          <h3 className="absolute bottom-3 left-4 right-4 truncate font-display text-xl font-semibold tracking-tight text-white">
+            {m.project.name}
+          </h3>
+        </div>
+
+        {/* Body */}
+        <div className="space-y-3 p-4">
+          <div className="flex items-center justify-between gap-2 text-xs">
+            <span className="flex min-w-0 items-center gap-1.5">
+              <CalendarDaysIcon className="h-3.5 w-3.5 shrink-0 text-muted" />
+              {period ? <span className="truncate font-semibold text-accent">{period}</span> : <span className="text-faint">Unscheduled</span>}
+            </span>
+            {linkedName && <span className="truncate text-faint">{linkedName}</span>}
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-border/60">
+              <div className="h-full rounded-full transition-all" style={{ width: `${m.progressPercent}%`, backgroundColor: getProgressRawColor(m.progressPercent, m.overdueTasks) }} />
+            </div>
+            <span className="text-xs font-semibold tabular-nums text-muted">{m.progressPercent}%</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 text-xs text-muted">
+              <span><strong className="font-semibold text-text">{openTasks}</strong> open</span>
+              {m.overdueTasks > 0 && <span className="font-semibold text-red">{m.overdueTasks} overdue</span>}
+            </div>
+            {m.assignees.length > 0 ? <AvatarStack users={m.assignees} max={3} size="xs" /> : <span className="text-xs text-faint">—</span>}
+          </div>
+          {(canEdit || canDelete) && (
+            <div className="flex items-center justify-between border-t border-border pt-3">
+              {showScheduleCta && canEdit ? (
+                <button onClick={(e) => { e.stopPropagation(); openEdit(m, true); }}
+                  className="flex h-7 items-center gap-1 rounded-lg border border-border px-2.5 text-xs font-semibold text-muted transition-colors hover:border-accent hover:text-accent">
+                  <CalendarDaysIcon className="h-3.5 w-3.5" /> Schedule
+                </button>
+              ) : <span className="text-[11px] text-faint">{m.lastActivityRelative}</span>}
+              <div className="flex items-center gap-1">
+                {canEdit && (
+                  <button onClick={(e) => { e.stopPropagation(); openEdit(m); }} className="rounded-lg p-1.5 text-muted transition-colors hover:bg-bg hover:text-text" title="Edit"><PencilSquareIcon className="h-4 w-4" /></button>
+                )}
+                {canDelete && (
+                  <button onClick={(e) => { e.stopPropagation(); onDelete(m); }} className="rounded-lg p-1.5 text-muted transition-colors hover:bg-red-bg hover:text-red" title="Delete"><TrashIcon className="h-4 w-4" /></button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </motion.div>
   );
 }
 
