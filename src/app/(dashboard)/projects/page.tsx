@@ -13,10 +13,9 @@ import { useProjects } from '@/hooks/use-projects';
 import { useTasks } from '@/hooks/use-tasks';
 import { useTeam } from '@/hooks/use-team';
 import { useUser } from '@/hooks/use-user';
-import { useFinanceClients, useClientInvoices, useExpenses } from '@/hooks/use-finance-data';
+import { useFinanceClients } from '@/hooks/use-finance-data';
 import { canManage, canManageFinance } from '@/lib/roles';
 import { cn } from '@/lib/utils';
-import { formatOMR } from '@/lib/currency';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -114,8 +113,6 @@ export default function ProjectsPage() {
   const canEdit = user ? canManage(user.role) : false;
 
   const { clients } = useFinanceClients();
-  const { invoices } = useClientInvoices();
-  const { expenses } = useExpenses();
 
   const [scope, setScope] = useState<'month' | 'all'>('month');
   const [month, setMonth] = useState(() => startOfMonth(new Date()));
@@ -131,20 +128,6 @@ export default function ProjectsPage() {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   const isLoading = projLoading || tasksLoading;
-
-  // Per-client financials (owner/manager only)
-  const clientFinance = useMemo(() => {
-    const map = new Map<string, { revenue: number; profit: number }>();
-    if (!showFinance) return map;
-    const rev = new Map<string, number>();
-    invoices.forEach((i) => rev.set(i.client_id, (rev.get(i.client_id) ?? 0) + i.amount));
-    const exp = new Map<string, number>();
-    expenses.filter((e) => e.type === 'operational' && e.client_id).forEach((e) => exp.set(e.client_id!, (exp.get(e.client_id!) ?? 0) + e.amount));
-    new Set([...rev.keys(), ...exp.keys()]).forEach((id) =>
-      map.set(id, { revenue: rev.get(id) ?? 0, profit: (rev.get(id) ?? 0) - (exp.get(id) ?? 0) })
-    );
-    return map;
-  }, [invoices, expenses, showFinance]);
 
   const clientName = useMemo(() => new Map(clients.map((c) => [c.id, c.name])), [clients]);
 
@@ -237,7 +220,7 @@ export default function ProjectsPage() {
   ];
 
   const rowProps = {
-    router, canEdit, showFinance, clientFinance, clientName, openEdit,
+    router, canEdit, clientName, openEdit,
     onDelete: (m: ProjectMetrics) => setDeleteTarget({ id: m.project.id, name: m.project.name }),
   };
 
@@ -405,7 +388,7 @@ export default function ProjectsPage() {
               )
             ) : (
               <div className="overflow-hidden rounded-card border border-border bg-card">
-                <ListHeader showFinance={showFinance} />
+                <ListHeader />
                 {displayed.map((m, i) => (
                   <ProjectRow key={m.project.id} m={m} isLast={i === displayed.length - 1} {...rowProps} />
                 ))}
@@ -421,7 +404,7 @@ export default function ProjectsPage() {
                 <p className="text-xs text-faint">Assign a month so these appear in your monthly view</p>
               </div>
               <div className="overflow-hidden rounded-card border border-border bg-card">
-                <ListHeader showFinance={showFinance} />
+                <ListHeader />
                 {displayedUnscheduled.map((m, i) => (
                   <ProjectRow key={m.project.id} m={m} isLast={i === displayedUnscheduled.length - 1} showScheduleCta {...rowProps} />
                 ))}
@@ -549,7 +532,7 @@ export default function ProjectsPage() {
   );
 }
 
-function ListHeader({ showFinance }: { showFinance: boolean }) {
+function ListHeader() {
   return (
     <div className="hidden items-center gap-4 border-b border-border px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted lg:flex">
       <span className="flex-1">Project</span>
@@ -557,8 +540,6 @@ function ListHeader({ showFinance }: { showFinance: boolean }) {
       <span className="w-16 text-center">Open</span>
       <span className="w-16 text-center">Overdue</span>
       <span className="w-24">Team</span>
-      {showFinance && <span className="w-28 text-right">Revenue</span>}
-      {showFinance && <span className="w-28 text-right">Profit</span>}
       <span className="w-16" />
     </div>
   );
@@ -570,15 +551,12 @@ interface ProjectRowProps {
   showScheduleCta?: boolean;
   router: ReturnType<typeof useRouter>;
   canEdit: boolean;
-  showFinance: boolean;
-  clientFinance: Map<string, { revenue: number; profit: number }>;
   clientName: Map<string, string>;
   openEdit: (m: ProjectMetrics, focusSchedule?: boolean) => void;
   onDelete: (m: ProjectMetrics) => void;
 }
 
-function ProjectRow({ m, isLast, showScheduleCta, router, canEdit, showFinance, clientFinance, clientName, openEdit, onDelete }: ProjectRowProps) {
-  const fin = m.project.client_id ? clientFinance.get(m.project.client_id) : undefined;
+function ProjectRow({ m, isLast, showScheduleCta, router, canEdit, clientName, openEdit, onDelete }: ProjectRowProps) {
   const linkedName = m.project.client_id ? clientName.get(m.project.client_id) : undefined;
   const period = formatProjectPeriod(m.project);
 
@@ -616,9 +594,6 @@ function ProjectRow({ m, isLast, showScheduleCta, router, canEdit, showFinance, 
       <span className={cn('w-16 text-center text-[13px] font-semibold tabular-nums', m.overdueTasks > 0 ? 'text-red' : 'text-faint')}>{m.overdueTasks}</span>
       {/* Team */}
       <div className="w-24">{m.assignees.length > 0 ? <AvatarStack users={m.assignees} max={3} size="xs" /> : <span className="text-xs text-faint">—</span>}</div>
-      {/* Finance */}
-      {showFinance && <span className="w-28 text-right text-[13px] tabular-nums text-text">{fin ? formatOMR(fin.revenue) : <span className="text-faint">—</span>}</span>}
-      {showFinance && <span className={cn('w-28 text-right text-[13px] font-semibold tabular-nums', fin ? (fin.profit >= 0 ? 'text-text' : 'text-red') : '')}>{fin ? formatOMR(fin.profit) : <span className="text-faint">—</span>}</span>}
       {/* Actions */}
       <div className={cn('flex items-center justify-end gap-1', showScheduleCta && canEdit ? 'w-auto lg:w-40' : 'w-16')}>
         {showScheduleCta && canEdit && (
