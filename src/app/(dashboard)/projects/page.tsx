@@ -14,7 +14,7 @@ import { useTasks } from '@/hooks/use-tasks';
 import { useTeam } from '@/hooks/use-team';
 import { useUser } from '@/hooks/use-user';
 import { useFinanceClients } from '@/hooks/use-finance-data';
-import { canManage, canManageFinance } from '@/lib/roles';
+import { canManage, canManageFinance, canDeleteProjects } from '@/lib/roles';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -111,6 +111,7 @@ export default function ProjectsPage() {
   const { user } = useUser();
   const showFinance = user ? canManageFinance(user.role) : false;
   const canEdit = user ? canManage(user.role) : false;
+  const canDelete = user ? canDeleteProjects(user.role) : false;
 
   const { clients } = useFinanceClients();
 
@@ -220,7 +221,7 @@ export default function ProjectsPage() {
   ];
 
   const rowProps = {
-    router, canEdit, clientName, openEdit,
+    router, canEdit, canDelete, clientName, openEdit,
     onDelete: (m: ProjectMetrics) => setDeleteTarget({ id: m.project.id, name: m.project.name }),
   };
 
@@ -551,12 +552,13 @@ interface ProjectRowProps {
   showScheduleCta?: boolean;
   router: ReturnType<typeof useRouter>;
   canEdit: boolean;
+  canDelete: boolean;
   clientName: Map<string, string>;
   openEdit: (m: ProjectMetrics, focusSchedule?: boolean) => void;
   onDelete: (m: ProjectMetrics) => void;
 }
 
-function ProjectRow({ m, isLast, showScheduleCta, router, canEdit, clientName, openEdit, onDelete }: ProjectRowProps) {
+function ProjectRow({ m, isLast, showScheduleCta, router, canEdit, canDelete, clientName, openEdit, onDelete }: ProjectRowProps) {
   const linkedName = m.project.client_id ? clientName.get(m.project.client_id) : undefined;
   const period = formatProjectPeriod(m.project);
 
@@ -603,10 +605,10 @@ function ProjectRow({ m, isLast, showScheduleCta, router, canEdit, clientName, o
           </button>
         )}
         {canEdit && (
-          <>
-            <button onClick={(e) => { e.stopPropagation(); openEdit(m); }} className="rounded-lg p-1.5 text-muted opacity-0 transition-opacity hover:bg-card hover:text-text group-hover:opacity-100" title="Edit"><PencilSquareIcon className="h-4 w-4" /></button>
-            <button onClick={(e) => { e.stopPropagation(); onDelete(m); }} className="rounded-lg p-1.5 text-muted opacity-0 transition-opacity hover:bg-red-bg hover:text-red group-hover:opacity-100" title="Delete"><TrashIcon className="h-4 w-4" /></button>
-          </>
+          <button onClick={(e) => { e.stopPropagation(); openEdit(m); }} className="rounded-lg p-1.5 text-muted transition-opacity hover:bg-card hover:text-text lg:opacity-0 lg:group-hover:opacity-100" title="Edit"><PencilSquareIcon className="h-4 w-4" /></button>
+        )}
+        {canDelete && (
+          <button onClick={(e) => { e.stopPropagation(); onDelete(m); }} className="rounded-lg p-1.5 text-muted transition-opacity hover:bg-red-bg hover:text-red lg:opacity-0 lg:group-hover:opacity-100" title="Delete"><TrashIcon className="h-4 w-4" /></button>
         )}
         <ArrowRightIcon className="h-4 w-4 shrink-0 text-faint" />
       </div>

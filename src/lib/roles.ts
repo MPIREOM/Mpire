@@ -24,6 +24,11 @@ export function canDeleteTasks(role: Role): boolean {
   return role === 'owner' || role === 'manager';
 }
 
+// Delete projects — owner (the top-level admin role) and managers.
+export function canDeleteProjects(role: Role): boolean {
+  return role === 'owner' || role === 'manager';
+}
+
 // Finance: everyone can reach the tab, but views differ by role.
 export function canAccessFinance(role: Role): boolean {
   return role === 'owner' || role === 'manager' || role === 'staff' || role === 'investor';
