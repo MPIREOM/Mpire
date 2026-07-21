@@ -48,6 +48,8 @@ export interface Project {
   name: string;
   status: ProjectStatus;
   color: string;
+  start_date: string | null; // ISO date — schedule start (null = unscheduled)
+  end_date: string | null; // ISO date — schedule end (null with a start = ongoing)
   created_at: string;
 }
 
